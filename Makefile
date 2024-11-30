@@ -42,6 +42,18 @@ clean:
 	@echo "Cleaning..."
 	@rm -f main
 
+db-status:
+	@GOOSE_DRIVER=sqlite3 GOOSE_MIGRATION_DIR=./migrations GOOSE_DBSTRING=./db/test.db goose status
+
+# goose sqlite3 ./foo.db status
+#    goose sqlite3 ./foo.db create init sql
+#    goose sqlite3 ./foo.db create add_some_column sql
+#    goose sqlite3 ./foo.db create fetch_user_data go
+#    goose sqlite3 ./foo.db up
+#
+db-create-migration:
+	GOOSE_DRIVER=sqlite3 GOOSE_MIGRATION_DIR=./migrations GOOSE_DBSTRING=./db/test.db goose create sql
+
 # Live Reload
 watch:
 	@if command -v air > /dev/null; then \
