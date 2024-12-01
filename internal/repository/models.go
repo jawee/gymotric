@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.27.0
 
-package repositories
+package repository
 
 type Exercise struct {
 	ID   string

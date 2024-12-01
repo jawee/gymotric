@@ -3,7 +3,7 @@
 //   sqlc v1.27.0
 // source: workouts.sql
 
-package repositories
+package repository
 
 import (
 	"context"
