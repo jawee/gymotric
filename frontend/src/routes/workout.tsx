@@ -8,6 +8,7 @@ const Workout = () => {
     return (
         <>
             <h1>Workout {workout.name}</h1>
+            {workout.completed && <h2>{workout.date.toISOString()}</h2>}
             <h3>Exercises</h3>
             <ul>
             {workout.exercises.map(e => {

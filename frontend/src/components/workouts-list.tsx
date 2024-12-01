@@ -6,13 +6,13 @@ import { dummyWorkouts } from "../models/dummy-data";
 const WorkoutsList = () => {
     const [workouts] = useState<workout[]>(dummyWorkouts);
     return (
-        <>
+        <ul>
             {workouts.map(work => {
                 return (
-                    <Link to={"/workouts/" + work.id} key={work.id}>{work.name} {work.date.toISOString()}</Link>
+                    <li key={work.id}><Link to={"/workouts/" + work.id}>{work.name} {work.date.toISOString()}</Link></li>
                 )
             })}
-        </>
+        </ul>
     );
 }
 

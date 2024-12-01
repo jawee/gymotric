@@ -19,4 +19,4 @@ const Exercise = (props: ExerciseProps) => {
     );
 };
 
-export default Exercise
+export default Exercise;

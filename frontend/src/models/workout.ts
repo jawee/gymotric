@@ -2,6 +2,7 @@ export type workout = {
     id: number
     name: string
     date: Date
+    completed: boolean
     exercises: exercise[]
 };
 
