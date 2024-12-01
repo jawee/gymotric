@@ -31,7 +31,7 @@ const EditableExercise = (props: ExerciseProps) => {
 
     const addSet = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        setExercise({...exercise, sets: [...exercise.sets, { weight: weight, reps: reps }]});
+        setExercise({ ...exercise, sets: [...exercise.sets, { weight: weight, reps: reps }] });
     };
 
     return (
@@ -54,7 +54,10 @@ const EditableExercise = (props: ExerciseProps) => {
 };
 
 const Workout = () => {
-    const [workout] = useState<workout>(dummyWorkouts[1]);
+    const [workout, setWorkout] = useState<workout>(dummyWorkouts[1]);
+    const [exerciseName, setExerciseName] = useState<string>("");
+
+    const exerciseNameId = useId();
 
     if (workout.completed) {
         return (
@@ -73,6 +76,14 @@ const Workout = () => {
         );
     }
 
+    const addExercise = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        // setExercise({ ...exercise, sets: [...exercise.sets, { weight: weight, reps: reps }] });
+        setWorkout({...workout, exercises: [...workout.exercises, { id: 0, name: exerciseName, sets: [] }] });
+        setExerciseName("");
+    };
+
+
     return (
         <>
             <h1>Workout {workout.name}</h1>
@@ -82,6 +93,10 @@ const Workout = () => {
                     return (<EditableExercise key={e.id} exercise={e} />);
                 })}
             </ul>
+            <form onSubmit={addExercise}>
+                name: <input id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
+                <button type="submit">Add exercise</button>
+            </form>
         </>
     );
 };
