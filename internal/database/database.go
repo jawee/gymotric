@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"weight-tracker/internal/repositories"
 
 	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/mattn/go-sqlite3"
@@ -22,10 +23,13 @@ type Service interface {
 	// Close terminates the database connection.
 	// It returns an error if the connection cannot be closed.
 	Close() error
+
+	GetRepository() *repositories.Queries
 }
 
 type service struct {
 	db *sql.DB
+	repo *repositories.Queries
 }
 
 var (
@@ -48,8 +52,13 @@ func New() Service {
 
 	dbInstance = &service{
 		db: db,
+		repo: repositories.New(db),
 	}
 	return dbInstance
+}
+
+func (s *service) GetRepository() *repositories.Queries {
+	return s.repo
 }
 
 // Health checks the health of the database connection by pinging the database.

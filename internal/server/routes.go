@@ -2,7 +2,7 @@ package server
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 )
 
@@ -10,9 +10,12 @@ func (s *Server) RegisterRoutes() http.Handler {
 	mux := http.NewServeMux()
 
 	// Register routes
-	mux.HandleFunc("/", s.HelloWorldHandler)
+	mux.HandleFunc("/", s.helloWorldHandler)
 
 	mux.HandleFunc("/health", s.healthHandler)
+
+	// mux.HandleFunc("/workouts", s.workoutsHandler)
+	mux.Handle("GET /workouts", http.HandlerFunc(s.workoutsHandler))
 
 	// Wrap the mux with CORS middleware
 	return s.corsMiddleware(mux)
@@ -37,7 +40,7 @@ func (s *Server) corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) helloWorldHandler(w http.ResponseWriter, r *http.Request) {
 	resp := map[string]string{"message": "Hello World"}
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
@@ -46,7 +49,7 @@ func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := w.Write(jsonResp); err != nil {
-		log.Printf("Failed to write response: %v", err)
+		slog.Warn("Failed to write response", "error", err)
 	}
 }
 
@@ -58,6 +61,22 @@ func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := w.Write(resp); err != nil {
-		log.Printf("Failed to write response: %v", err)
+		slog.Warn("Failed to write response", "error", err)
+	}
+}
+
+func (s *Server) workoutsHandler(w http.ResponseWriter, r *http.Request) {
+	repo := s.db.GetRepository()
+	count, err := repo.CountAllWorkouts(r.Context())
+
+	resp := map[string]int64{"count": count}
+	jsonResp, err := json.Marshal(resp)
+	if err != nil {
+		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(jsonResp); err != nil {
+		slog.Warn("Failed to write response", "error", err)
 	}
 }
