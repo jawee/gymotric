@@ -16,3 +16,7 @@ INSERT INTO sets (
   sqlc.arg(id), sqlc.arg(repetitions), sqlc.arg(weight), sqlc.arg(exercise_id)
 )
 RETURNING id;
+
+-- name: GetSetsByExerciseId :many
+SELECT * FROM sets 
+WHERE exercise_id = sqlc.arg(exercise_id);

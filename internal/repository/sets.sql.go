@@ -97,3 +97,36 @@ func (q *Queries) GetSetById(ctx context.Context, id string) (Set, error) {
 	)
 	return i, err
 }
+
+const getSetsByExerciseId = `-- name: GetSetsByExerciseId :many
+SELECT id, repetitions, weight, exercise_id FROM sets 
+WHERE exercise_id = ?1
+`
+
+func (q *Queries) GetSetsByExerciseId(ctx context.Context, exerciseID string) ([]Set, error) {
+	rows, err := q.db.QueryContext(ctx, getSetsByExerciseId, exerciseID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Set
+	for rows.Next() {
+		var i Set
+		if err := rows.Scan(
+			&i.ID,
+			&i.Repetitions,
+			&i.Weight,
+			&i.ExerciseID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

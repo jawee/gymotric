@@ -14,8 +14,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	mux.HandleFunc("/health", s.healthHandler)
 
-	// mux.HandleFunc("/workouts", s.workoutsHandler)
-	mux.Handle("GET /workouts", http.HandlerFunc(s.workoutsHandler))
+	mux.Handle("GET /workouts", http.HandlerFunc(s.getAllWorkoutsHandler))
+	mux.Handle("GET /workouts/{id}/exercises", http.HandlerFunc(s.getExercisesByWorkoutIdHandler))
+	mux.Handle("GET /workouts/{id}/exercises/{exerciseId}/sets", http.HandlerFunc(s.getSetsByExerciseIdHandler))
 
 	// Wrap the mux with CORS middleware
 	return s.corsMiddleware(mux)
@@ -65,11 +66,47 @@ func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) workoutsHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) getAllWorkoutsHandler(w http.ResponseWriter, r *http.Request) {
 	repo := s.db.GetRepository()
 	workouts, err := repo.GetAllWorkouts(r.Context())
 
 	resp := map[string]interface{}{"workouts": workouts}
+	jsonResp, err := json.Marshal(resp)
+	if err != nil {
+		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(jsonResp); err != nil {
+		slog.Warn("Failed to write response", "error", err)
+	}
+}
+
+func (s *Server) getExercisesByWorkoutIdHandler(w http.ResponseWriter, r *http.Request) {
+	repo := s.db.GetRepository()
+	id := r.PathValue("id")
+
+	exercises, err := repo.GetExercisesByWorkoutId(r.Context(), id)
+
+	resp := map[string]interface{}{"exercises": exercises}
+	jsonResp, err := json.Marshal(resp)
+	if err != nil {
+		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(jsonResp); err != nil {
+		slog.Warn("Failed to write response", "error", err)
+	}
+}
+
+func (s *Server) getSetsByExerciseIdHandler(w http.ResponseWriter, r *http.Request) {
+	repo := s.db.GetRepository()
+	id := r.PathValue("exerciseId")
+
+	sets, err := repo.GetSetsByExerciseId(r.Context(), id)
+
+	resp := map[string]interface{}{"sets": sets}
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
 		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
