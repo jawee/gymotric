@@ -5,8 +5,22 @@
 package repository
 
 type Exercise struct {
+	ID             string
+	Name           string
+	WorkoutID      string
+	ExerciseTypeID string
+}
+
+type ExerciseType struct {
 	ID   string
 	Name string
+}
+
+type Set struct {
+	ID          string
+	Repetitions int64
+	Weight      float64
+	ExerciseID  string
 }
 
 type Workout struct {
