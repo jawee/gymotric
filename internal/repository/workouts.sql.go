@@ -49,7 +49,7 @@ func (q *Queries) CreateWorkoutAndReturnId(ctx context.Context, arg CreateWorkou
 }
 
 const getAllWorkouts = `-- name: GetAllWorkouts :many
-SELECT id, name, created_at, updated_at FROM workouts 
+SELECT id, name, completed, created_at, updated_at FROM workouts 
 ORDER by id
 `
 
@@ -65,6 +65,7 @@ func (q *Queries) GetAllWorkouts(ctx context.Context) ([]Workout, error) {
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
+			&i.Completed,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -82,7 +83,7 @@ func (q *Queries) GetAllWorkouts(ctx context.Context) ([]Workout, error) {
 }
 
 const getWorkoutById = `-- name: GetWorkoutById :one
-SELECT id, name, created_at, updated_at FROM workouts 
+SELECT id, name, completed, created_at, updated_at FROM workouts 
 WHERE id = ?1
 `
 
@@ -92,6 +93,7 @@ func (q *Queries) GetWorkoutById(ctx context.Context, id string) (Workout, error
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Completed,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

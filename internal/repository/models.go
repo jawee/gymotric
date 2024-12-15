@@ -26,6 +26,7 @@ type Set struct {
 type Workout struct {
 	ID        string
 	Name      string
+	Completed bool
 	CreatedAt string
 	UpdatedAt string
 }

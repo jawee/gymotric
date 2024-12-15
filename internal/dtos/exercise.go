@@ -11,6 +11,6 @@ type ExerciseDto struct {
 	name string
 	date time.Time
 
-	sets []Set
+	sets []SetDto
 	exerciseTypeId uuid.UUID
 }
