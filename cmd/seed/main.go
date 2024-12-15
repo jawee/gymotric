@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	fmt.Printf("Seed\n")
+	fmt.Printf("Seeding\n")
 	db := database.New()
 
 	repo := db.GetRepository()
@@ -48,6 +48,7 @@ func main() {
 	repo.CreateExerciseTypeAndReturnId(ctx, exerciseType)
 	repo.CreateExerciseAndReturnId(ctx, exercise)
 	repo.CreateSetAndReturnId(ctx, set)
+	fmt.Printf("Done\n")
 }
 
 func getUuidString() string {
