@@ -42,12 +42,19 @@ func main() {
 		Weight: 110,
 		ExerciseID: exercise.ID,
 	}
-
+	set2 := repository.CreateSetAndReturnIdParams {
+		ID: getUuidString(),
+		Repetitions: 8,
+		Weight: 110,
+		ExerciseID: exercise.ID,
+	}
 
 	repo.CreateWorkoutAndReturnId(ctx, workout)
 	repo.CreateExerciseTypeAndReturnId(ctx, exerciseType)
 	repo.CreateExerciseAndReturnId(ctx, exercise)
 	repo.CreateSetAndReturnId(ctx, set)
+	repo.CreateSetAndReturnId(ctx, set2)
+
 	fmt.Printf("Done\n")
 }
 
