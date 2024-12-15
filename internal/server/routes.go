@@ -67,9 +67,9 @@ func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) workoutsHandler(w http.ResponseWriter, r *http.Request) {
 	repo := s.db.GetRepository()
-	count, err := repo.CountAllWorkouts(r.Context())
+	workouts, err := repo.GetAllWorkouts(r.Context())
 
-	resp := map[string]int64{"count": count}
+	resp := map[string]interface{}{"workouts": workouts}
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
 		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
