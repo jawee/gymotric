@@ -3,6 +3,7 @@
 CREATE TABLE workouts (
     id text primary key,
     name text not null,
+    completed integer not null,
 
     created_at text not null,
     updated_at text not null
