@@ -20,6 +20,27 @@ func (q *Queries) CountAllExerciseTypes(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const createExerciseTypeAndReturnId = `-- name: CreateExerciseTypeAndReturnId :one
+INSERT INTO exercise_types (
+  id, name
+) VALUES (
+  ?1, ?2
+)
+RETURNING id
+`
+
+type CreateExerciseTypeAndReturnIdParams struct {
+	ID   string
+	Name string
+}
+
+func (q *Queries) CreateExerciseTypeAndReturnId(ctx context.Context, arg CreateExerciseTypeAndReturnIdParams) (string, error) {
+	row := q.db.QueryRowContext(ctx, createExerciseTypeAndReturnId, arg.ID, arg.Name)
+	var id string
+	err := row.Scan(&id)
+	return id, err
+}
+
 const getAllExerciseTypes = `-- name: GetAllExerciseTypes :many
 SELECT id, name FROM exercise_types 
 ORDER by id asc
