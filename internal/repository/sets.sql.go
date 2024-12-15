@@ -20,6 +20,34 @@ func (q *Queries) CountAllSets(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const createSetAndReturnId = `-- name: CreateSetAndReturnId :one
+INSERT INTO sets (
+  id, repetitions, weight, exercise_id
+) VALUES (
+  ?1, ?2, ?3, ?4
+)
+RETURNING id
+`
+
+type CreateSetAndReturnIdParams struct {
+	ID          string
+	Repetitions int64
+	Weight      float64
+	ExerciseID  string
+}
+
+func (q *Queries) CreateSetAndReturnId(ctx context.Context, arg CreateSetAndReturnIdParams) (string, error) {
+	row := q.db.QueryRowContext(ctx, createSetAndReturnId,
+		arg.ID,
+		arg.Repetitions,
+		arg.Weight,
+		arg.ExerciseID,
+	)
+	var id string
+	err := row.Scan(&id)
+	return id, err
+}
+
 const getAllSets = `-- name: GetAllSets :many
 SELECT id, repetitions, weight, exercise_id FROM sets 
 ORDER by id
