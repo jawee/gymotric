@@ -25,28 +25,28 @@ func main() {
 	}
 
 	exerciseType := repository.CreateExerciseTypeAndReturnIdParams{
-		ID: getUuidString(),
+		ID:   getUuidString(),
 		Name: "Deadlift",
 	}
 
-	exercise := repository.CreateExerciseAndReturnIdParams {
-		ID: getUuidString(),
-		Name: exerciseType.Name,
-		WorkoutID: workout.ID,
+	exercise := repository.CreateExerciseAndReturnIdParams{
+		ID:             getUuidString(),
+		Name:           exerciseType.Name,
+		WorkoutID:      workout.ID,
 		ExerciseTypeID: exerciseType.ID,
 	}
 
-	set := repository.CreateSetAndReturnIdParams {
-		ID: getUuidString(),
+	set := repository.CreateSetAndReturnIdParams{
+		ID:          getUuidString(),
 		Repetitions: 8,
-		Weight: 110,
-		ExerciseID: exercise.ID,
+		Weight:      110,
+		ExerciseID:  exercise.ID,
 	}
-	set2 := repository.CreateSetAndReturnIdParams {
-		ID: getUuidString(),
+	set2 := repository.CreateSetAndReturnIdParams{
+		ID:          getUuidString(),
 		Repetitions: 8,
-		Weight: 110,
-		ExerciseID: exercise.ID,
+		Weight:      110,
+		ExerciseID:  exercise.ID,
 	}
 
 	repo.CreateWorkoutAndReturnId(ctx, workout)
