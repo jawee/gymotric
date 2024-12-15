@@ -1,18 +1,21 @@
-export type workout = {
-    id: number
+export type Workout = {
+    id: string
     name: string
-    date: Date
+    created_at: Date
+    updated_at: Date
     completed: boolean
-    exercises: exercise[]
 };
 
-export type exercise = {
-    id: number
+export type Exercise = {
+    id: string
     name: string
-    sets: set[]
+    workout_id: string
+    exercise_type_id: string
 };
 
-export type set = {
+export type Set = {
+    id: string
+    exercise_id: string
     weight: number
     reps: number
 };

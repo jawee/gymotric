@@ -1,17 +1,19 @@
 import { useId, useState } from "react";
-import { dummyWorkouts } from "../models/dummy-data";
-import { exercise, workout } from "../models/workout";
+import { dummyExercises, dummySets, dummyWorkouts } from "../models/dummy-data";
+import { Exercise, Workout, Set } from "../models/workout";
 
 type ExerciseProps = {
-    exercise: exercise
+    exercise: Exercise
 };
 
-const Exercise = (props: ExerciseProps) => {
-    const [ex] = useState<exercise>(props.exercise);
+const ExerciseComponent = (props: ExerciseProps) => {
+    const [ex] = useState<Exercise>(props.exercise);
+    const dSets: Set[] = dummySets.get(ex.id) ?? []
+    const [sets] = useState<Set[]>(dSets);
     return (
         <li key={ex.id}>{ex.name}
             <ul>
-                {ex.sets.map((set, i) => {
+                {sets.map((set, i) => {
                     return (
                         <li key={ex.id + " " + i}>{set.weight}kg for {set.reps} reps</li>
                     );
@@ -22,8 +24,10 @@ const Exercise = (props: ExerciseProps) => {
 };
 
 const EditableExercise = (props: ExerciseProps) => {
-    const [exercise, setExercise] = useState<exercise>(props.exercise);
+    const [exercise] = useState<Exercise>(props.exercise);
     const [weight, setWeight] = useState<number>(0);
+    const dSets: Set[] = dummySets.get(exercise.id) ?? []
+    const [sets] = useState<Set[]>(dSets);
     const [reps, setReps] = useState<number>(0);
 
     const weightId = useId();
@@ -31,14 +35,14 @@ const EditableExercise = (props: ExerciseProps) => {
 
     const addSet = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        setExercise({ ...exercise, sets: [...exercise.sets, { weight: weight, reps: reps }] });
+        // setExercise({ ...exercise, sets: [...exercise.sets, { weight: weight, reps: reps }] });
     };
 
     return (
         <>
             <li key={exercise.id}>{exercise.name}
                 <ul>
-                    {exercise.sets.map((set, i) => {
+                    {sets.map((set, i) => {
                         return (
                             <li key={exercise.id + " " + i}>{set.weight}kg for {set.reps} reps</li>
                         );
@@ -53,9 +57,11 @@ const EditableExercise = (props: ExerciseProps) => {
     );
 };
 
-const Workout = () => {
-    const [workout, setWorkout] = useState<workout>(dummyWorkouts[1]);
+const WorkoutComponent = () => {
+    const [workout] = useState<Workout>(dummyWorkouts[1]);
     const [exerciseName, setExerciseName] = useState<string>("");
+    const ex = dummyExercises.get(workout.id) ?? [];
+    const [exercises] = useState<Exercise[]>(ex)
 
     const exerciseNameId = useId();
 
@@ -63,12 +69,12 @@ const Workout = () => {
         return (
             <>
                 <h1>Workout {workout.name}</h1>
-                <h2>{workout.date.toDateString()}</h2>
+                <h2>{workout.created_at.toDateString()}</h2>
                 <h3>Exercises</h3>
                 <ul>
-                    {workout.exercises.map(e => {
+                    {exercises.map(e => {
                         return (
-                            <Exercise key={e.id} exercise={e} />
+                            <ExerciseComponent key={e.id} exercise={e} />
                         );
                     })}
                 </ul>
@@ -79,7 +85,7 @@ const Workout = () => {
     const addExercise = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         // setExercise({ ...exercise, sets: [...exercise.sets, { weight: weight, reps: reps }] });
-        setWorkout({...workout, exercises: [...workout.exercises, { id: 0, name: exerciseName, sets: [] }] });
+        // setWorkout({...workout, exercises: [...workout.exercises, { id: 0, name: exerciseName, sets: [] }] });
         setExerciseName("");
     };
 
@@ -89,7 +95,7 @@ const Workout = () => {
             <h1>Workout {workout.name}</h1>
             <h3>Exercises</h3>
             <ul>
-                {workout.exercises.map(e => {
+                {exercises.map(e => {
                     return (<EditableExercise key={e.id} exercise={e} />);
                 })}
             </ul>
@@ -101,4 +107,4 @@ const Workout = () => {
     );
 };
 
-export default Workout;
+export default WorkoutComponent;
