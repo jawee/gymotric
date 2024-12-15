@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type Exercise struct {
+type ExerciseDto struct {
 	id uuid.UUID
 	name string
 	date time.Time

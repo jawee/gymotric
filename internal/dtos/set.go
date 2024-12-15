@@ -2,7 +2,7 @@ package models
 
 import "github.com/google/uuid"
 
-type Set struct {
+type SetDto struct {
 	id uuid.UUID
 	weight float64
 	repetitions int
