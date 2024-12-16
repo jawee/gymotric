@@ -10,6 +10,7 @@ const ExerciseComponent = (props: ExerciseProps) => {
     const [ex] = useState<Exercise>(props.exercise);
     const dSets: Set[] = dummySets.get(ex.id) ?? []
     const [sets] = useState<Set[]>(dSets);
+
     return (
         <li key={ex.id}>{ex.name}
             <ul>
