@@ -30,10 +30,10 @@ RETURNING id
 `
 
 type CreateExerciseAndReturnIdParams struct {
-	ID             string
-	Name           string
-	WorkoutID      string
-	ExerciseTypeID string
+	ID             string `json:"id"`
+	Name           string `json:"name"`
+	WorkoutID      string `json:"workout_id"`
+	ExerciseTypeID string `json:"exercise_type_id"`
 }
 
 func (q *Queries) CreateExerciseAndReturnId(ctx context.Context, arg CreateExerciseAndReturnIdParams) (string, error) {

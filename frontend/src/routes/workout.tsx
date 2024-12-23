@@ -1,15 +1,27 @@
-import { useId, useState } from "react";
-import { dummyExercises, dummySets, dummyWorkouts } from "../models/dummy-data";
+import { useEffect, useId, useState } from "react";
 import { Exercise, Workout, Set } from "../models/workout";
+import { useParams } from "react-router";
+import Menu from "../components/menu";
 
 type ExerciseProps = {
     exercise: Exercise
 };
 
+const fetchSets = async (wId: string, eId: string, setSets: React.Dispatch<React.SetStateAction<Set[]>>) => {
+    const res = await fetch("http://localhost:8080/workouts/" + wId + "/exercises/" + eId + "/sets");
+    if (res.status === 200) {
+        const resObj = await res.json();
+        setSets(resObj.sets);
+    }
+};
+
 const ExerciseComponent = (props: ExerciseProps) => {
     const [ex] = useState<Exercise>(props.exercise);
-    const dSets: Set[] = dummySets.get(ex.id) ?? []
-    const [sets] = useState<Set[]>(dSets);
+    const [sets, setSets] = useState<Set[]>([]);
+
+    useEffect(() => {
+        fetchSets(ex.workout_id, ex.id, setSets);
+    }, [ex]);
 
     return (
         <li key={ex.id}>{ex.name}
@@ -25,14 +37,17 @@ const ExerciseComponent = (props: ExerciseProps) => {
 };
 
 const EditableExercise = (props: ExerciseProps) => {
-    const [exercise] = useState<Exercise>(props.exercise);
+    const [ex] = useState<Exercise>(props.exercise);
     const [weight, setWeight] = useState<number>(0);
-    const dSets: Set[] = dummySets.get(exercise.id) ?? []
-    const [sets] = useState<Set[]>(dSets);
+    const [sets, setSets] = useState<Set[]>([]);
     const [reps, setReps] = useState<number>(0);
 
     const weightId = useId();
     const repsId = useId();
+
+    useEffect(() => {
+        fetchSets(ex.workout_id, ex.id, setSets);
+    }, [ex]);
 
     const addSet = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -41,11 +56,11 @@ const EditableExercise = (props: ExerciseProps) => {
 
     return (
         <>
-            <li key={exercise.id}>{exercise.name}
+            <li key={ex.id}>{ex.name}
                 <ul>
                     {sets.map((set, i) => {
                         return (
-                            <li key={exercise.id + " " + i}>{set.weight}kg for {set.reps} reps</li>
+                            <li key={ex.id + " " + i}>{set.weight}kg for {set.reps} reps</li>
                         );
                     })}
                 </ul>
@@ -59,18 +74,51 @@ const EditableExercise = (props: ExerciseProps) => {
 };
 
 const WorkoutComponent = () => {
-    const [workout] = useState<Workout>(dummyWorkouts[1]);
+    const params = useParams();
+    const [workout, setWorkout] = useState<Workout | null>(null);
     const [exerciseName, setExerciseName] = useState<string>("");
-    const ex = dummyExercises.get(workout.id) ?? [];
-    const [exercises] = useState<Exercise[]>(ex)
+    const [exercises, setExercises] = useState<Exercise[]>([])
 
+    const id = params.id;
+
+    useEffect(() => {
+        const fetchWorkout = async () => {
+            const res = await fetch("http://localhost:8080/workouts/" + id);
+            if (res.status === 200) {
+                const resObj = await res.json();
+                setWorkout(resObj.workout);
+            }
+        };
+
+        fetchWorkout();
+    }, []);
+
+    useEffect(() => {
+        const fetchExercises = async () => {
+            const res = await fetch("http://localhost:8080/workouts/" + id + "/exercises");
+            if (res.status === 200) {
+                const resObj = await res.json();
+                setExercises(resObj.exercises);
+            }
+        };
+
+        fetchExercises();
+    }, []);
     const exerciseNameId = useId();
 
-    if (workout.completed) {
+    if (workout === null) {
+        return (
+            <p>Loading</p>
+        );
+    }
+
+
+    if (workout.completed_on !== null) {
         return (
             <>
+                <Menu />
                 <h1>Workout {workout.name}</h1>
-                <h2>{workout.created_at.toDateString()}</h2>
+                <h2>{new Date(workout.created_on).toDateString()}</h2>
                 <h3>Exercises</h3>
                 <ul>
                     {exercises.map(e => {
@@ -93,7 +141,9 @@ const WorkoutComponent = () => {
 
     return (
         <>
+            <Menu />
             <h1>Workout {workout.name}</h1>
+            <h2>{new Date(workout.created_on).toDateString()}</h2>
             <h3>Exercises</h3>
             <ul>
                 {exercises.map(e => {

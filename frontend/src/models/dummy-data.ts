@@ -4,16 +4,16 @@ export const dummyWorkouts: Workout[] = [
     {
         id: "workout-1",
         name: "Legs",
-        created_at: new Date(),
-        updated_at: new Date(),
-        completed: true,
+        created_on: new Date(),
+        updated_on: new Date(),
+        completed_on: null,
     },
     {
         id: "workout-2",
         name: "Back",
-        created_at: new Date(),
-        updated_at: new Date(),
-        completed: false,
+        created_on: new Date(),
+        updated_on: new Date(),
+        completed_on: null,
     }
 ];
 export const dummyExercises: Map<string, Exercise[]> = new Map<string, Exercise[]>([

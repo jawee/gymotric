@@ -20,8 +20,8 @@ func main() {
 	workout := repository.CreateWorkoutAndReturnIdParams{
 		ID:        getUuidString(),
 		Name:      "back",
-		CreatedAt: time.Now().UTC().Format(time.RFC3339),
-		UpdatedAt: time.Now().UTC().Format(time.RFC3339),
+		CreatedOn: time.Now().UTC().Format(time.RFC3339),
+		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
 	}
 
 	exerciseType := repository.CreateExerciseTypeAndReturnIdParams{

@@ -30,10 +30,10 @@ RETURNING id
 `
 
 type CreateSetAndReturnIdParams struct {
-	ID          string
-	Repetitions int64
-	Weight      float64
-	ExerciseID  string
+	ID          string  `json:"id"`
+	Repetitions int64   `json:"repetitions"`
+	Weight      float64 `json:"weight"`
+	ExerciseID  string  `json:"exercise_id"`
 }
 
 func (q *Queries) CreateSetAndReturnId(ctx context.Context, arg CreateSetAndReturnIdParams) (string, error) {

@@ -22,7 +22,7 @@ func (q *Queries) CountAllWorkouts(ctx context.Context) (int64, error) {
 
 const createWorkoutAndReturnId = `-- name: CreateWorkoutAndReturnId :one
 INSERT INTO workouts (
-  id, name, created_at, updated_at
+  id, name, created_on, updated_on
 ) VALUES (
   ?1, ?2, ?3, ?4
 )
@@ -30,18 +30,18 @@ RETURNING id
 `
 
 type CreateWorkoutAndReturnIdParams struct {
-	ID        string
-	Name      string
-	CreatedAt string
-	UpdatedAt string
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	CreatedOn string `json:"created_on"`
+	UpdatedOn string `json:"updated_on"`
 }
 
 func (q *Queries) CreateWorkoutAndReturnId(ctx context.Context, arg CreateWorkoutAndReturnIdParams) (string, error) {
 	row := q.db.QueryRowContext(ctx, createWorkoutAndReturnId,
 		arg.ID,
 		arg.Name,
-		arg.CreatedAt,
-		arg.UpdatedAt,
+		arg.CreatedOn,
+		arg.UpdatedOn,
 	)
 	var id string
 	err := row.Scan(&id)
@@ -49,7 +49,7 @@ func (q *Queries) CreateWorkoutAndReturnId(ctx context.Context, arg CreateWorkou
 }
 
 const getAllWorkouts = `-- name: GetAllWorkouts :many
-SELECT id, name, completed, created_at, updated_at FROM workouts 
+SELECT id, name, completed_on, created_on, updated_on FROM workouts 
 ORDER by id
 `
 
@@ -65,9 +65,9 @@ func (q *Queries) GetAllWorkouts(ctx context.Context) ([]Workout, error) {
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
-			&i.Completed,
-			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.CompletedOn,
+			&i.CreatedOn,
+			&i.UpdatedOn,
 		); err != nil {
 			return nil, err
 		}
@@ -83,7 +83,7 @@ func (q *Queries) GetAllWorkouts(ctx context.Context) ([]Workout, error) {
 }
 
 const getWorkoutById = `-- name: GetWorkoutById :one
-SELECT id, name, completed, created_at, updated_at FROM workouts 
+SELECT id, name, completed_on, created_on, updated_on FROM workouts 
 WHERE id = ?1
 `
 
@@ -93,9 +93,9 @@ func (q *Queries) GetWorkoutById(ctx context.Context, id string) (Workout, error
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
-		&i.Completed,
-		&i.CreatedAt,
-		&i.UpdatedAt,
+		&i.CompletedOn,
+		&i.CreatedOn,
+		&i.UpdatedOn,
 	)
 	return i, err
 }

@@ -3,10 +3,10 @@
 CREATE TABLE workouts (
     id text primary key,
     name text not null,
-    completed integer not null,
+    completed_on text null,
 
-    created_at text not null,
-    updated_at text not null
+    created_on text not null,
+    updated_on text not null
 );
 
 CREATE TABLE exercise_types (

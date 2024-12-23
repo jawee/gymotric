@@ -1,9 +1,9 @@
 export type Workout = {
     id: string
     name: string
-    created_at: Date
-    updated_at: Date
-    completed: boolean
+    created_on: Date
+    updated_on: Date
+    completed_on: Date | null
 };
 
 export type Exercise = {

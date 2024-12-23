@@ -11,8 +11,8 @@ WHERE id = sqlc.arg(id);
 
 -- name: CreateWorkoutAndReturnId :one
 INSERT INTO workouts (
-  id, name, created_at, updated_at
+  id, name, created_on, updated_on
 ) VALUES (
-  sqlc.arg(id), sqlc.arg(name), sqlc.arg(created_at), sqlc.arg(updated_at)
+  sqlc.arg(id), sqlc.arg(name), sqlc.arg(created_on), sqlc.arg(updated_on)
 )
 RETURNING id;
