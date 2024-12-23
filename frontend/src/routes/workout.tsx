@@ -1,7 +1,6 @@
 import { useEffect, useId, useState } from "react";
 import { Exercise, Workout, Set } from "../models/workout";
 import { useParams } from "react-router";
-import Menu from "../components/menu";
 
 type ExerciseProps = {
     exercise: Exercise
@@ -116,7 +115,6 @@ const WorkoutComponent = () => {
     if (workout.completed_on !== null) {
         return (
             <>
-                <Menu />
                 <h1>Workout {workout.name}</h1>
                 <h2>{new Date(workout.created_on).toDateString()}</h2>
                 <h3>Exercises</h3>
@@ -141,7 +139,6 @@ const WorkoutComponent = () => {
 
     return (
         <>
-            <Menu />
             <h1>Workout {workout.name}</h1>
             <h2>{new Date(workout.created_on).toDateString()}</h2>
             <h3>Exercises</h3>

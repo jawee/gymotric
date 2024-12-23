@@ -1,4 +1,3 @@
-import Menu from '../components/menu';
 import WorkoutsList from '../components/workouts-list';
 
 const Home = () => {
@@ -8,7 +7,6 @@ const Home = () => {
 
     return (
         <>
-            <Menu />
             <h1>Home</h1>
 
             <button onClick={newWorkout}>New workout</button>
