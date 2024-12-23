@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -36,7 +37,27 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 	done <- true
 }
 
+func setupSlog() {
+	replace := func(groups []string, a slog.Attr) slog.Attr {
+		//format time as RFC3339
+		if a.Key == slog.TimeKey && len(groups) == 0 {
+			a.Value = slog.StringValue(time.Now().UTC().Format(time.RFC3339))
+		}
+		return a
+	}
+
+	opts := &slog.HandlerOptions{
+		AddSource:   true,
+		Level:       slog.LevelDebug,
+		ReplaceAttr: replace,
+	}
+
+	logger := slog.New(slog.NewJSONHandler(os.Stderr, opts))
+	slog.SetDefault(logger)
+}
+
 func main() {
+	setupSlog()
 
 	server := server.NewServer()
 

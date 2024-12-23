@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"sort"
@@ -93,6 +94,8 @@ func (s *Server) getAllWorkoutsHandler(w http.ResponseWriter, r *http.Request) {
 		return tb.Before(ta)
 	})
 
+	slog.Info(fmt.Sprintf("returning %d workouts", len(workouts)))
+
 	resp := map[string]interface{}{"workouts": workouts}
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
@@ -158,8 +161,8 @@ func (s *Server) getSetsByExerciseIdHandler(w http.ResponseWriter, r *http.Reque
 	sets, err := repo.GetSetsByExerciseId(r.Context(), id)
     
 	if err != nil {
-		slog.Warn("Failed to get sets body", "error", err)
-		http.Error(w, "Failed to create workout", http.StatusBadRequest)
+		slog.Warn("Failed to get sets", "error", err)
+		http.Error(w, "Failed to get sets", http.StatusBadRequest)
 		return
 	}
 
