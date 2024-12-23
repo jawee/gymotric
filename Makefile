@@ -14,6 +14,9 @@ run:
 	@go run cmd/api/main.go &
 	@npm install --prefix ./frontend
 	@npm run dev --prefix ./frontend
+
+run-api:
+	@go run cmd/api/main.go
 # Create DB container
 docker-run:
 	@if docker compose up --build 2>/dev/null; then \
