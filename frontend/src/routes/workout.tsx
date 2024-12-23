@@ -75,9 +75,11 @@ const EditableExercise = (props: ExerciseProps) => {
 const WorkoutComponent = () => {
     const params = useParams();
     const [workout, setWorkout] = useState<Workout | null>(null);
-    const [exerciseName, setExerciseName] = useState<string>("");
     const [exercises, setExercises] = useState<Exercise[]>([])
     const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([]);
+    //form
+    const [exerciseName, setExerciseName] = useState<string>("");
+    const [exerciseTypeId, setExerciseTypeId] = useState<string>();
 
     const id = params.id;
 
@@ -92,6 +94,7 @@ const WorkoutComponent = () => {
 
         fetchExerciseTypes();
     }, []);
+
     useEffect(() => {
         const fetchWorkout = async () => {
             const res = await fetch("http://localhost:8080/workouts/" + id);
@@ -115,7 +118,9 @@ const WorkoutComponent = () => {
 
         fetchExercises();
     }, []);
+
     const exerciseNameId = useId();
+    const existingExerciseTypeSelectName = "exerciseTypeSelect";
 
     if (workout === null) {
         return (
@@ -143,6 +148,18 @@ const WorkoutComponent = () => {
 
     const addExercise = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+
+        if (exerciseTypeId !== "None") {
+            const exerciseType = exerciseTypes.filter(et => et.id == exerciseTypeId)[0];
+
+
+        }
+
+        if (exerciseName === "") {
+            return;
+        }
+
+        console.log(exerciseName)
         // setExercise({ ...exercise, sets: [...exercise.sets, { weight: weight, reps: reps }] });
         // setWorkout({...workout, exercises: [...workout.exercises, { id: 0, name: exerciseName, sets: [] }] });
         setExerciseName("");
@@ -161,10 +178,10 @@ const WorkoutComponent = () => {
             </ul>
             <form onSubmit={addExercise}>
                 Add new: <input id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
-                <select>
+                <select name={existingExerciseTypeSelectName} onChange={e => setExerciseTypeId(e.target.value)}>
                     <option>None</option>
                     {exerciseTypes.map(e => {
-                        return (<option value={e.id}>{e.name}</option>);
+                        return (<option key={e.id}  value={e.id}>{e.name}</option>);
                     })}
                 </select>
                 <button type="submit">Add exercise</button>
