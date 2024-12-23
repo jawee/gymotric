@@ -17,6 +17,7 @@ const CreateWorkoutForm = () => {
 
         if (res.status !== 201) {
             console.log("Error");
+            return
         }
 
         const response = await res.json()

@@ -146,12 +146,21 @@ const WorkoutComponent = () => {
         );
     }
 
-    const addExercise = (event: React.FormEvent<HTMLFormElement>) => {
+    const addExercise = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
         if (exerciseTypeId !== "None") {
             const exerciseType = exerciseTypes.filter(et => et.id == exerciseTypeId)[0];
 
+            const res = await fetch("http://localhost:8080/workouts/" + workout.id + "/exercises", {
+                method:"POST",
+                body: JSON.stringify({ exercise_type_id: exerciseType.id })
+            });
+            if (res.status !== 201) {
+                console.log("Error");
+                return
+            }
+            const response = await res.json()
 
         }
 
@@ -181,7 +190,7 @@ const WorkoutComponent = () => {
                 <select name={existingExerciseTypeSelectName} onChange={e => setExerciseTypeId(e.target.value)}>
                     <option>None</option>
                     {exerciseTypes.map(e => {
-                        return (<option key={e.id}  value={e.id}>{e.name}</option>);
+                        return (<option key={e.id} value={e.id}>{e.name}</option>);
                     })}
                 </select>
                 <button type="submit">Add exercise</button>

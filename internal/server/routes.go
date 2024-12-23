@@ -26,8 +26,10 @@ func (s *Server) RegisterRoutes() http.Handler {
 	mux.Handle("GET /workouts/{id}", http.HandlerFunc(s.getWorkoutByIdHandler))
 
 	mux.Handle("GET /workouts/{id}/exercises", http.HandlerFunc(s.getExercisesByWorkoutIdHandler))
+	mux.Handle("POST /workouts/{id}/exercises", http.HandlerFunc(s.createExerciseHandler))
 
 	mux.Handle("GET /workouts/{id}/exercises/{exerciseId}/sets", http.HandlerFunc(s.getSetsByExerciseIdHandler))
+	mux.Handle("POST /workouts/{id}/exercises/{exerciseId}/sets", http.HandlerFunc(s.createSetHandler))
 
 	return s.corsMiddleware(s.loggingMiddleware(mux))
 }
@@ -83,6 +85,98 @@ func (s *Server) getAllWorkoutTypesHandler(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+func (s *Server) createSetHandler(w http.ResponseWriter, r *http.Request) {
+	repo := s.db.GetRepository()
+
+	decoder := json.NewDecoder(r.Body)
+	var t createWorkoutRequest
+	err := decoder.Decode(&t)
+
+	if err != nil {
+		slog.Warn("Failed to decode request body", "error", err)
+		http.Error(w, "Failed to create workout", http.StatusBadRequest)
+		return
+	}
+
+	workout := repository.CreateWorkoutAndReturnIdParams{
+		ID:        generateUuid(),
+		Name:      t.Name,
+		CreatedOn: time.Now().UTC().Format(time.RFC3339),
+		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
+	}
+
+	id, err := repo.CreateWorkoutAndReturnId(r.Context(), workout)
+
+	if err != nil {
+		slog.Warn("Failed to create workout", "error", err)
+		http.Error(w, "Failed to create workout", http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+
+	resp := map[string]interface{}{"id": id}
+	jsonResp, err := json.Marshal(resp)
+	if err != nil {
+		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(jsonResp); err != nil {
+		slog.Warn("Failed to write response", "error", err)
+	}
+}
+
+func (s *Server) createExerciseHandler(w http.ResponseWriter, r *http.Request) {
+	repo := s.db.GetRepository()
+
+	decoder := json.NewDecoder(r.Body)
+	var t createExerciseRequest
+	err := decoder.Decode(&t)
+
+	if err != nil {
+		slog.Warn("Failed to decode request body", "error", err)
+		http.Error(w, "Failed to create exercise", http.StatusBadRequest)
+		return
+	}
+
+	exerciseType, err := repo.GetExerciseTypeById(r.Context(), t.ExerciseTypeID)
+	if err != nil {
+		slog.Warn("Failed GetExerciseTypeById", "error", err)
+		http.Error(w, "Failed to create exercise", http.StatusBadRequest)
+		return
+	}
+
+	workoutId := r.PathValue("id")
+
+	exercise := repository.CreateExerciseAndReturnIdParams{
+		ID:             generateUuid(),
+		Name:           exerciseType.Name,
+		WorkoutID:      workoutId,
+		ExerciseTypeID: exerciseType.ID,
+	}
+
+	id, err := repo.CreateExerciseAndReturnId(r.Context(), exercise)
+
+	if err != nil {
+		slog.Warn("Failed to create exercise", "error", err)
+		http.Error(w, "Failed to create exercise", http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+
+	resp := map[string]interface{}{"id": id}
+	jsonResp, err := json.Marshal(resp)
+	if err != nil {
+		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(jsonResp); err != nil {
+		slog.Warn("Failed to write response", "error", err)
+	}
+}
 func (s *Server) createWorkoutHandler(w http.ResponseWriter, r *http.Request) {
 	repo := s.db.GetRepository()
 
@@ -254,8 +348,8 @@ func (s *Server) createExerciseTypeHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	exerciseType := repository.CreateExerciseTypeAndReturnIdParams{
-		ID:        generateUuid(),
-		Name:      t.Name,
+		ID:   generateUuid(),
+		Name: t.Name,
 	}
 
 	id, err := repo.CreateExerciseTypeAndReturnId(r.Context(), exerciseType)
@@ -291,4 +385,8 @@ type createWorkoutRequest struct {
 
 type createExerciseTypeRequest struct {
 	Name string `json:"name"`
+}
+
+type createExerciseRequest struct {
+	ExerciseTypeID string `json:"exercise_type_id"`
 }
