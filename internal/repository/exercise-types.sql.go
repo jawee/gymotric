@@ -9,17 +9,6 @@ import (
 	"context"
 )
 
-const countAllExerciseTypes = `-- name: CountAllExerciseTypes :one
-SELECT COUNT(*) from exercise_types
-`
-
-func (q *Queries) CountAllExerciseTypes(ctx context.Context) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countAllExerciseTypes)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
 const createExerciseTypeAndReturnId = `-- name: CreateExerciseTypeAndReturnId :one
 INSERT INTO exercise_types (
   id, name

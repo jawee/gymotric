@@ -1,6 +1,3 @@
--- name: CountAllSets :one
-SELECT COUNT(*) from sets;
-
 -- name: GetAllSets :many
 SELECT * FROM sets 
 ORDER by id;

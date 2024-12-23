@@ -9,15 +9,20 @@ import (
 	"context"
 )
 
-const countAllWorkouts = `-- name: CountAllWorkouts :one
-SELECT COUNT(*) from workouts
+const completeWorkoutById = `-- name: CompleteWorkoutById :exec
+UPDATE workouts 
+set completed_on = ?1 
+where id = ?2
 `
 
-func (q *Queries) CountAllWorkouts(ctx context.Context) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countAllWorkouts)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
+type CompleteWorkoutByIdParams struct {
+	CompletedOn interface{} `json:"completed_on"`
+	ID          string      `json:"id"`
+}
+
+func (q *Queries) CompleteWorkoutById(ctx context.Context, arg CompleteWorkoutByIdParams) error {
+	_, err := q.db.ExecContext(ctx, completeWorkoutById, arg.CompletedOn, arg.ID)
+	return err
 }
 
 const createWorkoutAndReturnId = `-- name: CreateWorkoutAndReturnId :one

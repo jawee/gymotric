@@ -17,10 +17,18 @@ func main() {
 	repo := db.GetRepository()
 
 	ctx := context.Background()
+
+	createWorkout(false, 0, repo, ctx)
+	createWorkout(true, 2, repo, ctx)
+
+	fmt.Printf("Done\n")
+}
+
+func createWorkout(completed bool, daysAgo int, repo *repository.Queries, ctx context.Context) {
 	workout := repository.CreateWorkoutAndReturnIdParams{
 		ID:        getUuidString(),
 		Name:      "back",
-		CreatedOn: time.Now().UTC().Format(time.RFC3339),
+		CreatedOn: time.Now().UTC().AddDate(0, 0, -daysAgo).Format(time.RFC3339),
 		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
 	}
 
@@ -55,7 +63,15 @@ func main() {
 	repo.CreateSetAndReturnId(ctx, set)
 	repo.CreateSetAndReturnId(ctx, set2)
 
-	fmt.Printf("Done\n")
+	if completed {
+		setCompleted := repository.CompleteWorkoutByIdParams {
+			CompletedOn: time.Now().UTC().Format(time.RFC3339),
+			ID: workout.ID,
+		}
+
+		repo.CompleteWorkoutById(ctx, setCompleted)
+	}
+
 }
 
 func getUuidString() string {
