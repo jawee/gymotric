@@ -18,23 +18,25 @@ func main() {
 
 	ctx := context.Background()
 
-	createWorkout(false, 0, repo, ctx)
-	createWorkout(true, 2, repo, ctx)
+	exerciseType := repository.CreateExerciseTypeAndReturnIdParams{
+		ID:   getUuidString(),
+		Name: "Deadlift",
+	}
+	repo.CreateExerciseTypeAndReturnId(ctx, exerciseType)
+	repo.CreateExerciseTypeAndReturnId(ctx, repository.CreateExerciseTypeAndReturnIdParams{ ID: getUuidString(), Name: "Squats" })
+
+	createWorkout(false, 0, exerciseType, repo, ctx)
+	createWorkout(true, 2, exerciseType, repo, ctx)
 
 	fmt.Printf("Done\n")
 }
 
-func createWorkout(completed bool, daysAgo int, repo *repository.Queries, ctx context.Context) {
+func createWorkout(completed bool, daysAgo int, exerciseType repository.CreateExerciseTypeAndReturnIdParams, repo *repository.Queries, ctx context.Context) {
 	workout := repository.CreateWorkoutAndReturnIdParams{
 		ID:        getUuidString(),
 		Name:      "back",
 		CreatedOn: time.Now().UTC().AddDate(0, 0, -daysAgo).Format(time.RFC3339),
 		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
-	}
-
-	exerciseType := repository.CreateExerciseTypeAndReturnIdParams{
-		ID:   getUuidString(),
-		Name: "Deadlift",
 	}
 
 	exercise := repository.CreateExerciseAndReturnIdParams{
@@ -58,8 +60,6 @@ func createWorkout(completed bool, daysAgo int, repo *repository.Queries, ctx co
 	}
 
 	repo.CreateWorkoutAndReturnId(ctx, workout)
-	repo.CreateExerciseTypeAndReturnId(ctx, exerciseType)
-	repo.CreateExerciseTypeAndReturnId(ctx, repository.CreateExerciseTypeAndReturnIdParams{ ID: getUuidString(), Name: "Squats" })
 	repo.CreateExerciseAndReturnId(ctx, exercise)
 	repo.CreateSetAndReturnId(ctx, set)
 	repo.CreateSetAndReturnId(ctx, set2)

@@ -42,6 +42,9 @@ clean:
 	@echo "Cleaning..."
 	@rm -f main
 
+seed:
+	@go run cmd/seed/main.go
+
 db-status:
 	@GOOSE_DRIVER=sqlite3 GOOSE_MIGRATION_DIR=./migrations GOOSE_DBSTRING=./db/test.db goose status
 
