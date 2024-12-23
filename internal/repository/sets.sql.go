@@ -48,7 +48,7 @@ func (q *Queries) GetAllSets(ctx context.Context) ([]Set, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Set
+	items := []Set{}
 	for rows.Next() {
 		var i Set
 		if err := rows.Scan(
@@ -98,7 +98,7 @@ func (q *Queries) GetSetsByExerciseId(ctx context.Context, exerciseID string) ([
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Set
+	items := []Set{}
 	for rows.Next() {
 		var i Set
 		if err := rows.Scan(

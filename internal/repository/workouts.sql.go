@@ -64,7 +64,7 @@ func (q *Queries) GetAllWorkouts(ctx context.Context) ([]Workout, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Workout
+	items := []Workout{}
 	for rows.Next() {
 		var i Workout
 		if err := rows.Scan(

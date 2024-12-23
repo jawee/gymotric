@@ -41,7 +41,7 @@ func (q *Queries) GetAllExerciseTypes(ctx context.Context) ([]ExerciseType, erro
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ExerciseType
+	items := []ExerciseType{}
 	for rows.Next() {
 		var i ExerciseType
 		if err := rows.Scan(&i.ID, &i.Name); err != nil {
