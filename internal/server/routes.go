@@ -27,10 +27,18 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	mux.Handle("POST /workouts", http.HandlerFunc(s.createWorkoutHandler))
 
-	// Wrap the mux with CORS middleware
-	return s.corsMiddleware(mux)
+	return s.corsMiddleware(s.loggingMiddleware(mux))
 }
 
+func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set CORS headers
+		slog.Info("Request", "Path", r.URL.Path, "Method", r.Method)
+
+		// Proceed with the next handler
+		next.ServeHTTP(w, r)
+	})
+}
 func (s *Server) corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Set CORS headers
@@ -94,7 +102,7 @@ func (s *Server) getAllWorkoutsHandler(w http.ResponseWriter, r *http.Request) {
 		return tb.Before(ta)
 	})
 
-	slog.Info(fmt.Sprintf("returning %d workouts", len(workouts)))
+	slog.Debug(fmt.Sprintf("returning %d workouts", len(workouts)))
 
 	resp := map[string]interface{}{"workouts": workouts}
 	jsonResp, err := json.Marshal(resp)

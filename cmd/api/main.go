@@ -47,7 +47,7 @@ func setupSlog() {
 	}
 
 	opts := &slog.HandlerOptions{
-		AddSource:   true,
+		// AddSource:   true,
 		Level:       slog.LevelDebug,
 		ReplaceAttr: replace,
 	}
