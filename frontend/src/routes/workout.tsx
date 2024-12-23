@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from "react";
-import { Exercise, Workout, Set } from "../models/workout";
+import { Exercise, Workout, Set, ExerciseType } from "../models/workout";
 import { useParams } from "react-router";
 
 type ExerciseProps = {
@@ -77,9 +77,21 @@ const WorkoutComponent = () => {
     const [workout, setWorkout] = useState<Workout | null>(null);
     const [exerciseName, setExerciseName] = useState<string>("");
     const [exercises, setExercises] = useState<Exercise[]>([])
+    const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([]);
 
     const id = params.id;
 
+    useEffect(() => {
+        const fetchExerciseTypes = async () => {
+            const res = await fetch("http://localhost:8080/exercise-types");
+            if (res.status === 200) {
+                const resObj = await res.json();
+                setExerciseTypes(resObj.exercise_types);
+            }
+        };
+
+        fetchExerciseTypes();
+    }, []);
     useEffect(() => {
         const fetchWorkout = async () => {
             const res = await fetch("http://localhost:8080/workouts/" + id);
@@ -148,7 +160,13 @@ const WorkoutComponent = () => {
                 })}
             </ul>
             <form onSubmit={addExercise}>
-                name: <input id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
+                Add new: <input id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
+                <select>
+                    <option>None</option>
+                    {exerciseTypes.map(e => {
+                        return (<option value={e.id}>{e.name}</option>);
+                    })}
+                </select>
                 <button type="submit">Add exercise</button>
             </form>
         </>

@@ -15,11 +15,9 @@ import (
 func (s *Server) RegisterRoutes() http.Handler {
 	mux := http.NewServeMux()
 
-	// Register routes
-	mux.HandleFunc("/", s.helloWorldHandler)
-
 	mux.HandleFunc("/health", s.healthHandler)
 
+	mux.Handle("GET /exercise-types", http.HandlerFunc(s.getAllWorkoutTypesHandler)) 
 	mux.Handle("GET /workouts", http.HandlerFunc(s.getAllWorkoutsHandler))
 	mux.Handle("GET /workouts/{id}", http.HandlerFunc(s.getWorkoutByIdHandler))
 	mux.Handle("GET /workouts/{id}/exercises", http.HandlerFunc(s.getExercisesByWorkoutIdHandler))
@@ -58,8 +56,17 @@ func (s *Server) corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func (s *Server) helloWorldHandler(w http.ResponseWriter, r *http.Request) {
-	resp := map[string]string{"message": "Hello World"}
+func (s *Server) getAllWorkoutTypesHandler(w http.ResponseWriter, r *http.Request) {
+	repo := s.db.GetRepository()
+	exerciseTypes, err := repo.GetAllExerciseTypes(r.Context())
+
+	sort.Slice(exerciseTypes, func(i, j int) bool {
+		return exerciseTypes[i].Name > exerciseTypes[j].Name
+	})
+
+	slog.Debug(fmt.Sprintf("returning %d exercise types", len(exerciseTypes)))
+
+	resp := map[string]interface{}{"exercise_types": exerciseTypes}
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
 		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)

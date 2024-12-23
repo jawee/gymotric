@@ -19,3 +19,8 @@ export type Set = {
     weight: number
     reps: number
 };
+
+export type ExerciseType = {
+    id: string
+    name: string
+};

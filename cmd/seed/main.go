@@ -59,6 +59,7 @@ func createWorkout(completed bool, daysAgo int, repo *repository.Queries, ctx co
 
 	repo.CreateWorkoutAndReturnId(ctx, workout)
 	repo.CreateExerciseTypeAndReturnId(ctx, exerciseType)
+	repo.CreateExerciseTypeAndReturnId(ctx, repository.CreateExerciseTypeAndReturnIdParams{ ID: getUuidString(), Name: "Squats" })
 	repo.CreateExerciseAndReturnId(ctx, exercise)
 	repo.CreateSetAndReturnId(ctx, set)
 	repo.CreateSetAndReturnId(ctx, set2)
