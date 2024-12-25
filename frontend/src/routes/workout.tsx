@@ -189,7 +189,6 @@ const WorkoutComponent = () => {
     const addExercise = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        debugger;
         if (exerciseTypeId !== "None" && exerciseTypeId !== null) {
             const exerciseType = exerciseTypes.filter(et => et.id == exerciseTypeId)[0];
 
