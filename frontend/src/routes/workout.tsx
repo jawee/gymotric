@@ -108,7 +108,7 @@ const WorkoutComponent = () => {
     const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([]);
     //form
     const [exerciseName, setExerciseName] = useState<string>("");
-    const [exerciseTypeId, setExerciseTypeId] = useState<string>();
+    const [exerciseTypeId, setExerciseTypeId] = useState<string | null>(null);
 
     const id = params.id;
 
@@ -189,7 +189,8 @@ const WorkoutComponent = () => {
     const addExercise = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        if (exerciseTypeId !== "None") {
+        debugger;
+        if (exerciseTypeId !== "None" && exerciseTypeId !== null) {
             const exerciseType = exerciseTypes.filter(et => et.id == exerciseTypeId)[0];
 
             const res = await fetch("http://localhost:8080/workouts/" + workout.id + "/exercises", {
@@ -201,7 +202,11 @@ const WorkoutComponent = () => {
                 return
             }
 
-            await fetchExercises();
+            const obj = await res.json();
+
+            setExercises([...exercises, { id: obj.id, exercise_type_id: exerciseType.id, workout_id: workout.id, name: exerciseType.name }]);
+            return;
+            // await fetchExercises();
         }
 
         if (exerciseName === "") {
@@ -209,8 +214,35 @@ const WorkoutComponent = () => {
         }
 
         //create exercise type and then exercise
-
         console.log(exerciseName)
+
+        const exerciseTypeRes = await fetch("http://localhost:8080/exercise-types", {
+            method: "POST",
+            body: JSON.stringify({ name: exerciseName })
+        });
+
+        if (exerciseTypeRes.status !== 201) {
+            console.log("Error");
+            return;
+        }
+
+        let obj = await exerciseTypeRes.json();
+        setExerciseTypes([...exerciseTypes, { id: obj.id, name: exerciseName }]);
+
+        const res = await fetch("http://localhost:8080/workouts/" + workout.id + "/exercises", {
+            method: "POST",
+            body: JSON.stringify({ exercise_type_id: obj.id })
+        });
+        if (res.status !== 201) {
+            console.log("Error");
+            return
+        }
+
+        obj = await res.json();
+
+        setExercises([...exercises, { id: obj.id, exercise_type_id: obj.id, workout_id: workout.id, name: exerciseName }]);
+
+
         // setExercise({ ...exercise, sets: [...exercise.sets, { weight: weight, reps: reps }] });
         // setWorkout({...workout, exercises: [...workout.exercises, { id: 0, name: exerciseName, sets: [] }] });
         setExerciseName("");
