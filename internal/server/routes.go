@@ -24,7 +24,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	mux.Handle("POST /workouts", http.HandlerFunc(s.createWorkoutHandler))
 
 	mux.Handle("GET /workouts/{id}", http.HandlerFunc(s.getWorkoutByIdHandler))
-	// mux.Handle("PUT /workouts/{id}/complete", http.HandlerFunc(s.completeWorkoutById))
+	mux.Handle("PUT /workouts/{id}/complete", http.HandlerFunc(s.completeWorkoutById))
 
 	mux.Handle("GET /workouts/{id}/exercises", http.HandlerFunc(s.getExercisesByWorkoutIdHandler))
 	mux.Handle("POST /workouts/{id}/exercises", http.HandlerFunc(s.createExerciseHandler))
@@ -64,6 +64,27 @@ func (s *Server) corsMiddleware(next http.Handler) http.Handler {
 		// Proceed with the next handler
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (s *Server) completeWorkoutById(w http.ResponseWriter, r *http.Request) {
+	repo := s.db.GetRepository()
+
+	workoutId := r.PathValue("id")
+
+	completeParams := repository.CompleteWorkoutByIdParams {
+		ID: workoutId,
+		CompletedOn: time.Now().UTC().Format(time.RFC3339),
+	}
+
+	err := repo.CompleteWorkoutById(r.Context(), completeParams)
+
+	if err != nil {
+		slog.Warn("Failed to complete workout", "error", err, "workoutId", workoutId)
+		http.Error(w, "Failed to complete workout", http.StatusBadRequest)
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+	w.Header().Set("Content-Type", "application/json")
 }
 
 func (s *Server) getAllWorkoutTypesHandler(w http.ResponseWriter, r *http.Request) {

@@ -36,7 +36,7 @@ const CreateWorkoutForm = () => {
 };
 
 const WorkoutsList = () => {
-    const [workouts, setWorkouts] = useState<Workout[]>();
+    const [workouts, setWorkouts] = useState<Workout[]>([]);
     const [isCreateWorkoutMode, setIsCreateWorkoutMode] = useState<boolean>(false);
 
     const addWorkout = () => {
@@ -53,10 +53,6 @@ const WorkoutsList = () => {
 
         fetchWorkouts();
     }, []);
-
-    if (workouts === null || workouts === undefined) {
-        return (<p>Loading..</p>)
-    }
 
     return (
         <>

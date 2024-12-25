@@ -124,15 +124,15 @@ const WorkoutComponent = () => {
         fetchExerciseTypes();
     }, []);
 
-    useEffect(() => {
-        const fetchWorkout = async () => {
-            const res = await fetch("http://localhost:8080/workouts/" + id);
-            if (res.status === 200) {
-                const resObj = await res.json();
-                setWorkout(resObj.workout);
-            }
-        };
+    const fetchWorkout = async () => {
+        const res = await fetch("http://localhost:8080/workouts/" + id);
+        if (res.status === 200) {
+            const resObj = await res.json();
+            setWorkout(resObj.workout);
+        }
+    };
 
+    useEffect(() => {
         fetchWorkout();
     }, []);
 
@@ -205,15 +205,11 @@ const WorkoutComponent = () => {
 
             setExercises([...exercises, { id: obj.id, exercise_type_id: exerciseType.id, workout_id: workout.id, name: exerciseType.name }]);
             return;
-            // await fetchExercises();
         }
 
         if (exerciseName === "") {
             return;
         }
-
-        //create exercise type and then exercise
-        console.log(exerciseName)
 
         const exerciseTypeRes = await fetch("http://localhost:8080/exercise-types", {
             method: "POST",
@@ -245,10 +241,24 @@ const WorkoutComponent = () => {
     };
 
 
+    const finishWorkout = async () => {
+        debugger;
+        const res = await fetch("http://localhost:8080/workouts/" + workout.id + "/complete", {
+            method: "PUT",
+        });
+
+        if (res.status !== 204) {
+            console.log("Error", res.status, res.statusText);
+            return;
+        }
+
+        await fetchWorkout();
+    };
     return (
         <>
             <h1>Workout {workout.name}</h1>
             <h2>{new Date(workout.created_on).toDateString()}</h2>
+            <button onClick={finishWorkout}>Finish workout</button>
             <h3>Exercises</h3>
             <ul>
                 {exercises.map(e => {
