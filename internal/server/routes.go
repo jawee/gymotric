@@ -15,7 +15,7 @@ import (
 func (s *Server) RegisterRoutes() http.Handler {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/health", s.healthHandler)
+	mux.Handle("GET /health", http.HandlerFunc(s.healthHandler))
 
 	mux.Handle("GET /exercise-types", http.HandlerFunc(s.getAllWorkoutTypesHandler))
 	mux.Handle("POST /exercise-types", http.HandlerFunc(s.createExerciseTypeHandler))
