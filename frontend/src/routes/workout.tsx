@@ -3,7 +3,12 @@ import { Exercise, Workout, Set, ExerciseType } from "../models/workout";
 import { useParams } from "react-router";
 
 type ExerciseProps = {
-    exercise: Exercise
+    exercise: Exercise,
+};
+
+type EditableExerciseProps = {
+    exercise: Exercise,
+    deleteExerciseFunc: Function
 };
 
 const fetchSets = async (wId: string, eId: string, setSets: React.Dispatch<React.SetStateAction<Set[]>>) => {
@@ -27,7 +32,7 @@ const ExerciseComponent = (props: ExerciseProps) => {
             <ul>
                 {sets.map((set, i) => {
                     return (
-                        <li key={ex.id + " " + i}>{set.weight}kg for {set.reps} reps</li>
+                        <li key={ex.id + " " + i}>{set.weight}kg for {set.repetitions} reps</li>
                     );
                 })}
             </ul>
@@ -35,7 +40,7 @@ const ExerciseComponent = (props: ExerciseProps) => {
     );
 };
 
-const EditableExercise = (props: ExerciseProps) => {
+const EditableExercise = (props: EditableExerciseProps) => {
     const [ex] = useState<Exercise>(props.exercise);
     const [weight, setWeight] = useState<number>(0);
     const [sets, setSets] = useState<Set[]>([]);
@@ -48,18 +53,42 @@ const EditableExercise = (props: ExerciseProps) => {
         fetchSets(ex.workout_id, ex.id, setSets);
     }, [ex]);
 
-    const addSet = (event: React.FormEvent<HTMLFormElement>) => {
+    const deleteSet = async (setId: string) => {
+        const res = await fetch("http://localhost:8080/workouts/" + ex.workout_id + "/exercises/" + ex.id + "/sets/" + setId, {
+            method: "DELETE"
+        });
+
+        if (res.status !== 204) {
+            console.log("Error");
+            return
+        }
+
+        await fetchSets(ex.workout_id, ex.id, setSets);
+    };
+
+    const addSet = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        // setExercise({ ...exercise, sets: [...exercise.sets, { weight: weight, reps: reps }] });
+        const res = await fetch("http://localhost:8080/workouts/" + ex.workout_id + "/exercises/" + ex.id + "/sets", {
+            method: "POST",
+            body: JSON.stringify({ repetitions: reps, weight: weight })
+        });
+
+        if (res.status !== 201) {
+            console.log("Error");
+            return
+        }
+
+        const obj = await res.json();
+        setSets([...sets, { id: obj.id, weight: weight, repetitions: reps, exercise_id: ex.id }]);
     };
 
     return (
         <>
-            <li key={ex.id}>{ex.name}
+            <li key={ex.id}>{ex.name}<button onClick={async () => { await props.deleteExerciseFunc(ex.id) }}>Delete</button>
                 <ul>
                     {sets.map((set, i) => {
                         return (
-                            <li key={ex.id + " " + i}>{set.weight}kg for {set.reps} reps</li>
+                            <li key={ex.id + " " + i}>{set.weight}kg for {set.repetitions} reps<button onClick={() => deleteSet(set.id)}>Delete</button></li>
                         );
                     })}
                 </ul>
@@ -107,17 +136,28 @@ const WorkoutComponent = () => {
         fetchWorkout();
     }, []);
 
-    useEffect(() => {
-        const fetchExercises = async () => {
-            const res = await fetch("http://localhost:8080/workouts/" + id + "/exercises");
-            if (res.status === 200) {
-                const resObj = await res.json();
-                setExercises(resObj.exercises);
-            }
-        };
+    const fetchExercises = async () => {
+        const res = await fetch("http://localhost:8080/workouts/" + id + "/exercises");
+        if (res.status === 200) {
+            const resObj = await res.json();
+            setExercises(resObj.exercises);
+        }
+    };
 
+    useEffect(() => {
         fetchExercises();
     }, []);
+
+    const deleteExercise = async (exerciseId: string) => {
+        const res = await fetch("http://localhost:8080/workouts/" + id + "/exercises/" + exerciseId,
+            {
+                method: "DELETE"
+            });
+        if (res.status === 204) {
+            await fetchExercises();
+        }
+        return;
+    };
 
     const exerciseNameId = useId();
     const existingExerciseTypeSelectName = "exerciseTypeSelect";
@@ -153,15 +193,14 @@ const WorkoutComponent = () => {
             const exerciseType = exerciseTypes.filter(et => et.id == exerciseTypeId)[0];
 
             const res = await fetch("http://localhost:8080/workouts/" + workout.id + "/exercises", {
-                method:"POST",
+                method: "POST",
                 body: JSON.stringify({ exercise_type_id: exerciseType.id })
             });
             if (res.status !== 201) {
                 console.log("Error");
                 return
             }
-            const response = await res.json()
-
+            await fetchExercises();
         }
 
         if (exerciseName === "") {
@@ -182,7 +221,7 @@ const WorkoutComponent = () => {
             <h3>Exercises</h3>
             <ul>
                 {exercises.map(e => {
-                    return (<EditableExercise key={e.id} exercise={e} />);
+                    return (<EditableExercise key={e.id} exercise={e} deleteExerciseFunc={deleteExercise} />);
                 })}
             </ul>
             <form onSubmit={addExercise}>

@@ -37,6 +37,16 @@ func (q *Queries) CreateSetAndReturnId(ctx context.Context, arg CreateSetAndRetu
 	return id, err
 }
 
+const deleteSetById = `-- name: DeleteSetById :exec
+DELETE FROM sets 
+where id = ?1
+`
+
+func (q *Queries) DeleteSetById(ctx context.Context, id string) error {
+	_, err := q.db.ExecContext(ctx, deleteSetById, id)
+	return err
+}
+
 const getAllSets = `-- name: GetAllSets :many
 SELECT id, repetitions, weight, exercise_id FROM sets 
 ORDER by id

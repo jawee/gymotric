@@ -24,12 +24,15 @@ func (s *Server) RegisterRoutes() http.Handler {
 	mux.Handle("POST /workouts", http.HandlerFunc(s.createWorkoutHandler))
 
 	mux.Handle("GET /workouts/{id}", http.HandlerFunc(s.getWorkoutByIdHandler))
+	// mux.Handle("PUT /workouts/{id}/complete", http.HandlerFunc(s.completeWorkoutById))
 
 	mux.Handle("GET /workouts/{id}/exercises", http.HandlerFunc(s.getExercisesByWorkoutIdHandler))
 	mux.Handle("POST /workouts/{id}/exercises", http.HandlerFunc(s.createExerciseHandler))
+	mux.Handle("DELETE /workouts/{id}/exercises/{exerciseId}", http.HandlerFunc(s.deleteExerciseByIdHandler))
 
 	mux.Handle("GET /workouts/{id}/exercises/{exerciseId}/sets", http.HandlerFunc(s.getSetsByExerciseIdHandler))
 	mux.Handle("POST /workouts/{id}/exercises/{exerciseId}/sets", http.HandlerFunc(s.createSetHandler))
+	mux.Handle("DELETE /workouts/{id}/exercises/{exerciseId}/sets/{setId}", http.HandlerFunc(s.deleteSetByIdHandler))
 
 	return s.corsMiddleware(s.loggingMiddleware(mux))
 }
@@ -85,11 +88,46 @@ func (s *Server) getAllWorkoutTypesHandler(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+func (s *Server) deleteSetByIdHandler(w http.ResponseWriter, r *http.Request) {
+
+	repo := s.db.GetRepository()
+
+	setId := r.PathValue("setId")
+	err := repo.DeleteSetById(r.Context(), setId)
+
+	if err != nil {
+		slog.Warn("Failed to delete set", "error", err, "setId", setId)
+		http.Error(w, "Failed to delete set", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) deleteExerciseByIdHandler(w http.ResponseWriter, r *http.Request) {
+
+	repo := s.db.GetRepository()
+
+	exerciseId := r.PathValue("exerciseId")
+	err := repo.DeleteExerciseById(r.Context(), exerciseId)
+
+	if err != nil {
+		slog.Warn("Failed to delete exercise", "error", err, "exerciseId", exerciseId)
+		http.Error(w, "Failed to delete exercise", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (s *Server) createSetHandler(w http.ResponseWriter, r *http.Request) {
 	repo := s.db.GetRepository()
 
+	exerciseId := r.PathValue("exerciseId")
 	decoder := json.NewDecoder(r.Body)
-	var t createWorkoutRequest
+	var t createSetRequest
 	err := decoder.Decode(&t)
 
 	if err != nil {
@@ -98,18 +136,17 @@ func (s *Server) createSetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	workout := repository.CreateWorkoutAndReturnIdParams{
-		ID:        generateUuid(),
-		Name:      t.Name,
-		CreatedOn: time.Now().UTC().Format(time.RFC3339),
-		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
+	set := repository.CreateSetAndReturnIdParams{
+		ID:          generateUuid(),
+		Repetitions: int64(t.Repetitions),
+		Weight:      t.Weight,
+		ExerciseID:  exerciseId,
 	}
-
-	id, err := repo.CreateWorkoutAndReturnId(r.Context(), workout)
+	id, err := repo.CreateSetAndReturnId(r.Context(), set)
 
 	if err != nil {
-		slog.Warn("Failed to create workout", "error", err)
-		http.Error(w, "Failed to create workout", http.StatusBadRequest)
+		slog.Warn("Failed to create set", "error", err)
+		http.Error(w, "Failed to create set", http.StatusBadRequest)
 		return
 	}
 
@@ -389,4 +426,9 @@ type createExerciseTypeRequest struct {
 
 type createExerciseRequest struct {
 	ExerciseTypeID string `json:"exercise_type_id"`
+}
+
+type createSetRequest struct {
+	Repetitions int     `json:"repetitions"`
+	Weight      float64 `json:"weight"`
 }

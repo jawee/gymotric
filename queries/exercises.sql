@@ -16,4 +16,7 @@ RETURNING id;
 
 -- name: GetExercisesByWorkoutId :many
 SELECT * FROM exercises
-WHERE workout_id = sqlc.arg(workout_id)
+WHERE workout_id = sqlc.arg(workout_id);
+
+-- name: DeleteExerciseById :exec
+DELETE FROM exercises where id = sqlc.arg(id);

@@ -17,3 +17,7 @@ RETURNING id;
 -- name: GetSetsByExerciseId :many
 SELECT * FROM sets 
 WHERE exercise_id = sqlc.arg(exercise_id);
+
+-- name: DeleteSetById :exec
+DELETE FROM sets 
+where id = sqlc.arg(id);
