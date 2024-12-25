@@ -242,7 +242,6 @@ const WorkoutComponent = () => {
 
 
     const finishWorkout = async () => {
-        debugger;
         const res = await fetch("http://localhost:8080/workouts/" + workout.id + "/complete", {
             method: "PUT",
         });

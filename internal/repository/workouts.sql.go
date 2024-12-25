@@ -16,7 +16,7 @@ where id = ?2
 `
 
 type CompleteWorkoutByIdParams struct {
-	CompletedOn string `json:"completed_on"`
+	CompletedOn interface{} `json:"completed_on"`
 	ID          string      `json:"id"`
 }
 
