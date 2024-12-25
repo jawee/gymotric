@@ -200,12 +200,15 @@ const WorkoutComponent = () => {
                 console.log("Error");
                 return
             }
+
             await fetchExercises();
         }
 
         if (exerciseName === "") {
             return;
         }
+
+        //create exercise type and then exercise
 
         console.log(exerciseName)
         // setExercise({ ...exercise, sets: [...exercise.sets, { weight: weight, reps: reps }] });
