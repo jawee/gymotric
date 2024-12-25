@@ -242,9 +242,6 @@ const WorkoutComponent = () => {
 
         setExercises([...exercises, { id: obj.id, exercise_type_id: obj.id, workout_id: workout.id, name: exerciseName }]);
 
-
-        // setExercise({ ...exercise, sets: [...exercise.sets, { weight: weight, reps: reps }] });
-        // setWorkout({...workout, exercises: [...workout.exercises, { id: 0, name: exerciseName, sets: [] }] });
         setExerciseName("");
     };
 
