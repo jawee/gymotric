@@ -92,7 +92,7 @@ func (s *Server) getAllWorkoutTypesHandler(w http.ResponseWriter, r *http.Reques
 	exerciseTypes, err := repo.GetAllExerciseTypes(r.Context())
 
 	sort.Slice(exerciseTypes, func(i, j int) bool {
-		return exerciseTypes[i].Name > exerciseTypes[j].Name
+		return exerciseTypes[i].Name < exerciseTypes[j].Name
 	})
 
 	slog.Debug(fmt.Sprintf("returning %d exercise types", len(exerciseTypes)))
