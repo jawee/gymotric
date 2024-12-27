@@ -71,8 +71,8 @@ func (s *Server) completeWorkoutById(w http.ResponseWriter, r *http.Request) {
 
 	workoutId := r.PathValue("id")
 
-	completeParams := repository.CompleteWorkoutByIdParams {
-		ID: workoutId,
+	completeParams := repository.CompleteWorkoutByIdParams{
+		ID:          workoutId,
 		CompletedOn: time.Now().UTC().Format(time.RFC3339),
 	}
 
@@ -235,6 +235,7 @@ func (s *Server) createExerciseHandler(w http.ResponseWriter, r *http.Request) {
 		slog.Warn("Failed to write response", "error", err)
 	}
 }
+
 func (s *Server) createWorkoutHandler(w http.ResponseWriter, r *http.Request) {
 	repo := s.db.GetRepository()
 
