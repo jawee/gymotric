@@ -42,6 +42,7 @@ const ExerciseTypes = () => {
 
         const obj = await exerciseTypeRes.json();
         setExerciseTypes([...exerciseTypes, { id: obj.id, name: exerciseName }]);
+        setExerciseName("");
     };
 
     const deleteExerciseType = async (id: string) => {
