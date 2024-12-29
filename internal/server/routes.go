@@ -19,6 +19,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	mux.Handle("GET /exercise-types", http.HandlerFunc(s.getAllWorkoutTypesHandler))
 	mux.Handle("POST /exercise-types", http.HandlerFunc(s.createExerciseTypeHandler))
+	mux.Handle("DELETE /exercise-types/{id}", http.HandlerFunc(s.deleteExerciseTypeByIdHandler))
 
 	mux.Handle("GET /workouts", http.HandlerFunc(s.getAllWorkoutsHandler))
 	mux.Handle("POST /workouts", http.HandlerFunc(s.createWorkoutHandler))
@@ -107,6 +108,22 @@ func (s *Server) getAllWorkoutTypesHandler(w http.ResponseWriter, r *http.Reques
 	if _, err := w.Write(jsonResp); err != nil {
 		slog.Warn("Failed to write response", "error", err)
 	}
+}
+
+func (s *Server) deleteExerciseTypeByIdHandler(w http.ResponseWriter, r *http.Request) {
+	repo := s.db.GetRepository()
+
+	exerciseTypeId := r.PathValue("id")
+	err := repo.DeleteExerciseTypeById(r.Context(), exerciseTypeId)
+
+	if err != nil {
+		slog.Warn("Failed to delete exercise type", "error", err, "exerciseTypeId", exerciseTypeId)
+		http.Error(w, "Failed to delete exercise type", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *Server) deleteSetByIdHandler(w http.ResponseWriter, r *http.Request) {

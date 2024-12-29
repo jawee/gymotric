@@ -5,6 +5,7 @@ const Menu = () => {
         <>
             <Link to="/">Home</Link>
             <Link to="/workouts">Workouts</Link>
+            <Link to="/exercise-types">Exercise types</Link>
         </>
     );
 };

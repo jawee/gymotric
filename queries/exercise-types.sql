@@ -13,3 +13,7 @@ INSERT INTO exercise_types (
   sqlc.arg(id), sqlc.arg(name)
 )
 RETURNING id;
+
+-- name: DeleteExerciseTypeById :exec
+DELETE FROM exercise_types
+WHERE id = sqlc.arg(id);

@@ -30,6 +30,16 @@ func (q *Queries) CreateExerciseTypeAndReturnId(ctx context.Context, arg CreateE
 	return id, err
 }
 
+const deleteExerciseTypeById = `-- name: DeleteExerciseTypeById :exec
+DELETE FROM exercise_types
+WHERE id = ?1
+`
+
+func (q *Queries) DeleteExerciseTypeById(ctx context.Context, id string) error {
+	_, err := q.db.ExecContext(ctx, deleteExerciseTypeById, id)
+	return err
+}
+
 const getAllExerciseTypes = `-- name: GetAllExerciseTypes :many
 SELECT id, name FROM exercise_types 
 ORDER by id asc
