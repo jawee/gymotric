@@ -63,7 +63,7 @@ const EditableExercise = (props: EditableExerciseProps) => {
             return
         }
 
-        await fetchSets(ex.workout_id, ex.id, setSets);
+        setSets(s => s.filter(item => item.id !== setId));
     };
 
     const addSet = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -153,10 +153,12 @@ const WorkoutComponent = () => {
             {
                 method: "DELETE"
             });
-        if (res.status === 204) {
-            await fetchExercises();
+        if (res.status !== 204) {
+            console.log("Error");
+            return;
         }
-        return;
+
+        setExercises(l => l.filter(item => item.id !== exerciseId));
     };
 
     const exerciseNameId = useId();
