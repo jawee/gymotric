@@ -31,7 +31,7 @@ func main() {
 	fmt.Printf("Done\n")
 }
 
-func createWorkout(completed bool, daysAgo int, exerciseType repository.CreateExerciseTypeAndReturnIdParams, repo *repository.Queries, ctx context.Context) {
+func createWorkout(completed bool, daysAgo int, exerciseType repository.CreateExerciseTypeAndReturnIdParams, repo repository.Querier, ctx context.Context) {
 	workout := repository.CreateWorkoutAndReturnIdParams{
 		ID:        getUuidString(),
 		Name:      "back",

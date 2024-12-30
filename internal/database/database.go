@@ -24,12 +24,12 @@ type Service interface {
 	// It returns an error if the connection cannot be closed.
 	Close() error
 
-	GetRepository() *repository.Queries 
+	GetRepository() repository.Querier
 }
 
 type service struct {
-	db *sql.DB
-	repo *repository.Queries
+	db   *sql.DB
+	repo repository.Querier
 }
 
 var (
@@ -51,13 +51,13 @@ func New() Service {
 	}
 
 	dbInstance = &service{
-		db: db,
+		db:   db,
 		repo: repository.New(db),
 	}
 	return dbInstance
 }
 
-func (s *service) GetRepository() *repository.Queries {
+func (s *service) GetRepository() repository.Querier {
 	return s.repo
 }
 
