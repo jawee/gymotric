@@ -66,7 +66,7 @@ func AddEndpoints(mux *http.ServeMux, s database.Service) {
 	mux.Handle("DELETE /exercise-types/{id}", http.HandlerFunc(handler.deleteExerciseTypeByIdHandler))
 }
 
-func NewService(repo exerciseTypeRepository) Service {
+func NewService(repo ExerciseTypeRepository) Service {
 	return &exerciseTypeService{repo}
 }
 
@@ -94,7 +94,16 @@ func (s *exerciseTypeService) DeleteById(context context.Context, exerciseTypeId
 }
 
 func (s *exerciseTypeService) GetAll(context context.Context) ([]ExerciseType, error) {
-	return s.repo.GetAll(context)
+	exerciseTypes, err := s.repo.GetAll(context)
+	if err != nil {
+		return []ExerciseType{}, err
+	}
+
+	sort.Slice(exerciseTypes, func(i, j int) bool {
+		return exerciseTypes[i].Name < exerciseTypes[j].Name
+	})
+
+	return exerciseTypes, nil
 }
 
 type exerciseTypeService struct {
@@ -107,10 +116,6 @@ type handler struct {
 
 func (s *handler) getAllWorkoutTypesHandler(w http.ResponseWriter, r *http.Request) {
 	exerciseTypes, err := s.service.GetAll(r.Context())
-
-	sort.Slice(exerciseTypes, func(i, j int) bool {
-		return exerciseTypes[i].Name < exerciseTypes[j].Name
-	})
 
 	slog.Debug(fmt.Sprintf("returning %d exercise types", len(exerciseTypes)))
 
