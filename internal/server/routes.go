@@ -85,7 +85,6 @@ func (s *Server) completeWorkoutById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 }
 
-
 func (s *Server) deleteSetByIdHandler(w http.ResponseWriter, r *http.Request) {
 
 	repo := s.db.GetRepository()
@@ -283,7 +282,6 @@ func (s *Server) getSetsByExerciseIdHandler(w http.ResponseWriter, r *http.Reque
 		slog.Warn("Failed to write response", "error", err)
 	}
 }
-
 
 func generateUuid() string {
 	id, _ := uuid.NewV7()
