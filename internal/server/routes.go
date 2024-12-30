@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sort"
 	"time"
+	"weight-tracker/internal/exercises"
 	"weight-tracker/internal/repository"
 
 	"github.com/google/uuid"
@@ -27,13 +28,11 @@ func (s *Server) RegisterRoutes() http.Handler {
 	mux.Handle("GET /workouts/{id}", http.HandlerFunc(s.getWorkoutByIdHandler))
 	mux.Handle("PUT /workouts/{id}/complete", http.HandlerFunc(s.completeWorkoutById))
 
-	mux.Handle("GET /workouts/{id}/exercises", http.HandlerFunc(s.getExercisesByWorkoutIdHandler))
-	mux.Handle("POST /workouts/{id}/exercises", http.HandlerFunc(s.createExerciseHandler))
-	mux.Handle("DELETE /workouts/{id}/exercises/{exerciseId}", http.HandlerFunc(s.deleteExerciseByIdHandler))
-
 	mux.Handle("GET /workouts/{id}/exercises/{exerciseId}/sets", http.HandlerFunc(s.getSetsByExerciseIdHandler))
 	mux.Handle("POST /workouts/{id}/exercises/{exerciseId}/sets", http.HandlerFunc(s.createSetHandler))
 	mux.Handle("DELETE /workouts/{id}/exercises/{exerciseId}/sets/{setId}", http.HandlerFunc(s.deleteSetByIdHandler))
+
+	exercises.AddEndpoints(mux, s.db)
 
 	return s.corsMiddleware(s.loggingMiddleware(mux))
 }
@@ -143,23 +142,6 @@ func (s *Server) deleteSetByIdHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (s *Server) deleteExerciseByIdHandler(w http.ResponseWriter, r *http.Request) {
-
-	repo := s.db.GetRepository()
-
-	exerciseId := r.PathValue("exerciseId")
-	err := repo.DeleteExerciseById(r.Context(), exerciseId)
-
-	if err != nil {
-		slog.Warn("Failed to delete exercise", "error", err, "exerciseId", exerciseId)
-		http.Error(w, "Failed to delete exercise", http.StatusBadRequest)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNoContent)
-}
-
 func (s *Server) createSetHandler(w http.ResponseWriter, r *http.Request) {
 	repo := s.db.GetRepository()
 
@@ -185,57 +167,6 @@ func (s *Server) createSetHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Warn("Failed to create set", "error", err)
 		http.Error(w, "Failed to create set", http.StatusBadRequest)
-		return
-	}
-
-	w.WriteHeader(http.StatusCreated)
-
-	resp := map[string]interface{}{"id": id}
-	jsonResp, err := json.Marshal(resp)
-	if err != nil {
-		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(jsonResp); err != nil {
-		slog.Warn("Failed to write response", "error", err)
-	}
-}
-
-func (s *Server) createExerciseHandler(w http.ResponseWriter, r *http.Request) {
-	repo := s.db.GetRepository()
-
-	decoder := json.NewDecoder(r.Body)
-	var t createExerciseRequest
-	err := decoder.Decode(&t)
-
-	if err != nil {
-		slog.Warn("Failed to decode request body", "error", err)
-		http.Error(w, "Failed to create exercise", http.StatusBadRequest)
-		return
-	}
-
-	exerciseType, err := repo.GetExerciseTypeById(r.Context(), t.ExerciseTypeID)
-	if err != nil {
-		slog.Warn("Failed GetExerciseTypeById", "error", err)
-		http.Error(w, "Failed to create exercise", http.StatusBadRequest)
-		return
-	}
-
-	workoutId := r.PathValue("id")
-
-	exercise := repository.CreateExerciseAndReturnIdParams{
-		ID:             generateUuid(),
-		Name:           exerciseType.Name,
-		WorkoutID:      workoutId,
-		ExerciseTypeID: exerciseType.ID,
-	}
-
-	id, err := repo.CreateExerciseAndReturnId(r.Context(), exercise)
-
-	if err != nil {
-		slog.Warn("Failed to create exercise", "error", err)
-		http.Error(w, "Failed to create exercise", http.StatusBadRequest)
 		return
 	}
 
@@ -362,33 +293,15 @@ func (s *Server) getWorkoutByIdHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) getExercisesByWorkoutIdHandler(w http.ResponseWriter, r *http.Request) {
-	repo := s.db.GetRepository()
-	id := r.PathValue("id")
-
-	exercises, err := repo.GetExercisesByWorkoutId(r.Context(), id)
-
-	if err != nil {
-		slog.Warn("Failed to get exercises", "error", err)
-		http.Error(w, "Failed to get exercises", http.StatusBadRequest)
-		return
-	}
-
-	resp := map[string]interface{}{"exercises": exercises}
-	jsonResp, err := json.Marshal(resp)
-	if err != nil {
-		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(jsonResp); err != nil {
-		slog.Warn("Failed to write response", "error", err)
-	}
-}
-
 func (s *Server) getSetsByExerciseIdHandler(w http.ResponseWriter, r *http.Request) {
 	repo := s.db.GetRepository()
 	id := r.PathValue("exerciseId")
+
+	if id == "" {
+		slog.Warn("Failed to get sets", "error", "empty exerciseId")
+		http.Error(w, "Failed to get sets", http.StatusBadRequest)
+		return
+	}
 
 	sets, err := repo.GetSetsByExerciseId(r.Context(), id)
 
