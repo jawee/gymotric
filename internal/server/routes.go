@@ -8,6 +8,7 @@ import (
 	"sort"
 	"time"
 	"weight-tracker/internal/exercises"
+	"weight-tracker/internal/exercisetypes"
 	"weight-tracker/internal/repository"
 
 	"github.com/google/uuid"
@@ -18,9 +19,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	mux.Handle("GET /health", http.HandlerFunc(s.healthHandler))
 
-	mux.Handle("GET /exercise-types", http.HandlerFunc(s.getAllWorkoutTypesHandler))
-	mux.Handle("POST /exercise-types", http.HandlerFunc(s.createExerciseTypeHandler))
-	mux.Handle("DELETE /exercise-types/{id}", http.HandlerFunc(s.deleteExerciseTypeByIdHandler))
+	exercisetypes.AddEndpoints(mux, s.db)
 
 	mux.Handle("GET /workouts", http.HandlerFunc(s.getAllWorkoutsHandler))
 	mux.Handle("POST /workouts", http.HandlerFunc(s.createWorkoutHandler))
@@ -86,43 +85,6 @@ func (s *Server) completeWorkoutById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 }
 
-func (s *Server) getAllWorkoutTypesHandler(w http.ResponseWriter, r *http.Request) {
-	repo := s.db.GetRepository()
-	exerciseTypes, err := repo.GetAllExerciseTypes(r.Context())
-
-	sort.Slice(exerciseTypes, func(i, j int) bool {
-		return exerciseTypes[i].Name < exerciseTypes[j].Name
-	})
-
-	slog.Debug(fmt.Sprintf("returning %d exercise types", len(exerciseTypes)))
-
-	resp := map[string]interface{}{"exercise_types": exerciseTypes}
-	jsonResp, err := json.Marshal(resp)
-	if err != nil {
-		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(jsonResp); err != nil {
-		slog.Warn("Failed to write response", "error", err)
-	}
-}
-
-func (s *Server) deleteExerciseTypeByIdHandler(w http.ResponseWriter, r *http.Request) {
-	repo := s.db.GetRepository()
-
-	exerciseTypeId := r.PathValue("id")
-	err := repo.DeleteExerciseTypeById(r.Context(), exerciseTypeId)
-
-	if err != nil {
-		slog.Warn("Failed to delete exercise type", "error", err, "exerciseTypeId", exerciseTypeId)
-		http.Error(w, "Failed to delete exercise type", http.StatusBadRequest)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNoContent)
-}
 
 func (s *Server) deleteSetByIdHandler(w http.ResponseWriter, r *http.Request) {
 
@@ -322,45 +284,6 @@ func (s *Server) getSetsByExerciseIdHandler(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func (s *Server) createExerciseTypeHandler(w http.ResponseWriter, r *http.Request) {
-	repo := s.db.GetRepository()
-
-	decoder := json.NewDecoder(r.Body)
-	var t createExerciseTypeRequest
-	err := decoder.Decode(&t)
-
-	if err != nil {
-		slog.Warn("Failed to decode request body", "error", err)
-		http.Error(w, "Failed to create exercise type", http.StatusBadRequest)
-		return
-	}
-
-	exerciseType := repository.CreateExerciseTypeAndReturnIdParams{
-		ID:   generateUuid(),
-		Name: t.Name,
-	}
-
-	id, err := repo.CreateExerciseTypeAndReturnId(r.Context(), exerciseType)
-
-	if err != nil {
-		slog.Warn("Failed to create workout", "error", err)
-		http.Error(w, "Failed to create workout", http.StatusBadRequest)
-		return
-	}
-
-	w.WriteHeader(http.StatusCreated)
-
-	resp := map[string]interface{}{"id": id}
-	jsonResp, err := json.Marshal(resp)
-	if err != nil {
-		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(jsonResp); err != nil {
-		slog.Warn("Failed to write response", "error", err)
-	}
-}
 
 func generateUuid() string {
 	id, _ := uuid.NewV7()
@@ -369,14 +292,6 @@ func generateUuid() string {
 
 type createWorkoutRequest struct {
 	Name string `json:"name"`
-}
-
-type createExerciseTypeRequest struct {
-	Name string `json:"name"`
-}
-
-type createExerciseRequest struct {
-	ExerciseTypeID string `json:"exercise_type_id"`
 }
 
 type createSetRequest struct {

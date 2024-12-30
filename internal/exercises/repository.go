@@ -7,14 +7,11 @@ import (
 	"net/http"
 	"weight-tracker/internal/database"
 	"weight-tracker/internal/repository"
+	"weight-tracker/internal/exercisetypes"
 
 	"github.com/google/uuid"
 )
 
-type ExerciseType struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
 type Exercise struct {
 	ID             string `json:"id"`
 	Name           string `json:"name"`
@@ -27,7 +24,7 @@ type ExerciseRepository interface {
 	GetByWorkoutId(context context.Context, workoutId string) ([]Exercise, error)
 	DeleteById(context context.Context, id string) error
 	CreateAndReturnId(context context.Context, exercise repository.CreateExerciseAndReturnIdParams, workoutId string) (string, error)
-	GetExerciseTypeById(context context.Context, exerciseTypeId string) (*ExerciseType, error)
+	GetExerciseTypeById(context context.Context, exerciseTypeId string) (*exercisetypes.ExerciseType, error)
 }
 
 type exerciseRepository struct {
@@ -44,14 +41,14 @@ func (e exerciseRepository) CreateAndReturnId(context context.Context, exercise 
 	return id, nil
 }
 
-func (e exerciseRepository) GetExerciseTypeById(context context.Context, exerciseTypeId string) (*ExerciseType, error) {
+func (e exerciseRepository) GetExerciseTypeById(context context.Context, exerciseTypeId string) (*exercisetypes.ExerciseType, error) {
 	exerciseType, err := e.repo.GetExerciseTypeById(context, exerciseTypeId)
 	if err != nil {
 		slog.Warn("Failed GetExerciseTypeById", "error", err)
 		return nil, err
 	}
 
-	return &ExerciseType{exerciseType.ID, exerciseType.Name}, nil
+	return &exercisetypes.ExerciseType{ID: exerciseType.ID, Name: exerciseType.Name}, nil
 }
 
 func (e exerciseRepository) DeleteById(context context.Context, id string) error {
