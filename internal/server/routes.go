@@ -39,7 +39,6 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Set CORS headers
 		slog.Info("Request", "Path", r.URL.Path, "Method", r.Method)
 
 		// Proceed with the next handler
