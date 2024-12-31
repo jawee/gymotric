@@ -48,7 +48,7 @@ func TestGetAll(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Len(t, result, 2)
-	assert.Equal(t, result, expected)
+	assert.Equal(t, expected, result)
 	repoMock.AssertExpectations(t)
 }
 
