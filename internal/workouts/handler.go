@@ -17,7 +17,6 @@ func AddEndpoints(mux *http.ServeMux, s database.Service) {
 		service: NewService(&workoutsRepository{s.GetRepository()}),
 	}
 
-
 	mux.Handle("GET /workouts", http.HandlerFunc(handler.getAllWorkoutsHandler))
 	mux.Handle("POST /workouts", http.HandlerFunc(handler.createWorkoutHandler))
 	mux.Handle("GET /workouts/{id}", http.HandlerFunc(handler.getWorkoutByIdHandler))
@@ -112,4 +111,3 @@ func (s *handler) completeWorkoutById(w http.ResponseWriter, r *http.Request) {
 type createWorkoutRequest struct {
 	Name string `json:"name"`
 }
-

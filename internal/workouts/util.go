@@ -6,4 +6,3 @@ func generateUuid() string {
 	id, _ := uuid.NewV7()
 	return id.String()
 }
-

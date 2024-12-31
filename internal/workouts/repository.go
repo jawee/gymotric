@@ -24,17 +24,14 @@ type workoutsRepository struct {
 	repo repository.Querier
 }
 
-// CompleteById implements WorkoutsRepository.
 func (w *workoutsRepository) CompleteById(ctx context.Context, arg repository.CompleteWorkoutByIdParams) (int64, error) {
 	return w.repo.CompleteWorkoutById(ctx, arg)
 }
 
-// CreateAndReturnId implements WorkoutsRepository.
 func (w *workoutsRepository) CreateAndReturnId(ctx context.Context, arg repository.CreateWorkoutAndReturnIdParams) (string, error) {
 	return w.repo.CreateWorkoutAndReturnId(ctx, arg)
 }
 
-// GetAll implements WorkoutsRepository.
 func (w *workoutsRepository) GetAll(ctx context.Context) ([]Workout, error) {
 	workouts, err := w.repo.GetAllWorkouts(ctx)
 	if err != nil {
@@ -50,12 +47,12 @@ func (w *workoutsRepository) GetAll(ctx context.Context) ([]Workout, error) {
 }
 
 func newWorkout(v repository.Workout) Workout {
-	workout := Workout {
-		ID: v.ID,
-		Name: v.Name,
+	workout := Workout{
+		ID:          v.ID,
+		Name:        v.Name,
 		CompletedOn: v.CompletedOn,
-		CreatedOn: v.CreatedOn,
-		UpdatedOn: v.UpdatedOn,
+		CreatedOn:   v.CreatedOn,
+		UpdatedOn:   v.UpdatedOn,
 	}
 	return workout
 }
@@ -69,4 +66,3 @@ func (w *workoutsRepository) GetById(ctx context.Context, id string) (Workout, e
 	result := newWorkout(workout)
 	return result, nil
 }
-

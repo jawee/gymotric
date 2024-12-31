@@ -18,7 +18,6 @@ type workoutsService struct {
 	repo WorkoutsRepository
 }
 
-// CompleteWorkoutById implements Service.
 func (w *workoutsService) CompleteById(context context.Context, workoutId string) error {
 	completeParams := repository.CompleteWorkoutByIdParams{
 		ID:          workoutId,
