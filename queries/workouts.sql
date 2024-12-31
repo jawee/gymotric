@@ -14,7 +14,7 @@ INSERT INTO workouts (
 )
 RETURNING id;
 
--- name: CompleteWorkoutById :exec
+-- name: CompleteWorkoutById :execrows
 UPDATE workouts 
 set completed_on = sqlc.arg(completed_on) 
 where id = sqlc.arg(id)

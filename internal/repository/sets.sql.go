@@ -37,14 +37,17 @@ func (q *Queries) CreateSetAndReturnId(ctx context.Context, arg CreateSetAndRetu
 	return id, err
 }
 
-const deleteSetById = `-- name: DeleteSetById :exec
+const deleteSetById = `-- name: DeleteSetById :execrows
 DELETE FROM sets 
 where id = ?1
 `
 
-func (q *Queries) DeleteSetById(ctx context.Context, id string) error {
-	_, err := q.db.ExecContext(ctx, deleteSetById, id)
-	return err
+func (q *Queries) DeleteSetById(ctx context.Context, id string) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteSetById, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const getAllSets = `-- name: GetAllSets :many

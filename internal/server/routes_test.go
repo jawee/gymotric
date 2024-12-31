@@ -28,7 +28,7 @@ func (m MockDatabaseService) GetRepository() repository.Querier {
 type MockRepository struct{}
 
 // CompleteWorkoutById implements repository.Querier.
-func (m MockRepository) CompleteWorkoutById(ctx context.Context, arg repository.CompleteWorkoutByIdParams) error {
+func (m MockRepository) CompleteWorkoutById(ctx context.Context, arg repository.CompleteWorkoutByIdParams) (int64, error) {
 	panic("unimplemented")
 }
 
@@ -53,17 +53,17 @@ func (m MockRepository) CreateWorkoutAndReturnId(ctx context.Context, arg reposi
 }
 
 // DeleteExerciseById implements repository.Querier.
-func (m MockRepository) DeleteExerciseById(ctx context.Context, id string) error {
+func (m MockRepository) DeleteExerciseById(ctx context.Context, id string) (int64, error) {
 	panic("unimplemented")
 }
 
 // DeleteExerciseTypeById implements repository.Querier.
-func (m MockRepository) DeleteExerciseTypeById(ctx context.Context, id string) error {
+func (m MockRepository) DeleteExerciseTypeById(ctx context.Context, id string) (int64, error) {
 	panic("unimplemented")
 }
 
 // DeleteSetById implements repository.Querier.
-func (m MockRepository) DeleteSetById(ctx context.Context, id string) error {
+func (m MockRepository) DeleteSetById(ctx context.Context, id string) (int64, error) {
 	panic("unimplemented")
 }
 

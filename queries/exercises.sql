@@ -18,5 +18,5 @@ RETURNING id;
 SELECT * FROM exercises
 WHERE workout_id = sqlc.arg(workout_id);
 
--- name: DeleteExerciseById :exec
+-- name: DeleteExerciseById :execrows
 DELETE FROM exercises where id = sqlc.arg(id);

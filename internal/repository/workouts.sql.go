@@ -9,7 +9,7 @@ import (
 	"context"
 )
 
-const completeWorkoutById = `-- name: CompleteWorkoutById :exec
+const completeWorkoutById = `-- name: CompleteWorkoutById :execrows
 UPDATE workouts 
 set completed_on = ?1 
 where id = ?2
@@ -20,9 +20,12 @@ type CompleteWorkoutByIdParams struct {
 	ID          string      `json:"id"`
 }
 
-func (q *Queries) CompleteWorkoutById(ctx context.Context, arg CompleteWorkoutByIdParams) error {
-	_, err := q.db.ExecContext(ctx, completeWorkoutById, arg.CompletedOn, arg.ID)
-	return err
+func (q *Queries) CompleteWorkoutById(ctx context.Context, arg CompleteWorkoutByIdParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, completeWorkoutById, arg.CompletedOn, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const createWorkoutAndReturnId = `-- name: CreateWorkoutAndReturnId :one

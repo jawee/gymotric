@@ -2,6 +2,7 @@ package exercisetypes
 
 import (
 	"context"
+	"log/slog"
 	"weight-tracker/internal/repository"
 )
 
@@ -37,7 +38,15 @@ func newExerciseType(v repository.ExerciseType) ExerciseType {
 }
 
 func (e exerciseTypeRepository) DeleteById(context context.Context, exerciseTypeId string) error {
-	return e.repo.DeleteExerciseTypeById(context, exerciseTypeId)
+	rows, err := e.repo.DeleteExerciseTypeById(context, exerciseTypeId)
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		slog.Info("Tried to delete exercise type that did not exist", "exerciseTypeId", exerciseTypeId)
+	}
+	return nil
 }
 
 func (e exerciseTypeRepository) CreateAndReturnId(context context.Context, exerciseType repository.CreateExerciseTypeAndReturnIdParams) (string, error) {

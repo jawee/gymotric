@@ -52,10 +52,14 @@ func (e exerciseRepository) GetExerciseTypeById(context context.Context, exercis
 }
 
 func (e exerciseRepository) DeleteById(context context.Context, id string) error {
-	err := e.repo.DeleteExerciseById(context, id)
+	rows, err := e.repo.DeleteExerciseById(context, id)
 
 	if err != nil {
 		return err
+	}
+
+	if rows == 0 {
+		slog.Info("Tried to delete exercise that did not exist", "exerciseId", id)
 	}
 
 	return nil

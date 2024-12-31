@@ -9,14 +9,14 @@ import (
 )
 
 type Querier interface {
-	CompleteWorkoutById(ctx context.Context, arg CompleteWorkoutByIdParams) error
+	CompleteWorkoutById(ctx context.Context, arg CompleteWorkoutByIdParams) (int64, error)
 	CreateExerciseAndReturnId(ctx context.Context, arg CreateExerciseAndReturnIdParams) (string, error)
 	CreateExerciseTypeAndReturnId(ctx context.Context, arg CreateExerciseTypeAndReturnIdParams) (string, error)
 	CreateSetAndReturnId(ctx context.Context, arg CreateSetAndReturnIdParams) (string, error)
 	CreateWorkoutAndReturnId(ctx context.Context, arg CreateWorkoutAndReturnIdParams) (string, error)
-	DeleteExerciseById(ctx context.Context, id string) error
-	DeleteExerciseTypeById(ctx context.Context, id string) error
-	DeleteSetById(ctx context.Context, id string) error
+	DeleteExerciseById(ctx context.Context, id string) (int64, error)
+	DeleteExerciseTypeById(ctx context.Context, id string) (int64, error)
+	DeleteSetById(ctx context.Context, id string) (int64, error)
 	GetAllExerciseTypes(ctx context.Context) ([]ExerciseType, error)
 	GetAllExercises(ctx context.Context) ([]Exercise, error)
 	GetAllSets(ctx context.Context) ([]Set, error)

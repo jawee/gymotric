@@ -74,7 +74,7 @@ func (s *Server) completeWorkoutById(w http.ResponseWriter, r *http.Request) {
 		CompletedOn: time.Now().UTC().Format(time.RFC3339),
 	}
 
-	err := repo.CompleteWorkoutById(r.Context(), completeParams)
+	_, err := repo.CompleteWorkoutById(r.Context(), completeParams)
 
 	if err != nil {
 		slog.Warn("Failed to complete workout", "error", err, "workoutId", workoutId)
@@ -90,7 +90,7 @@ func (s *Server) deleteSetByIdHandler(w http.ResponseWriter, r *http.Request) {
 	repo := s.db.GetRepository()
 
 	setId := r.PathValue("setId")
-	err := repo.DeleteSetById(r.Context(), setId)
+	_, err := repo.DeleteSetById(r.Context(), setId)
 
 	if err != nil {
 		slog.Warn("Failed to delete set", "error", err, "setId", setId)

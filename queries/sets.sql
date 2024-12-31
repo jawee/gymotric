@@ -18,6 +18,6 @@ RETURNING id;
 SELECT * FROM sets 
 WHERE exercise_id = sqlc.arg(exercise_id);
 
--- name: DeleteSetById :exec
+-- name: DeleteSetById :execrows
 DELETE FROM sets 
 where id = sqlc.arg(id);
