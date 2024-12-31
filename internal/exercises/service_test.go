@@ -6,6 +6,7 @@ import (
 	"weight-tracker/internal/exercisetypes"
 	"weight-tracker/internal/repository"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -66,26 +67,26 @@ func TestGetAll(t *testing.T) {
 func TestCreateAndReturnId(t *testing.T) {
 	ctx := context.Background()
 
-	exerciseTypeId := generateUuid()
+	exerciseTypeId, _ := uuid.NewV7()
 	exerciseTypeName := "example-exercise"
-	workoutId := generateUuid()
-	exerciseId := generateUuid()
+	workoutId, _ := uuid.NewV7()
+	exerciseId, _ := uuid.NewV7()
 
 
 	repoMock := repoMock{}
 	repoMock.On("CreateAndReturnId", ctx, mock.MatchedBy(func(input repository.CreateExerciseAndReturnIdParams) bool {
-		return input.Name == exerciseTypeName && input.WorkoutID == workoutId
-	}), workoutId).Return(exerciseId, nil).Once()
+		return input.Name == exerciseTypeName && input.WorkoutID == workoutId.String()
+	}), workoutId.String()).Return(exerciseId.String(), nil).Once()
 
-	repoMock.On("GetExerciseTypeById", ctx, exerciseTypeId).Return(&exercisetypes.ExerciseType{ID: exerciseTypeId, Name: exerciseTypeName}, nil).Once()
+	repoMock.On("GetExerciseTypeById", ctx, exerciseTypeId.String()).Return(&exercisetypes.ExerciseType{ID: exerciseTypeId.String(), Name: exerciseTypeName}, nil).Once()
 
 	service := NewService(&repoMock)
 	id, err := service.CreateAndReturnId(context.Background(), createExerciseRequest{
-		ExerciseTypeID: exerciseTypeId,
-	}, workoutId)
+		ExerciseTypeID: exerciseTypeId.String(),
+	}, workoutId.String())
 
 	assert.Nil(t, err)
-	assert.Equal(t, exerciseId, id)
+	assert.Equal(t, exerciseId.String(), id)
 	repoMock.AssertExpectations(t)
 }
 
@@ -103,21 +104,21 @@ func TestDeleteById(t *testing.T) {
 }
 
 func TestGetByWorkoutId(t *testing.T) {
-	workoutId := generateUuid()
+	workoutId, _ := uuid.NewV7()
 	expected := []Exercise{
-		{ID: "a", Name: "a", WorkoutID: workoutId, ExerciseTypeID: ""},
-		{ID: "b", Name: "b", WorkoutID: workoutId, ExerciseTypeID: ""},
+		{ID: "a", Name: "a", WorkoutID: workoutId.String(), ExerciseTypeID: ""},
+		{ID: "b", Name: "b", WorkoutID: workoutId.String(), ExerciseTypeID: ""},
 	}
 	ctx := context.Background()
 
 	repoMock := repoMock{}
-	repoMock.On("GetByWorkoutId", ctx, workoutId).Return([]Exercise{
-		{ID: "a", Name: "a", WorkoutID: workoutId, ExerciseTypeID: ""},
-		{ID: "b", Name: "b", WorkoutID: workoutId, ExerciseTypeID: ""},
+	repoMock.On("GetByWorkoutId", ctx, workoutId.String()).Return([]Exercise{
+		{ID: "a", Name: "a", WorkoutID: workoutId.String(), ExerciseTypeID: ""},
+		{ID: "b", Name: "b", WorkoutID: workoutId.String(), ExerciseTypeID: ""},
 	}, nil).Once()
 
 	service := NewService(&repoMock)
-	result, err := service.GetByWorkoutId(ctx, workoutId)
+	result, err := service.GetByWorkoutId(ctx, workoutId.String())
 
 	assert.Nil(t, err)
 	assert.Equal(t, expected, result)

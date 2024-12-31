@@ -3,8 +3,9 @@ package exercises
 import (
 	"context"
 	"weight-tracker/internal/repository"
-)
 
+	"github.com/google/uuid"
+)
 
 type Service interface {
 	GetAll(context context.Context) ([]Exercise, error)
@@ -23,8 +24,13 @@ func (e *exerciseService) CreateAndReturnId(context context.Context, exercise cr
 		return "", err
 	}
 
+	uuid, err := uuid.NewV7()
+	if err != nil {
+		return "", err
+	}
+
 	toCreate := repository.CreateExerciseAndReturnIdParams{
-		ID:             generateUuid(),
+		ID:             uuid.String(),
 		Name:           exerciseType.Name,
 		WorkoutID:      workoutId,
 		ExerciseTypeID: exerciseType.ID,
@@ -53,4 +59,3 @@ func (e *exerciseService) DeleteById(context context.Context, id string) error {
 func NewService(repo ExerciseRepository) Service {
 	return &exerciseService{repo}
 }
-

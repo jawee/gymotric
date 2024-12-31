@@ -3,6 +3,8 @@ package sets
 import (
 	"context"
 	"weight-tracker/internal/repository"
+
+	"github.com/google/uuid"
 )
 
 type Service interface {
@@ -21,8 +23,13 @@ func (s *setsService) DeleteById(context context.Context, setId string) error {
 }
 
 func (s *setsService) CreateAndReturnId(context context.Context, t createSetRequest, exerciseId string) (string, error) {
+	uuid, err := uuid.NewV7()
+	if err != nil {
+		return "", err
+	}
+
 	set := repository.CreateSetAndReturnIdParams{
-		ID:          generateUuid(),
+		ID:          uuid.String(),
 		Repetitions: int64(t.Repetitions),
 		Weight:      t.Weight,
 		ExerciseID:  exerciseId,

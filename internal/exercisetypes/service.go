@@ -4,6 +4,8 @@ import (
 	"context"
 	"sort"
 	"weight-tracker/internal/repository"
+
+	"github.com/google/uuid"
 )
 
 func NewService(repo ExerciseTypeRepository) Service {
@@ -17,8 +19,13 @@ type Service interface {
 }
 
 func (s *exerciseTypeService) CreateAndReturnId(context context.Context, exerciseType createExerciseTypeRequest) (string, error) {
+	uuid, err := uuid.NewV7()
+	if err != nil {
+		return "", err
+	}
+
 	toCreate := repository.CreateExerciseTypeAndReturnIdParams{
-		ID:   generateUuid(),
+		ID:   uuid.String(),
 		Name: exerciseType.Name,
 	}
 

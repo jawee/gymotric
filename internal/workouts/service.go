@@ -5,6 +5,8 @@ import (
 	"sort"
 	"time"
 	"weight-tracker/internal/repository"
+
+	"github.com/google/uuid"
 )
 
 type Service interface {
@@ -30,8 +32,13 @@ func (w *workoutsService) CompleteById(context context.Context, workoutId string
 }
 
 func (w *workoutsService) CreateAndReturnId(context context.Context, t createWorkoutRequest) (string, error) {
+	uuid, err := uuid.NewV7()
+	if err != nil {
+		return "", err
+	}
+
 	workout := repository.CreateWorkoutAndReturnIdParams{
-		ID:        generateUuid(),
+		ID:        uuid.String(),
 		Name:      t.Name,
 		CreatedOn: time.Now().UTC().Format(time.RFC3339),
 		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
