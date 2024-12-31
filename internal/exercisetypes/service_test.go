@@ -10,34 +10,8 @@ import (
 )
 
 type repoMock struct {
-	// ExerciseTypes []ExerciseType
 	mock.Mock
 }
-
-//
-// func (r *repoMock) CreateAndReturnId(context context.Context, exerciseType repository.CreateExerciseTypeAndReturnIdParams) (string, error) {
-// 	exerciseTypeStruct := ExerciseType{
-// 		ID: exerciseType.ID,
-// 		Name: exerciseType.Name,
-// 	}
-// 	r.ExerciseTypes = append(r.ExerciseTypes, exerciseTypeStruct)
-//
-// 	return exerciseType.ID, nil
-// }
-//
-// func (r *repoMock) DeleteById(context context.Context, exerciseTypeId string) error {
-// 	for i, v := range r.ExerciseTypes {
-// 		if v.ID == exerciseTypeId {
-// 			r.ExerciseTypes = append(r.ExerciseTypes[:i], r.ExerciseTypes[i+1:]...)
-// 		}
-// 	}
-//
-// 	return nil
-// }
-//
-// func (r *repoMock) GetAll(context context.Context) ([]ExerciseType, error) {
-// 	return r.ExerciseTypes, nil
-// }
 
 func (m *repoMock) CreateAndReturnId(context context.Context, exerciseType repository.CreateExerciseTypeAndReturnIdParams) (string, error) {
 	args := m.Called(context, exerciseType)
