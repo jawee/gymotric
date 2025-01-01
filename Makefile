@@ -49,16 +49,16 @@ seed:
 	@go run cmd/seed/main.go
 
 db-status:
-	@GOOSE_DRIVER=sqlite3 GOOSE_MIGRATION_DIR=./migrations GOOSE_DBSTRING=./db/test.db goose status
+	@GOOSE_DRIVER=sqlite3 GOOSE_MIGRATION_DIR=./cmd/goose/migrations GOOSE_DBSTRING=./db/test.db goose status
 
 db-up:
-	@GOOSE_DRIVER=sqlite3 GOOSE_MIGRATION_DIR=./migrations GOOSE_DBSTRING=./db/test.db goose up
+	@GOOSE_DRIVER=sqlite3 GOOSE_MIGRATION_DIR=./cmd/goose/migrations GOOSE_DBSTRING=./db/test.db goose up
 
 db-reset:
-	@GOOSE_DRIVER=sqlite3 GOOSE_MIGRATION_DIR=./migrations GOOSE_DBSTRING=./db/test.db goose reset
+	@GOOSE_DRIVER=sqlite3 GOOSE_MIGRATION_DIR=./cmd/goose/migrations GOOSE_DBSTRING=./db/test.db goose reset
 
 db-create-migration:
-	GOOSE_DRIVER=sqlite3 GOOSE_MIGRATION_DIR=./migrations GOOSE_DBSTRING=./db/test.db goose create a sql
+	GOOSE_DRIVER=sqlite3 GOOSE_MIGRATION_DIR=./cmd/goose/migrations GOOSE_DBSTRING=./db/test.db goose create a sql
 
 # Live Reload
 watch:
