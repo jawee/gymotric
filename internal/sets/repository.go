@@ -15,7 +15,7 @@ type Set struct {
 type SetsRepository interface {
 	GetAll(ctx context.Context) ([]Set, error)
 	GetById(ctx context.Context, id string) (Set, error)
-	GetsByExerciseId(ctx context.Context, exerciseID string) ([]Set, error)
+	GetByExerciseId(ctx context.Context, exerciseID string) ([]Set, error)
 	CreateAndReturnId(ctx context.Context, arg repository.CreateSetAndReturnIdParams) (string, error)
 	DeleteById(ctx context.Context, id string) (int64, error)
 }
@@ -68,7 +68,7 @@ func (s *setsRepository) GetById(ctx context.Context, id string) (Set, error) {
 	return result, nil
 }
 
-func (s *setsRepository) GetsByExerciseId(ctx context.Context, exerciseID string) ([]Set, error) {
+func (s *setsRepository) GetByExerciseId(ctx context.Context, exerciseID string) ([]Set, error) {
 	sets, err := s.repo.GetSetsByExerciseId(ctx, exerciseID)
 	if err != nil {
 		return []Set{}, err

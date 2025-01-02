@@ -14,7 +14,7 @@ type Service interface {
 }
 
 func (s *setsService) GetByExerciseId(context context.Context, exerciseId string) ([]Set, error) {
-	return s.repo.GetsByExerciseId(context, exerciseId)
+	return s.repo.GetByExerciseId(context, exerciseId)
 }
 
 func (s *setsService) DeleteById(context context.Context, setId string) error {
