@@ -5,8 +5,9 @@ import (
 	"embed"
 	"os"
 
-	"github.com/pressly/goose/v3"
+	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/pressly/goose/v3"
 )
 
 //go:embed migrations/*.sql
@@ -15,6 +16,9 @@ var embedMigrations embed.FS
 func main() {
 	// setup database
 	dburl := os.Getenv("BLUEPRINT_DB_URL")
+	if dburl == "" {
+		panic("dburl is empty")
+	}
 	db, err := sql.Open("sqlite3", dburl)
 
 	if err != nil {
