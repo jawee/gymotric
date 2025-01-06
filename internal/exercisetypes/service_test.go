@@ -69,8 +69,9 @@ func TestCreateAndReturnId(t *testing.T) {
 	ctx := context.Background()
 
 	repoMock := repoMock{}
-	repoMock.On("CreateAndReturnId", ctx, mock.MatchedBy(func (input repository.CreateExerciseTypeAndReturnIdParams) bool {
-	return input.Name == "a" })).Return("asdf", nil).Once()
+	repoMock.On("CreateAndReturnId", ctx, mock.MatchedBy(func(input repository.CreateExerciseTypeAndReturnIdParams) bool {
+		return input.Name == "a" && input.CreatedOn != "" && input.UpdatedOn != ""
+	})).Return("asdf", nil).Once()
 
 	service := NewService(&repoMock)
 	_, err := service.CreateAndReturnId(context.Background(), createExerciseTypeRequest{

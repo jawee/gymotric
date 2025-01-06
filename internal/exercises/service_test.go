@@ -74,7 +74,7 @@ func TestCreateAndReturnId(t *testing.T) {
 
 	repoMock := repoMock{}
 	repoMock.On("CreateAndReturnId", ctx, mock.MatchedBy(func(input repository.CreateExerciseAndReturnIdParams) bool {
-		return input.Name == exerciseTypeName && input.WorkoutID == workoutId.String()
+		return input.Name == exerciseTypeName && input.WorkoutID == workoutId.String() && input.CreatedOn != "" && input.UpdatedOn != ""
 	}), workoutId.String()).Return(exerciseId.String(), nil).Once()
 
 	repoMock.On("GetExerciseTypeById", ctx, exerciseTypeId.String()).Return(&exercisetypes.ExerciseType{ID: exerciseTypeId.String(), Name: exerciseTypeName}, nil).Once()
