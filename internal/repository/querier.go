@@ -13,6 +13,7 @@ type Querier interface {
 	CreateExerciseAndReturnId(ctx context.Context, arg CreateExerciseAndReturnIdParams) (string, error)
 	CreateExerciseTypeAndReturnId(ctx context.Context, arg CreateExerciseTypeAndReturnIdParams) (string, error)
 	CreateSetAndReturnId(ctx context.Context, arg CreateSetAndReturnIdParams) (string, error)
+	CreateUserAndReturnId(ctx context.Context, arg CreateUserAndReturnIdParams) (string, error)
 	CreateWorkoutAndReturnId(ctx context.Context, arg CreateWorkoutAndReturnIdParams) (string, error)
 	DeleteExerciseById(ctx context.Context, id string) (int64, error)
 	DeleteExerciseTypeById(ctx context.Context, id string) (int64, error)
@@ -26,6 +27,7 @@ type Querier interface {
 	GetExercisesByWorkoutId(ctx context.Context, workoutID string) ([]Exercise, error)
 	GetSetById(ctx context.Context, id string) (Set, error)
 	GetSetsByExerciseId(ctx context.Context, exerciseID string) ([]Set, error)
+	GetUserByUsernameAndPassword(ctx context.Context, arg GetUserByUsernameAndPasswordParams) (User, error)
 	GetWorkoutById(ctx context.Context, id string) (Workout, error)
 }
 
