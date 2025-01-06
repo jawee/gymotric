@@ -8,6 +8,7 @@ import (
 	"weight-tracker/internal/repository"
 
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func main() {
@@ -17,6 +18,23 @@ func main() {
 	repo := db.GetRepository()
 
 	ctx := context.Background()
+
+	password, err := bcrypt.GenerateFromPassword([]byte("test"), bcrypt.DefaultCost)
+	user := repository.CreateUserAndReturnIdParams {
+		ID: getUuidString(),
+		Username: "test",
+		Password: string(password),
+		CreatedOn: time.Now().UTC().Format(time.RFC3339),
+		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
+	}
+
+	id, err := repo.CreateUserAndReturnId(ctx, user)
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("%s\n", id)
 
 	exerciseType := repository.CreateExerciseTypeAndReturnIdParams{
 		ID:   getUuidString(),
