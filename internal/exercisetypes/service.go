@@ -3,6 +3,7 @@ package exercisetypes
 import (
 	"context"
 	"sort"
+	"time"
 	"weight-tracker/internal/repository"
 
 	"github.com/google/uuid"
@@ -27,6 +28,8 @@ func (s *exerciseTypeService) CreateAndReturnId(context context.Context, exercis
 	toCreate := repository.CreateExerciseTypeAndReturnIdParams{
 		ID:   uuid.String(),
 		Name: exerciseType.Name,
+		CreatedOn: time.Now().UTC().Format(time.RFC3339),
+		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
 	}
 
 	id, err := s.repo.CreateAndReturnId(context, toCreate)

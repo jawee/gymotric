@@ -1,5 +1,13 @@
 -- +goose Up
 -- +goose StatementBegin
+CREATE TABLE users (
+    id text primary key,
+    username text not null,
+    password text not null,
+    created_on text not null,
+    updated_on text not null
+);
+
 CREATE TABLE workouts (
     id text primary key,
     name text not null,
@@ -11,12 +19,16 @@ CREATE TABLE workouts (
 
 CREATE TABLE exercise_types (
     id text primary key,
-    name text not null
+    name text not null,
+    created_on text not null,
+    updated_on text not null
 );
 
 CREATE TABLE exercises (
     id text primary key,
     name text not null,
+    created_on text not null,
+    updated_on text not null,
 
     workout_id text not null,
     exercise_type_id text not null,
@@ -30,6 +42,8 @@ CREATE TABLE sets (
     id text primary key,
     repetitions integer not null,
     weight real not null,
+    created_on text not null,
+    updated_on text not null,
 
     exercise_id text not null,
 
@@ -43,4 +57,5 @@ DROP TABLE sets;
 DROP TABLE exercises;
 DROP TABLE exercise_types;
 DROP TABLE workouts;
+DROP TABLE users;
 -- +goose StatementEnd

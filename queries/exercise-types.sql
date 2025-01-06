@@ -8,9 +8,9 @@ WHERE id = sqlc.arg(id);
 
 -- name: CreateExerciseTypeAndReturnId :one
 INSERT INTO exercise_types (
-  id, name
+  id, name, created_on, updated_on
 ) VALUES (
-  sqlc.arg(id), sqlc.arg(name)
+  sqlc.arg(id), sqlc.arg(name), sqlc.arg(created_on), sqlc.arg(updated_on)
 )
 RETURNING id;
 

@@ -11,20 +11,27 @@ import (
 
 const createExerciseTypeAndReturnId = `-- name: CreateExerciseTypeAndReturnId :one
 INSERT INTO exercise_types (
-  id, name
+  id, name, created_on, updated_on
 ) VALUES (
-  ?1, ?2
+  ?1, ?2, ?3, ?4
 )
 RETURNING id
 `
 
 type CreateExerciseTypeAndReturnIdParams struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	CreatedOn string `json:"created_on"`
+	UpdatedOn string `json:"updated_on"`
 }
 
 func (q *Queries) CreateExerciseTypeAndReturnId(ctx context.Context, arg CreateExerciseTypeAndReturnIdParams) (string, error) {
-	row := q.db.QueryRowContext(ctx, createExerciseTypeAndReturnId, arg.ID, arg.Name)
+	row := q.db.QueryRowContext(ctx, createExerciseTypeAndReturnId,
+		arg.ID,
+		arg.Name,
+		arg.CreatedOn,
+		arg.UpdatedOn,
+	)
 	var id string
 	err := row.Scan(&id)
 	return id, err
@@ -44,7 +51,7 @@ func (q *Queries) DeleteExerciseTypeById(ctx context.Context, id string) (int64,
 }
 
 const getAllExerciseTypes = `-- name: GetAllExerciseTypes :many
-SELECT id, name FROM exercise_types 
+SELECT id, name, created_on, updated_on FROM exercise_types 
 ORDER by id asc
 `
 
@@ -57,7 +64,12 @@ func (q *Queries) GetAllExerciseTypes(ctx context.Context) ([]ExerciseType, erro
 	items := []ExerciseType{}
 	for rows.Next() {
 		var i ExerciseType
-		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.CreatedOn,
+			&i.UpdatedOn,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -72,13 +84,18 @@ func (q *Queries) GetAllExerciseTypes(ctx context.Context) ([]ExerciseType, erro
 }
 
 const getExerciseTypeById = `-- name: GetExerciseTypeById :one
-SELECT id, name FROM exercise_types 
+SELECT id, name, created_on, updated_on FROM exercise_types 
 WHERE id = ?1
 `
 
 func (q *Queries) GetExerciseTypeById(ctx context.Context, id string) (ExerciseType, error) {
 	row := q.db.QueryRowContext(ctx, getExerciseTypeById, id)
 	var i ExerciseType
-	err := row.Scan(&i.ID, &i.Name)
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedOn,
+		&i.UpdatedOn,
+	)
 	return i, err
 }

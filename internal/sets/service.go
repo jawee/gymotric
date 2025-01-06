@@ -2,6 +2,7 @@ package sets
 
 import (
 	"context"
+	"time"
 	"weight-tracker/internal/repository"
 
 	"github.com/google/uuid"
@@ -33,6 +34,8 @@ func (s *setsService) CreateAndReturnId(context context.Context, t createSetRequ
 		Repetitions: int64(t.Repetitions),
 		Weight:      t.Weight,
 		ExerciseID:  exerciseId,
+		CreatedOn: time.Now().UTC().Format(time.RFC3339),
+		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
 	}
 	id, err := s.repo.CreateAndReturnId(context, set)
 	return id, err
