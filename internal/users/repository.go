@@ -15,5 +15,9 @@ type User struct {
 
 type UsersRepository interface {
 	GetByUsernameAndPassword(ctx context.Context, arg repository.GetUserByUsernameAndPasswordParams) (User, error)
-	CreateUserAndReturnId(ctx context.Context, arg repository.CreateUserAndReturnIdParams) (string, error)
+	CreateAndReturnId(ctx context.Context, arg repository.CreateUserAndReturnIdParams) (string, error)
+}
+
+type usersRepository struct {
+	repo repository.Querier
 }
