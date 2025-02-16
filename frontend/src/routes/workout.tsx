@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from "react";
 import { Exercise, Workout, Set, ExerciseType } from "../models/workout";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import ApiService from "../services/api-service";
 
 type ExerciseProps = {
@@ -108,6 +108,8 @@ const WorkoutComponent = () => {
 
     const id = params.id;
 
+    const navigate = useNavigate();
+
     useEffect(() => {
         const fetchExerciseTypes = async () => {
             const res = await ApiService.fetchExerciseTypes();
@@ -135,6 +137,20 @@ const WorkoutComponent = () => {
     useEffect(() => {
         fetchWorkout();
     }, []);
+
+    const deleteWorkout = async () => {
+        if (workout === null) {
+            return;
+        }
+
+        const res = await ApiService.deleteWorkout(workout.id);
+        if (res.status !== 204) {
+            console.log("Error", res.status, res.statusText);
+            return;
+        }
+
+        navigate("/workouts");
+    };
 
     const fetchExercises = async () => {
         if (id === undefined) {
@@ -189,6 +205,7 @@ const WorkoutComponent = () => {
                         );
                     })}
                 </ul>
+                <button onClick={deleteWorkout}>Delete workout</button>
             </>
         );
     }
@@ -251,6 +268,7 @@ const WorkoutComponent = () => {
 
         await fetchWorkout();
     };
+
     return (
         <>
             <h1>Workout {workout.name}</h1>
@@ -272,6 +290,8 @@ const WorkoutComponent = () => {
                 </select>
                 <button type="submit">Add exercise</button>
             </form>
+
+            <button onClick={deleteWorkout}>Delete workout</button>
         </>
     );
 };

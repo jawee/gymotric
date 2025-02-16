@@ -39,6 +39,16 @@ const finishWorkout = async (id: string) => {
 
 };
 
+const deleteWorkout = async (workoutId: string) => {
+    const res = await fetch("http://localhost:8080/workouts/" + workoutId, {
+        method: "DELETE",
+        headers: {
+            "ApiKey": "1234",
+        },
+    });
+    return res;
+};
+
 const fetchSets = async (workoutId: string, exerciseId: string) => {
     const res = await fetch("http://localhost:8080/workouts/" + workoutId + "/exercises/" + exerciseId + "/sets", {
         headers: {
@@ -139,6 +149,7 @@ const ApiService = {
     fetchWorkout,
     createWorkout,
     finishWorkout,
+    deleteWorkout,
     fetchSets,
     deleteSet,
     createSet,
