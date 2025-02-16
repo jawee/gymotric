@@ -34,6 +34,11 @@ func (r *repoMock) GetById(ctx context.Context, id string) (Workout, error) {
 	return args.Get(0).(Workout), args.Error(1)
 }
 
+func (r *repoMock) DeleteById(ctx context.Context, id string) error {
+	args := r.Called(ctx, id)
+	return args.Error(0)
+}
+
 func TestGetAll(t *testing.T) {
 	expected := []Workout{
 		{ID: "a", Name: "A", CreatedOn: time.Now().UTC().Format(time.RFC3339), CompletedOn: time.Now().UTC().Format(time.RFC3339), UpdatedOn: time.Now().UTC().Format(time.RFC3339)},
@@ -120,3 +125,17 @@ func TestCompleteById(t *testing.T) {
 	assert.Nil(t, err)
 	repoMock.AssertExpectations(t)
 }
+
+func TestDeleteById(t *testing.T) {
+	ctx := context.Background()
+
+	repoMock := repoMock{}
+	repoMock.On("DeleteById", ctx, "a").Return(nil).Once()
+
+	service := NewService(&repoMock)
+	err := service.DeleteById(ctx, "a")
+
+	assert.Nil(t, err)
+	repoMock.AssertExpectations(t)
+}
+

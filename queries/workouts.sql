@@ -1,6 +1,6 @@
 -- name: GetAllWorkouts :many
 SELECT * FROM workouts 
-ORDER by id;
+ORDER by id asc;
 
 -- name: GetWorkoutById :one
 SELECT * FROM workouts 
@@ -17,4 +17,8 @@ RETURNING id;
 -- name: CompleteWorkoutById :execrows
 UPDATE workouts 
 set completed_on = sqlc.arg(completed_on) 
-where id = sqlc.arg(id)
+where id = sqlc.arg(id);
+
+-- name: DeleteWorkoutById :execrows
+DELETE FROM workouts
+WHERE id = sqlc.arg(id);

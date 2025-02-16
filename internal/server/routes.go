@@ -29,10 +29,10 @@ func (s *Server) RegisterRoutes() http.Handler {
 func (s *Server) AuthenticatedMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		header := r.Header.Get("ApiKey")
-		if header == "" {
+		if header != "1234" {
 			slog.Error("request failed API key authentication")
-			w.WriteHeader(http.StatusUnauthorized);
-			return;
+			w.WriteHeader(http.StatusUnauthorized)
+			return
 		}
 
 		next.ServeHTTP(w, r)
