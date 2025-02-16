@@ -15,15 +15,28 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	mux.Handle("GET /health", http.HandlerFunc(s.healthHandler))
 
-	exercisetypes.AddEndpoints(mux, s.db)
+	exercisetypes.AddEndpoints(mux, s.db, s.AuthenticatedMiddleware)
 
-	workouts.AddEndpoints(mux, s.db)
+	workouts.AddEndpoints(mux, s.db, s.AuthenticatedMiddleware)
 
-	sets.AddEndpoints(mux, s.db)
+	sets.AddEndpoints(mux, s.db, s.AuthenticatedMiddleware)
 
-	exercises.AddEndpoints(mux, s.db)
+	exercises.AddEndpoints(mux, s.db, s.AuthenticatedMiddleware)
 
 	return s.corsMiddleware(s.loggingMiddleware(mux))
+}
+
+func (s *Server) AuthenticatedMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		header := r.Header.Get("ApiKey")
+		if header == "" {
+			slog.Error("request failed API key authentication")
+			w.WriteHeader(http.StatusUnauthorized);
+			return;
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
@@ -40,15 +53,17 @@ func (s *Server) corsMiddleware(next http.Handler) http.Handler {
 		// Set CORS headers
 		w.Header().Set("Access-Control-Allow-Origin", "*") // Replace "*" with specific origins if needed
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
-		w.Header().Set("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, X-CSRF-Token")
+		w.Header().Set("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, X-CSRF-Token, ApiKey")
 		w.Header().Set("Access-Control-Allow-Credentials", "false") // Set to "true" if credentials are required
 
 		// Handle preflight OPTIONS requests
 		if r.Method == http.MethodOptions {
+			slog.Info("Returning 204")
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 
+		slog.Info("Proceeding")
 		// Proceed with the next handler
 		next.ServeHTTP(w, r)
 	})

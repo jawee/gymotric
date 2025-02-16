@@ -12,18 +12,19 @@ type handler struct {
 	service Service
 }
 
-func AddEndpoints(mux *http.ServeMux, s database.Service) {
+func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper func(next http.Handler) http.Handler) {
 	handler := handler{
 		service: NewService(&workoutsRepository{s.GetRepository()}),
 	}
 
-	mux.Handle("GET /workouts", http.HandlerFunc(handler.getAllWorkoutsHandler))
-	mux.Handle("POST /workouts", http.HandlerFunc(handler.createWorkoutHandler))
-	mux.Handle("GET /workouts/{id}", http.HandlerFunc(handler.getWorkoutByIdHandler))
-	mux.Handle("PUT /workouts/{id}/complete", http.HandlerFunc(handler.completeWorkoutById))
+	mux.Handle("GET /workouts", authenticationWrapper(http.HandlerFunc(handler.getAllWorkoutsHandler)))
+	mux.Handle("POST /workouts", authenticationWrapper(http.HandlerFunc(handler.createWorkoutHandler)))
+	mux.Handle("GET /workouts/{id}", authenticationWrapper(http.HandlerFunc(handler.getWorkoutByIdHandler)))
+	mux.Handle("PUT /workouts/{id}/complete", authenticationWrapper(http.HandlerFunc(handler.completeWorkoutById)))
 }
 
 func (s *handler) getAllWorkoutsHandler(w http.ResponseWriter, r *http.Request) {
+	slog.Info("Getting all workouts")
 	workouts, err := s.service.GetAll(r.Context())
 
 	slog.Debug(fmt.Sprintf("returning %d workouts", len(workouts)))

@@ -8,14 +8,14 @@ import (
 	"weight-tracker/internal/database"
 )
 
-func AddEndpoints(mux *http.ServeMux, s database.Service) {
+func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper func(next http.Handler) http.Handler) {
 	handler := handler{
 		service: NewService(exerciseTypeRepository{s.GetRepository()}),
 	}
 
-	mux.Handle("GET /exercise-types", http.HandlerFunc(handler.getAllWorkoutTypesHandler))
-	mux.Handle("POST /exercise-types", http.HandlerFunc(handler.createExerciseTypeHandler))
-	mux.Handle("DELETE /exercise-types/{id}", http.HandlerFunc(handler.deleteExerciseTypeByIdHandler))
+	mux.Handle("GET /exercise-types", authenticationWrapper(http.HandlerFunc(handler.getAllWorkoutTypesHandler)))
+	mux.Handle("POST /exercise-types", authenticationWrapper(http.HandlerFunc(handler.createExerciseTypeHandler)))
+	mux.Handle("DELETE /exercise-types/{id}", authenticationWrapper(http.HandlerFunc(handler.deleteExerciseTypeByIdHandler)))
 }
 
 type handler struct {
