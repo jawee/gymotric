@@ -14,6 +14,7 @@ type EditableExerciseProps = {
 
 const fetchSets = async (wId: string, eId: string, setSets: React.Dispatch<React.SetStateAction<Set[]>>) => {
     const res = await ApiService.fetchSets(wId, eId);
+
     if (res.status === 200) {
         const resObj = await res.json();
         setSets(resObj.sets);
