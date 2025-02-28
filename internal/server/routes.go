@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"os"
 	"weight-tracker/internal/exercises"
 	"weight-tracker/internal/exercisetypes"
 	"weight-tracker/internal/sets"
 	"weight-tracker/internal/workouts"
+	_ "github.com/joho/godotenv/autoload"
 )
 
 func (s *Server) RegisterRoutes() http.Handler {
@@ -28,8 +30,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 func (s *Server) AuthenticatedMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apiKey := os.Getenv("API_KEY")
 		header := r.Header.Get("ApiKey")
-		if header != "1234" {
+		if header != apiKey {
 			slog.Error("request failed API key authentication")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
