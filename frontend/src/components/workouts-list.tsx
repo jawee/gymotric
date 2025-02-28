@@ -10,7 +10,7 @@ const CreateWorkoutForm = () => {
 
     const createWorkout = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const res = await fetch("http://localhost:8080/workouts", {
+        const res = await fetch("/api/workouts", {
             method: "POST",
             body: JSON.stringify({ name: name })
         });
@@ -44,7 +44,7 @@ const WorkoutsList = () => {
     };
     useEffect(() => {
         const fetchWorkouts = async () => {
-            const res = await fetch("http://localhost:8080/workouts");
+            const res = await fetch("/api/workouts");
             if (res.status === 200) {
                 const resObj = await res.json();
                 setWorkouts(resObj.workouts);
