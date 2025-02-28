@@ -12,7 +12,7 @@ type EditableExerciseProps = {
 };
 
 const fetchSets = async (wId: string, eId: string, setSets: React.Dispatch<React.SetStateAction<Set[]>>) => {
-    const res = await fetch("http://localhost:8080/workouts/" + wId + "/exercises/" + eId + "/sets");
+    const res = await fetch("/api/workouts/" + wId + "/exercises/" + eId + "/sets");
     if (res.status === 200) {
         const resObj = await res.json();
         setSets(resObj.sets);
@@ -54,7 +54,7 @@ const EditableExercise = (props: EditableExerciseProps) => {
     }, [ex]);
 
     const deleteSet = async (setId: string) => {
-        const res = await fetch("http://localhost:8080/workouts/" + ex.workout_id + "/exercises/" + ex.id + "/sets/" + setId, {
+        const res = await fetch("/api/workouts/" + ex.workout_id + "/exercises/" + ex.id + "/sets/" + setId, {
             method: "DELETE"
         });
 
@@ -68,7 +68,7 @@ const EditableExercise = (props: EditableExerciseProps) => {
 
     const addSet = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const res = await fetch("http://localhost:8080/workouts/" + ex.workout_id + "/exercises/" + ex.id + "/sets", {
+        const res = await fetch("/api/workouts/" + ex.workout_id + "/exercises/" + ex.id + "/sets", {
             method: "POST",
             body: JSON.stringify({ repetitions: reps, weight: weight })
         });
@@ -114,7 +114,7 @@ const WorkoutComponent = () => {
 
     useEffect(() => {
         const fetchExerciseTypes = async () => {
-            const res = await fetch("http://localhost:8080/exercise-types");
+            const res = await fetch("/api/exercise-types");
             if (res.status === 200) {
                 const resObj = await res.json();
                 setExerciseTypes(resObj.exercise_types);
@@ -125,7 +125,7 @@ const WorkoutComponent = () => {
     }, []);
 
     const fetchWorkout = async () => {
-        const res = await fetch("http://localhost:8080/workouts/" + id);
+        const res = await fetch("/api/workouts/" + id);
         if (res.status === 200) {
             const resObj = await res.json();
             setWorkout(resObj.workout);
@@ -137,7 +137,7 @@ const WorkoutComponent = () => {
     }, []);
 
     const fetchExercises = async () => {
-        const res = await fetch("http://localhost:8080/workouts/" + id + "/exercises");
+        const res = await fetch("/api/workouts/" + id + "/exercises");
         if (res.status === 200) {
             const resObj = await res.json();
             setExercises(resObj.exercises);
@@ -149,7 +149,7 @@ const WorkoutComponent = () => {
     }, []);
 
     const deleteExercise = async (exerciseId: string) => {
-        const res = await fetch("http://localhost:8080/workouts/" + id + "/exercises/" + exerciseId,
+        const res = await fetch("/api/workouts/" + id + "/exercises/" + exerciseId,
             {
                 method: "DELETE"
             });
@@ -194,7 +194,7 @@ const WorkoutComponent = () => {
         if (exerciseTypeId !== "None" && exerciseTypeId !== null) {
             const exerciseType = exerciseTypes.filter(et => et.id == exerciseTypeId)[0];
 
-            const res = await fetch("http://localhost:8080/workouts/" + workout.id + "/exercises", {
+            const res = await fetch("/api/workouts/" + workout.id + "/exercises", {
                 method: "POST",
                 body: JSON.stringify({ exercise_type_id: exerciseType.id })
             });
@@ -213,7 +213,7 @@ const WorkoutComponent = () => {
             return;
         }
 
-        const exerciseTypeRes = await fetch("http://localhost:8080/exercise-types", {
+        const exerciseTypeRes = await fetch("/api/exercise-types", {
             method: "POST",
             body: JSON.stringify({ name: exerciseName })
         });
@@ -226,7 +226,7 @@ const WorkoutComponent = () => {
         let obj = await exerciseTypeRes.json();
         setExerciseTypes([...exerciseTypes, { id: obj.id, name: exerciseName }]);
 
-        const res = await fetch("http://localhost:8080/workouts/" + workout.id + "/exercises", {
+        const res = await fetch("/api/workouts/" + workout.id + "/exercises", {
             method: "POST",
             body: JSON.stringify({ exercise_type_id: obj.id })
         });
@@ -244,7 +244,7 @@ const WorkoutComponent = () => {
 
 
     const finishWorkout = async () => {
-        const res = await fetch("http://localhost:8080/workouts/" + workout.id + "/complete", {
+        const res = await fetch("/api/workouts/" + workout.id + "/complete", {
             method: "PUT",
         });
 

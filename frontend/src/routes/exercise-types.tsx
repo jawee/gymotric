@@ -5,7 +5,7 @@ const ExerciseTypes = () => {
     const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([]);
 
     const fetchExerciseTypes = async () => {
-        const res = await fetch("http://localhost:8080/exercise-types");
+        const res = await fetch("/api/exercise-types");
         if (res.status === 200) {
             const resObj = await res.json();
             setExerciseTypes(resObj.exercise_types);
@@ -30,7 +30,7 @@ const ExerciseTypes = () => {
             return;
         }
 
-        const exerciseTypeRes = await fetch("http://localhost:8080/exercise-types", {
+        const exerciseTypeRes = await fetch("/api/exercise-types", {
             method: "POST",
             body: JSON.stringify({ name: exerciseName })
         });
@@ -46,7 +46,7 @@ const ExerciseTypes = () => {
     };
 
     const deleteExerciseType = async (id: string) => {
-        const res = await fetch("http://localhost:8080/exercise-types/" + id, {
+        const res = await fetch("/api/exercise-types/" + id, {
             method: "DELETE",
         });
 
