@@ -8,21 +8,21 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type repoMock struct {
 	mock.Mock
 }
 
-// CreateAndReturnId implements UsersRepository.
 func (r *repoMock) CreateAndReturnId(ctx context.Context, arg repository.CreateUserAndReturnIdParams) (string, error) {
 	args := r.Called(ctx, arg)
 	return args.String(0), args.Error(1)
 }
 
-// GetByUsernameAndPassword implements UsersRepository.
-func (r *repoMock) GetByUsernameAndPassword(ctx context.Context, arg repository.GetUserByUsernameAndPasswordParams) (User, error) {
-	panic("unimplemented")
+func (r *repoMock) GetByUsername(ctx context.Context, arg string) (User, error) {
+	args := r.Called(ctx, arg)
+	return args.Get(0).(User), args.Error(1)
 }
 
 func TestCreateAndReturnId(t *testing.T) {
@@ -40,5 +40,28 @@ func TestCreateAndReturnId(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, userId.String(), id)
+	repoMock.AssertExpectations(t)
+}
+
+func TestLoginAndReturnToken(t *testing.T) {
+	ctx := context.Background()
+
+	userId, _ := uuid.NewV7()
+	pwBytes, _ := bcrypt.GenerateFromPassword([]byte("test"), bcrypt.DefaultCost)
+	repoMock := repoMock{}
+	repoMock.On("GetByUsername", ctx, "testusername").Return(User{
+		ID:        userId.String(),
+		Username:  "testusername",
+		Password:  string(pwBytes),
+		CreatedOn: "2024-09-05T19:22:00Z",
+		UpdatedOn: "2024-09-05T19:22:00Z",
+	}, nil).Once()
+
+	service := NewService(&repoMock)
+	token, err := service.Login(context.Background(), loginRequest{
+		Username: "testusername", Password: "test"})
+
+	assert.Nil(t, err)
+	assert.NotEmpty(t, token)
 	repoMock.AssertExpectations(t)
 }

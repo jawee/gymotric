@@ -2,15 +2,19 @@ package users
 
 import (
 	"context"
+	"os"
 	"time"
 	"weight-tracker/internal/repository"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	_ "github.com/joho/godotenv/autoload"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type Service interface {
 	CreateAndReturnId(ctx context.Context, arg createUserAndReturnIdRequest) (string, error)
+	Login(ctx context.Context, arg loginRequest) (string, error)
 }
 
 type usersService struct {
@@ -38,6 +42,28 @@ func (u *usersService) CreateAndReturnId(ctx context.Context, arg createUserAndR
 	}
 	id, err := u.repo.CreateAndReturnId(ctx, user)
 	return id, err
+}
+
+func (u *usersService) Login(ctx context.Context, arg loginRequest) (string, error) {
+	signingKey := os.Getenv("JWT_SIGN_KEY")
+	mySigningKey := []byte(signingKey)
+	user, err := u.repo.GetByUsername(ctx, arg.Username)
+	if err != nil {
+		return "", err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(arg.Password))
+	if err != nil {
+		return "", err
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Minute * 15)),
+		Issuer:    "weight-tracker",
+		Subject:   user.ID,
+		Audience:  []string{"weight-tracker"},
+	})
+	return token.SignedString(mySigningKey)
 }
 
 func NewService(repo UsersRepository) Service {

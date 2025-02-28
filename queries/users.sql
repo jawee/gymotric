@@ -1,6 +1,6 @@
--- name: GetUserByUsernameAndPassword :one
+-- name: GetByUsername :one
 SELECT * FROM users 
-WHERE username = sqlc.arg(username) and password = sqlc.arg(password);
+WHERE username = sqlc.arg(username);
 
 -- name: CreateUserAndReturnId :one
 INSERT INTO users (

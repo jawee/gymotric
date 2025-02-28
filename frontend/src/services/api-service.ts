@@ -1,6 +1,6 @@
 
 const fetchWorkouts = async () => {
-    const res = await fetch("http://localhost:8080/workouts", {
+    const res = await fetch("/api/workouts", {
         headers: {
             "ApiKey": "1234",
         },
@@ -9,7 +9,7 @@ const fetchWorkouts = async () => {
 };
 
 const fetchWorkout = async (id: string) => {
-    const res = await fetch("http://localhost:8080/workouts/" + id, {
+    const res = await fetch("/api/workouts/" + id, {
         headers: {
             "ApiKey": "1234",
         },
@@ -18,7 +18,7 @@ const fetchWorkout = async (id: string) => {
 };
 
 const createWorkout = async (name: string) => {
-    const res = await fetch("http://localhost:8080/workouts", {
+    const res = await fetch("/api/workouts", {
         method: "POST",
         headers: {
             "ApiKey": "1234",
@@ -29,7 +29,7 @@ const createWorkout = async (name: string) => {
 };
 
 const finishWorkout = async (id: string) => {
-    const res = await fetch("http://localhost:8080/workouts/" + id + "/complete", {
+    const res = await fetch("/api/workouts/" + id + "/complete", {
         method: "PUT",
         headers: {
             "ApiKey": "1234",
@@ -40,7 +40,7 @@ const finishWorkout = async (id: string) => {
 };
 
 const deleteWorkout = async (workoutId: string) => {
-    const res = await fetch("http://localhost:8080/workouts/" + workoutId, {
+    const res = await fetch("/api/workouts/" + workoutId, {
         method: "DELETE",
         headers: {
             "ApiKey": "1234",
@@ -50,7 +50,7 @@ const deleteWorkout = async (workoutId: string) => {
 };
 
 const fetchSets = async (workoutId: string, exerciseId: string) => {
-    const res = await fetch("http://localhost:8080/workouts/" + workoutId + "/exercises/" + exerciseId + "/sets", {
+    const res = await fetch("/api/workouts/" + workoutId + "/exercises/" + exerciseId + "/sets", {
         headers: {
             "ApiKey": "1234",
         },
@@ -59,7 +59,7 @@ const fetchSets = async (workoutId: string, exerciseId: string) => {
 };
 
 const deleteSet = async (workoutId: string, exerciseId: string, setId: string) => {
-    const res = await fetch("http://localhost:8080/workouts/" + workoutId + "/exercises/" + exerciseId + "/sets/" + setId, {
+    const res = await fetch("/api/workouts/" + workoutId + "/exercises/" + exerciseId + "/sets/" + setId, {
         method: "DELETE",
         headers: {
             "ApiKey": "1234",
@@ -71,7 +71,7 @@ const deleteSet = async (workoutId: string, exerciseId: string, setId: string) =
 };
 
 const createSet = async (workoutId: string, exerciseId: string, repetitions: number, weight: number) => {
-    const res = await fetch("http://localhost:8080/workouts/" + workoutId + "/exercises/" + exerciseId + "/sets", {
+    const res = await fetch("/api/workouts/" + workoutId + "/exercises/" + exerciseId + "/sets", {
         method: "POST",
         headers: {
             "ApiKey": "1234",
@@ -83,7 +83,7 @@ const createSet = async (workoutId: string, exerciseId: string, repetitions: num
 };
 
 const fetchExerciseTypes = async () => {
-    const res = await fetch("http://localhost:8080/exercise-types", {
+    const res = await fetch("/api/exercise-types", {
         headers: {
             "ApiKey": "1234",
         },
@@ -92,7 +92,7 @@ const fetchExerciseTypes = async () => {
 };
 
 const createExerciseType = async (name: string) => {
-    const res = await fetch("http://localhost:8080/exercise-types", {
+    const res = await fetch("/api/exercise-types", {
         method: "POST",
         headers: {
             "ApiKey": "1234",
@@ -103,7 +103,7 @@ const createExerciseType = async (name: string) => {
 };
 
 const deleteExerciseType = async (id: string) => {
-    const res = await fetch("http://localhost:8080/exercise-types/" + id, {
+    const res = await fetch("/api/exercise-types/" + id, {
         method: "DELETE",
         headers: {
             "ApiKey": "1234",
@@ -114,7 +114,7 @@ const deleteExerciseType = async (id: string) => {
 };
 
 const fetchExercises = async (workoutId: string) => {
-    const res = await fetch("http://localhost:8080/workouts/" + workoutId + "/exercises", {
+    const res = await fetch("/api/workouts/" + workoutId + "/exercises", {
         headers: {
             "ApiKey": "1234",
         },
@@ -124,7 +124,7 @@ const fetchExercises = async (workoutId: string) => {
 };
 
 const createExercise = async (workoutId: string, exerciseTypeId: string) => {
-    const res = await fetch("http://localhost:8080/workouts/" + workoutId + "/exercises", {
+    const res = await fetch("/api/workouts/" + workoutId + "/exercises", {
         method: "POST",
         headers: {
             "ApiKey": "1234",
@@ -135,7 +135,7 @@ const createExercise = async (workoutId: string, exerciseTypeId: string) => {
 };
 
 const deleteExercise = async (workoutId: string, exerciseId: string) => {
-    const res = await fetch("http://localhost:8080/workouts/" + workoutId + "/exercises/" + exerciseId, {
+    const res = await fetch("/api/workouts/" + workoutId + "/exercises/" + exerciseId, {
         method: "DELETE",
         headers: {
             "ApiKey": "1234",

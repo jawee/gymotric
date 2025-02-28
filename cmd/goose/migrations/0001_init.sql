@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 CREATE TABLE users (
     id text primary key,
-    username text not null,
+    username text unique not null,
     password text not null,
     created_on text not null,
     updated_on text not null
