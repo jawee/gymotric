@@ -1,7 +1,9 @@
 package workouts
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -59,12 +61,18 @@ func (s *handler) getAllWorkoutsHandler(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+var ErrNotFound = errors.New("sql: no rows in result set")
+
 func (s *handler) getWorkoutByIdHandler(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value("sub").(string)
 	id := r.PathValue("id")
 	workout, err := s.service.GetById(r.Context(), id, userId)
 
 	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "", http.StatusNotFound)
+			return;
+		}
 		slog.Error("Failed to get workout", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
