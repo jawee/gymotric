@@ -2,6 +2,7 @@ package workouts
 
 import (
 	"context"
+	"log/slog"
 	"weight-tracker/internal/repository"
 )
 
@@ -18,11 +19,25 @@ type WorkoutsRepository interface {
 	CreateAndReturnId(ctx context.Context, arg repository.CreateWorkoutAndReturnIdParams) (string, error)
 	GetAll(ctx context.Context) ([]Workout, error)
 	GetById(ctx context.Context, id string) (Workout, error)
+	DeleteById(ctx context.Context, id string) error
 }
 
 type workoutsRepository struct {
 	repo repository.Querier
 }
+
+func (w *workoutsRepository) DeleteById(ctx context.Context, id string) error {
+	rows, err := w.repo.DeleteWorkoutById(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		slog.Info("Tried to delete workout that did not exist", "workoutId", id)
+	}
+	return nil
+}
+
 
 func (w *workoutsRepository) CompleteById(ctx context.Context, arg repository.CompleteWorkoutByIdParams) (int64, error) {
 	return w.repo.CompleteWorkoutById(ctx, arg)

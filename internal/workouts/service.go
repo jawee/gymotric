@@ -14,10 +14,15 @@ type Service interface {
 	GetById(context context.Context, id string) (Workout, error)
 	CreateAndReturnId(context context.Context, t createWorkoutRequest) (string, error)
 	CompleteById(context context.Context, workoutId string) error
+	DeleteById(context context.Context, workoutId string) error
 }
 
 type workoutsService struct {
 	repo WorkoutsRepository
+}
+
+func (w *workoutsService) DeleteById(context context.Context, workoutId string) error {
+	return w.repo.DeleteById(context, workoutId)
 }
 
 func (w *workoutsService) CompleteById(context context.Context, workoutId string) error {

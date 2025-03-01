@@ -11,14 +11,14 @@ type handler struct {
 	service Service
 }
 
-func AddEndpoints(mux *http.ServeMux, s database.Service) {
+func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper func(next http.Handler) http.Handler) {
 	handler := handler{
 		service: NewService(exerciseRepository{s.GetRepository()}),
 	}
 
-	mux.Handle("GET /workouts/{id}/exercises", http.HandlerFunc(handler.getExercisesByWorkoutIdHandler))
-	mux.Handle("POST /workouts/{id}/exercises", http.HandlerFunc(handler.createExerciseHandler))
-	mux.Handle("DELETE /workouts/{id}/exercises/{exerciseId}", http.HandlerFunc(handler.deleteExerciseByIdHandler))
+	mux.Handle("GET /workouts/{id}/exercises", authenticationWrapper(http.HandlerFunc(handler.getExercisesByWorkoutIdHandler)))
+	mux.Handle("POST /workouts/{id}/exercises", authenticationWrapper(http.HandlerFunc(handler.createExerciseHandler)))
+	mux.Handle("DELETE /workouts/{id}/exercises/{exerciseId}", authenticationWrapper(http.HandlerFunc(handler.deleteExerciseByIdHandler)))
 }
 
 func (s *handler) getExercisesByWorkoutIdHandler(w http.ResponseWriter, r *http.Request) {

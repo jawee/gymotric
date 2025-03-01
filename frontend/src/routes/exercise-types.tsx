@@ -1,11 +1,12 @@
 import { useEffect, useId, useState } from "react";
 import { ExerciseType } from "../models/workout";
+import ApiService from "../services/api-service";
 
 const ExerciseTypes = () => {
     const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([]);
 
     const fetchExerciseTypes = async () => {
-        const res = await fetch("/api/exercise-types");
+        const res = await ApiService.fetchExerciseTypes();
         if (res.status === 200) {
             const resObj = await res.json();
             setExerciseTypes(resObj.exercise_types);
@@ -30,10 +31,7 @@ const ExerciseTypes = () => {
             return;
         }
 
-        const exerciseTypeRes = await fetch("/api/exercise-types", {
-            method: "POST",
-            body: JSON.stringify({ name: exerciseName })
-        });
+        const exerciseTypeRes = await ApiService.createExerciseType(exerciseName);
 
         if (exerciseTypeRes.status !== 201) {
             console.log("Error");
@@ -46,9 +44,7 @@ const ExerciseTypes = () => {
     };
 
     const deleteExerciseType = async (id: string) => {
-        const res = await fetch("/api/exercise-types/" + id, {
-            method: "DELETE",
-        });
+        const res = await ApiService.deleteExerciseType(id);
 
         if (res.status !== 204) {
             console.log("Error");

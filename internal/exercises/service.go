@@ -2,6 +2,7 @@ package exercises
 
 import (
 	"context"
+	"time"
 	"weight-tracker/internal/repository"
 
 	"github.com/google/uuid"
@@ -34,6 +35,8 @@ func (e *exerciseService) CreateAndReturnId(context context.Context, exercise cr
 		Name:           exerciseType.Name,
 		WorkoutID:      workoutId,
 		ExerciseTypeID: exerciseType.ID,
+		CreatedOn: time.Now().UTC().Format(time.RFC3339),
+		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
 	}
 
 	id, err := e.repo.CreateAndReturnId(context, toCreate, workoutId)

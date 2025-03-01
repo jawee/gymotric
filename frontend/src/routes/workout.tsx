@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import { Exercise, Workout, Set, ExerciseType } from "../models/workout";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
+import ApiService from "../services/api-service";
 
 type ExerciseProps = {
     exercise: Exercise,
@@ -12,7 +13,8 @@ type EditableExerciseProps = {
 };
 
 const fetchSets = async (wId: string, eId: string, setSets: React.Dispatch<React.SetStateAction<Set[]>>) => {
-    const res = await fetch("/api/workouts/" + wId + "/exercises/" + eId + "/sets");
+    const res = await ApiService.fetchSets(wId, eId);
+
     if (res.status === 200) {
         const resObj = await res.json();
         setSets(resObj.sets);
@@ -54,9 +56,7 @@ const EditableExercise = (props: EditableExerciseProps) => {
     }, [ex]);
 
     const deleteSet = async (setId: string) => {
-        const res = await fetch("/api/workouts/" + ex.workout_id + "/exercises/" + ex.id + "/sets/" + setId, {
-            method: "DELETE"
-        });
+        const res = await ApiService.deleteSet(ex.workout_id, ex.id, setId);
 
         if (res.status !== 204) {
             console.log("Error");
@@ -68,10 +68,7 @@ const EditableExercise = (props: EditableExerciseProps) => {
 
     const addSet = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const res = await fetch("/api/workouts/" + ex.workout_id + "/exercises/" + ex.id + "/sets", {
-            method: "POST",
-            body: JSON.stringify({ repetitions: reps, weight: weight })
-        });
+        const res = await ApiService.createSet(ex.workout_id, ex.id, reps, weight);
 
         if (res.status !== 201) {
             console.log("Error");
@@ -112,9 +109,11 @@ const WorkoutComponent = () => {
 
     const id = params.id;
 
+    const navigate = useNavigate();
+
     useEffect(() => {
         const fetchExerciseTypes = async () => {
-            const res = await fetch("/api/exercise-types");
+            const res = await ApiService.fetchExerciseTypes();
             if (res.status === 200) {
                 const resObj = await res.json();
                 setExerciseTypes(resObj.exercise_types);
@@ -125,7 +124,11 @@ const WorkoutComponent = () => {
     }, []);
 
     const fetchWorkout = async () => {
-        const res = await fetch("/api/workouts/" + id);
+        if (id === undefined) {
+            return;
+        }
+
+        const res = await ApiService.fetchWorkout(id);
         if (res.status === 200) {
             const resObj = await res.json();
             setWorkout(resObj.workout);
@@ -136,8 +139,26 @@ const WorkoutComponent = () => {
         fetchWorkout();
     }, []);
 
+    const deleteWorkout = async () => {
+        if (workout === null) {
+            return;
+        }
+
+        const res = await ApiService.deleteWorkout(workout.id);
+        if (res.status !== 204) {
+            console.log("Error", res.status, res.statusText);
+            return;
+        }
+
+        navigate("/workouts");
+    };
+
     const fetchExercises = async () => {
-        const res = await fetch("/api/workouts/" + id + "/exercises");
+        if (id === undefined) {
+            return;
+        }
+
+        const res = await ApiService.fetchExercises(id);
         if (res.status === 200) {
             const resObj = await res.json();
             setExercises(resObj.exercises);
@@ -149,10 +170,11 @@ const WorkoutComponent = () => {
     }, []);
 
     const deleteExercise = async (exerciseId: string) => {
-        const res = await fetch("/api/workouts/" + id + "/exercises/" + exerciseId,
-            {
-                method: "DELETE"
-            });
+        if (id === undefined) {
+            return;
+        }
+
+        const res = await ApiService.deleteExercise(id, exerciseId);
         if (res.status !== 204) {
             console.log("Error");
             return;
@@ -184,6 +206,7 @@ const WorkoutComponent = () => {
                         );
                     })}
                 </ul>
+                <button onClick={deleteWorkout}>Delete workout</button>
             </>
         );
     }
@@ -194,10 +217,8 @@ const WorkoutComponent = () => {
         if (exerciseTypeId !== "None" && exerciseTypeId !== null) {
             const exerciseType = exerciseTypes.filter(et => et.id == exerciseTypeId)[0];
 
-            const res = await fetch("/api/workouts/" + workout.id + "/exercises", {
-                method: "POST",
-                body: JSON.stringify({ exercise_type_id: exerciseType.id })
-            });
+            const res = await ApiService.createExercise(workout.id, exerciseType.id);
+
             if (res.status !== 201) {
                 console.log("Error");
                 return
@@ -213,10 +234,7 @@ const WorkoutComponent = () => {
             return;
         }
 
-        const exerciseTypeRes = await fetch("/api/exercise-types", {
-            method: "POST",
-            body: JSON.stringify({ name: exerciseName })
-        });
+        const exerciseTypeRes = await ApiService.createExerciseType(exerciseName);
 
         if (exerciseTypeRes.status !== 201) {
             console.log("Error");
@@ -226,10 +244,8 @@ const WorkoutComponent = () => {
         let obj = await exerciseTypeRes.json();
         setExerciseTypes([...exerciseTypes, { id: obj.id, name: exerciseName }]);
 
-        const res = await fetch("/api/workouts/" + workout.id + "/exercises", {
-            method: "POST",
-            body: JSON.stringify({ exercise_type_id: obj.id })
-        });
+        const res = await ApiService.createExercise(workout.id, obj.id);
+
         if (res.status !== 201) {
             console.log("Error");
             return
@@ -244,9 +260,7 @@ const WorkoutComponent = () => {
 
 
     const finishWorkout = async () => {
-        const res = await fetch("/api/workouts/" + workout.id + "/complete", {
-            method: "PUT",
-        });
+        const res = await ApiService.finishWorkout(workout.id);
 
         if (res.status !== 204) {
             console.log("Error", res.status, res.statusText);
@@ -255,6 +269,7 @@ const WorkoutComponent = () => {
 
         await fetchWorkout();
     };
+
     return (
         <>
             <h1>Workout {workout.name}</h1>
@@ -276,6 +291,8 @@ const WorkoutComponent = () => {
                 </select>
                 <button type="submit">Add exercise</button>
             </form>
+
+            <button onClick={deleteWorkout}>Delete workout</button>
         </>
     );
 };

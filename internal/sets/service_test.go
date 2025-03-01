@@ -71,7 +71,7 @@ func TestCreateAndReturnId(t *testing.T) {
 
 	repoMock := repoMock{}
 	repoMock.On("CreateAndReturnId", ctx, mock.MatchedBy(func(input repository.CreateSetAndReturnIdParams) bool {
-		return input.Weight == 10.5 && input.Repetitions == 1 && input.ExerciseID == exerciseId.String()
+		return input.Weight == 10.5 && input.Repetitions == 1 && input.ExerciseID == exerciseId.String() && input.CreatedOn != "" && input.UpdatedOn != ""
 	})).Return(setId.String(), nil).Once()
 
 	service := NewService(&repoMock)
