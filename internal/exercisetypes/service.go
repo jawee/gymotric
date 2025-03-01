@@ -30,6 +30,7 @@ func (s *exerciseTypeService) CreateAndReturnId(context context.Context, exercis
 		Name: exerciseType.Name,
 		CreatedOn: time.Now().UTC().Format(time.RFC3339),
 		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
+		UserID: userId,
 	}
 
 	id, err := s.repo.CreateAndReturnId(context, toCreate)

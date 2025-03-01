@@ -18,17 +18,19 @@ func (m *repoMock) CreateAndReturnId(context context.Context, exerciseType repos
 	return args.String(0), args.Error(1)
 }
 
-func (m *repoMock) DeleteById(context context.Context, exerciseTypeId string) error {
-	args := m.Called(context, exerciseTypeId)
+func (m *repoMock) DeleteById(context context.Context, arg repository.DeleteExerciseTypeByIdParams) error {
+	args := m.Called(context, arg)
 	return args.Error(0)
 }
 
-func (m *repoMock) GetAll(context context.Context) ([]ExerciseType, error) {
-	args := m.Called(context)
+func (m *repoMock) GetAll(context context.Context, userId string) ([]ExerciseType, error) {
+	args := m.Called(context, userId)
 	return args.Get(0).([]ExerciseType), args.Error(1)
 }
 
 func TestGetAll(t *testing.T) {
+	userId := "userid"
+
 	expected := []ExerciseType{
 		{ID: "a", Name: "a"},
 		{ID: "b", Name: "b"},
@@ -37,14 +39,14 @@ func TestGetAll(t *testing.T) {
 	ctx := context.Background()
 
 	repoMock := repoMock{}
-	repoMock.On("GetAll", ctx).Return([]ExerciseType{
+	repoMock.On("GetAll", ctx, userId).Return([]ExerciseType{
 		{ID: "b", Name: "b"},
 		{ID: "a", Name: "a"},
 	}, nil).Once()
 
 	service := NewService(&repoMock)
 
-	result, err := service.GetAll(ctx)
+	result, err := service.GetAll(ctx, userId)
 
 	assert.Nil(t, err)
 	assert.Len(t, result, 2)
@@ -53,30 +55,36 @@ func TestGetAll(t *testing.T) {
 }
 
 func TestDeleteById(t *testing.T) {
+	userId := "userid"
+	exerciseTypeId := "exerciseTypeId"
 	ctx := context.Background()
 
 	repoMock := repoMock{}
-	repoMock.On("DeleteById", ctx, "a").Return(nil).Once()
+	repoMock.On("DeleteById", ctx, mock.MatchedBy(func(input repository.DeleteExerciseTypeByIdParams) bool {
+		return input.ID == exerciseTypeId && input.UserID == userId
+	})).Return(nil).Once()
 
 	service := NewService(&repoMock)
-	err := service.DeleteById(ctx, "a")
+	err := service.DeleteById(ctx, exerciseTypeId, userId)
 
 	assert.Nil(t, err)
 	repoMock.AssertExpectations(t)
 }
 
 func TestCreateAndReturnId(t *testing.T) {
+	userId := "userid"
+	exerciseTypeName := "exerciseTypeId"
 	ctx := context.Background()
 
 	repoMock := repoMock{}
 	repoMock.On("CreateAndReturnId", ctx, mock.MatchedBy(func(input repository.CreateExerciseTypeAndReturnIdParams) bool {
-		return input.Name == "a" && input.CreatedOn != "" && input.UpdatedOn != ""
+		return input.Name == exerciseTypeName && input.CreatedOn != "" && input.UpdatedOn != "" && input.UserID == userId
 	})).Return("asdf", nil).Once()
 
 	service := NewService(&repoMock)
 	_, err := service.CreateAndReturnId(context.Background(), createExerciseTypeRequest{
-		Name: "a",
-	})
+		Name: exerciseTypeName,
+	}, userId)
 
 	assert.Nil(t, err)
 	repoMock.AssertExpectations(t)
