@@ -9,17 +9,21 @@ import (
 )
 
 type Service interface {
-	GetAll(context context.Context) ([]Exercise, error)
-	GetByWorkoutId(context context.Context, workoutId string) ([]Exercise, error)
-	DeleteById(context context.Context, id string) error
-	CreateAndReturnId(context context.Context, exercise createExerciseRequest, workoutId string) (string, error)
+	GetAll(context context.Context, userId string) ([]Exercise, error)
+	GetByWorkoutId(context context.Context, workoutId string, userId string) ([]Exercise, error)
+	DeleteById(context context.Context, id string, userId string) error
+	CreateAndReturnId(context context.Context, exercise createExerciseRequest, workoutId string, userId string) (string, error)
 }
 type exerciseService struct {
 	repo ExerciseRepository
 }
 
-func (e *exerciseService) CreateAndReturnId(context context.Context, exercise createExerciseRequest, workoutId string) (string, error) {
-	exerciseType, err := e.repo.GetExerciseTypeById(context, exercise.ExerciseTypeID)
+func (e *exerciseService) CreateAndReturnId(context context.Context, exercise createExerciseRequest, workoutId string, userId string) (string, error) {
+	arg := repository.GetExerciseTypeByIdParams{
+		ID: exercise.ExerciseTypeID,
+		UserID: userId,
+	}
+	exerciseType, err := e.repo.GetExerciseTypeById(context, arg)
 
 	if err != nil {
 		return "", err
@@ -37,9 +41,10 @@ func (e *exerciseService) CreateAndReturnId(context context.Context, exercise cr
 		ExerciseTypeID: exerciseType.ID,
 		CreatedOn: time.Now().UTC().Format(time.RFC3339),
 		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
+		UserID: userId,
 	}
 
-	id, err := e.repo.CreateAndReturnId(context, toCreate, workoutId)
+	id, err := e.repo.CreateAndReturnId(context, toCreate)
 	if err != nil {
 		return "", err
 	}
@@ -47,16 +52,24 @@ func (e *exerciseService) CreateAndReturnId(context context.Context, exercise cr
 	return id, nil
 }
 
-func (e *exerciseService) GetAll(context context.Context) ([]Exercise, error) {
-	return e.repo.GetAll(context)
+func (e *exerciseService) GetAll(context context.Context, userId string) ([]Exercise, error) {
+	return e.repo.GetAll(context, userId)
 }
 
-func (e *exerciseService) GetByWorkoutId(context context.Context, workoutId string) ([]Exercise, error) {
-	return e.repo.GetByWorkoutId(context, workoutId)
+func (e *exerciseService) GetByWorkoutId(context context.Context, workoutId string, userId string) ([]Exercise, error) {
+	arg := repository.GetExercisesByWorkoutIdParams{
+		WorkoutID: workoutId,
+		UserID:    userId,
+	}
+	return e.repo.GetByWorkoutId(context, arg)
 }
 
-func (e *exerciseService) DeleteById(context context.Context, id string) error {
-	return e.repo.DeleteById(context, id)
+func (e *exerciseService) DeleteById(context context.Context, id string, userId string) error {
+	arg := repository.DeleteExerciseByIdParams{
+		ID:     id,
+		UserID: userId,
+	}
+	return e.repo.DeleteById(context, arg)
 }
 
 func NewService(repo ExerciseRepository) Service {

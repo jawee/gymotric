@@ -20,7 +20,7 @@ const CreateWorkoutForm = () => {
 
         const response = await res.json()
 
-        navigate("/workouts/" + response.id);
+        navigate("/app/workouts/" + response.id);
     };
 
     return (

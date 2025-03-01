@@ -23,7 +23,8 @@ type handler struct {
 }
 
 func (s *handler) getAllWorkoutTypesHandler(w http.ResponseWriter, r *http.Request) {
-	exerciseTypes, err := s.service.GetAll(r.Context())
+	userId := r.Context().Value("sub").(string)
+	exerciseTypes, err := s.service.GetAll(r.Context(), userId)
 
 	slog.Debug(fmt.Sprintf("returning %d exercise types", len(exerciseTypes)))
 
@@ -40,8 +41,9 @@ func (s *handler) getAllWorkoutTypesHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (s *handler) deleteExerciseTypeByIdHandler(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("sub").(string)
 	exerciseTypeId := r.PathValue("id")
-	err := s.service.DeleteById(r.Context(), exerciseTypeId)
+	err := s.service.DeleteById(r.Context(), exerciseTypeId, userId)
 
 	if err != nil {
 		slog.Warn("Failed to delete exercise type", "error", err, "exerciseTypeId", exerciseTypeId)
@@ -54,6 +56,7 @@ func (s *handler) deleteExerciseTypeByIdHandler(w http.ResponseWriter, r *http.R
 }
 
 func (s *handler) createExerciseTypeHandler(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("sub").(string)
 	decoder := json.NewDecoder(r.Body)
 	var t createExerciseTypeRequest
 	err := decoder.Decode(&t)
@@ -64,7 +67,7 @@ func (s *handler) createExerciseTypeHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	id, err := s.service.CreateAndReturnId(r.Context(), t)
+	id, err := s.service.CreateAndReturnId(r.Context(), t, userId)
 
 	if err != nil {
 		slog.Warn("Failed to create workout", "error", err)

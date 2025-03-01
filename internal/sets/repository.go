@@ -13,11 +13,11 @@ type Set struct {
 }
 
 type SetsRepository interface {
-	GetAll(ctx context.Context) ([]Set, error)
-	GetById(ctx context.Context, id string) (Set, error)
-	GetByExerciseId(ctx context.Context, exerciseID string) ([]Set, error)
+	GetAll(ctx context.Context, userId string) ([]Set, error)
+	GetById(ctx context.Context, arg repository.GetSetByIdParams) (Set, error)
+	GetByExerciseId(ctx context.Context, arg repository.GetSetsByExerciseIdParams) ([]Set, error)
 	CreateAndReturnId(ctx context.Context, arg repository.CreateSetAndReturnIdParams) (string, error)
-	DeleteById(ctx context.Context, id string) (int64, error)
+	DeleteById(ctx context.Context, arg repository.DeleteSetByIdParams) (int64, error)
 }
 
 type setsRepository struct {
@@ -28,12 +28,12 @@ func (s *setsRepository) CreateAndReturnId(ctx context.Context, arg repository.C
 	return s.repo.CreateSetAndReturnId(ctx, arg)
 }
 
-func (s *setsRepository) DeleteById(ctx context.Context, id string) (int64, error) {
-	return s.repo.DeleteSetById(ctx, id)
+func (s *setsRepository) DeleteById(ctx context.Context, arg repository.DeleteSetByIdParams) (int64, error) {
+	return s.repo.DeleteSetById(ctx, arg)
 }
 
-func (s *setsRepository) GetAll(ctx context.Context) ([]Set, error) {
-	sets, err := s.repo.GetAllSets(ctx)
+func (s *setsRepository) GetAll(ctx context.Context, userId string) ([]Set, error) {
+	sets, err := s.repo.GetAllSets(ctx, userId)
 	if err != nil {
 		return []Set{}, err
 	}
@@ -57,8 +57,8 @@ func newSet(v repository.Set) Set {
 	return set
 }
 
-func (s *setsRepository) GetById(ctx context.Context, id string) (Set, error) {
-	set, err := s.repo.GetSetById(ctx, id)
+func (s *setsRepository) GetById(ctx context.Context, arg repository.GetSetByIdParams) (Set, error) {
+	set, err := s.repo.GetSetById(ctx, arg)
 	if err != nil {
 		return Set{}, err
 	}
@@ -68,8 +68,8 @@ func (s *setsRepository) GetById(ctx context.Context, id string) (Set, error) {
 	return result, nil
 }
 
-func (s *setsRepository) GetByExerciseId(ctx context.Context, exerciseID string) ([]Set, error) {
-	sets, err := s.repo.GetSetsByExerciseId(ctx, exerciseID)
+func (s *setsRepository) GetByExerciseId(ctx context.Context, arg repository.GetSetsByExerciseIdParams) ([]Set, error) {
+	sets, err := s.repo.GetSetsByExerciseId(ctx, arg)
 	if err != nil {
 		return []Set{}, err
 	}

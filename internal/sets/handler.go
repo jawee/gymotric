@@ -21,10 +21,11 @@ func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper 
 }
 
 func (s *handler) deleteSetByIdHandler(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("sub").(string)
 	setId := r.PathValue("setId")
 	// _, err := repo.DeleteSetById(r.Context(), setId)
 
-	err := s.service.DeleteById(r.Context(), setId)
+	err := s.service.DeleteById(r.Context(), setId, userId)
 
 	if err != nil {
 		slog.Warn("Failed to delete set", "error", err, "setId", setId)
@@ -37,6 +38,7 @@ func (s *handler) deleteSetByIdHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *handler) createSetHandler(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("sub").(string)
 	exerciseId := r.PathValue("exerciseId")
 	decoder := json.NewDecoder(r.Body)
 	var t createSetRequest
@@ -48,7 +50,7 @@ func (s *handler) createSetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := s.service.CreateAndReturnId(r.Context(), t, exerciseId)
+	id, err := s.service.CreateAndReturnId(r.Context(), t, exerciseId, userId)
 
 	if err != nil {
 		slog.Warn("Failed to create set", "error", err)
@@ -71,6 +73,7 @@ func (s *handler) createSetHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *handler) getSetsByExerciseIdHandler(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("sub").(string)
 	exerciseId := r.PathValue("exerciseId")
 
 	if exerciseId == "" {
@@ -79,7 +82,7 @@ func (s *handler) getSetsByExerciseIdHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	sets, err := s.service.GetByExerciseId(r.Context(), exerciseId)
+	sets, err := s.service.GetByExerciseId(r.Context(), exerciseId, userId)
 
 	if err != nil {
 		slog.Warn("Failed to get sets", "error", err)

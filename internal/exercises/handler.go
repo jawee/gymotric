@@ -24,7 +24,9 @@ func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper 
 func (s *handler) getExercisesByWorkoutIdHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
-	exercises, err := s.service.GetByWorkoutId(r.Context(), id)
+	userId := r.Context().Value("sub").(string)
+
+	exercises, err := s.service.GetByWorkoutId(r.Context(), id, userId)
 
 	if err != nil {
 		slog.Warn("Failed to get exercises", "error", err)
@@ -46,6 +48,7 @@ func (s *handler) getExercisesByWorkoutIdHandler(w http.ResponseWriter, r *http.
 
 func (s *handler) createExerciseHandler(w http.ResponseWriter, r *http.Request) {
 
+	userId := r.Context().Value("sub").(string)
 	decoder := json.NewDecoder(r.Body)
 	var t createExerciseRequest
 	err := decoder.Decode(&t)
@@ -58,7 +61,7 @@ func (s *handler) createExerciseHandler(w http.ResponseWriter, r *http.Request) 
 
 	workoutId := r.PathValue("id")
 
-	id, err := s.service.CreateAndReturnId(r.Context(), t, workoutId)
+	id, err := s.service.CreateAndReturnId(r.Context(), t, workoutId, userId)
 
 	if err != nil {
 		slog.Warn("Failed to create exercise", "error", err)
@@ -81,9 +84,10 @@ func (s *handler) createExerciseHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *handler) deleteExerciseByIdHandler(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("sub").(string)
 	exerciseId := r.PathValue("exerciseId")
 
-	err := s.service.DeleteById(r.Context(), exerciseId)
+	err := s.service.DeleteById(r.Context(), exerciseId, userId)
 
 	if err != nil {
 		slog.Warn("Failed to delete exercise", "error", err, "exerciseId", exerciseId)

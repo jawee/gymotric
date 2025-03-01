@@ -11,9 +11,9 @@ import (
 
 const createExerciseAndReturnId = `-- name: CreateExerciseAndReturnId :one
 INSERT INTO exercises (
-  id, name, workout_id, exercise_type_id, created_on, updated_on
+  id, name, workout_id, exercise_type_id, created_on, updated_on, user_id
 ) VALUES (
-  ?1, ?2, ?3, ?4, ?5, ?6
+  ?1, ?2, ?3, ?4, ?5, ?6, ?7
 )
 RETURNING id
 `
@@ -25,6 +25,7 @@ type CreateExerciseAndReturnIdParams struct {
 	ExerciseTypeID string `json:"exercise_type_id"`
 	CreatedOn      string `json:"created_on"`
 	UpdatedOn      string `json:"updated_on"`
+	UserID         string `json:"user_id"`
 }
 
 func (q *Queries) CreateExerciseAndReturnId(ctx context.Context, arg CreateExerciseAndReturnIdParams) (string, error) {
@@ -35,6 +36,7 @@ func (q *Queries) CreateExerciseAndReturnId(ctx context.Context, arg CreateExerc
 		arg.ExerciseTypeID,
 		arg.CreatedOn,
 		arg.UpdatedOn,
+		arg.UserID,
 	)
 	var id string
 	err := row.Scan(&id)
@@ -42,11 +44,18 @@ func (q *Queries) CreateExerciseAndReturnId(ctx context.Context, arg CreateExerc
 }
 
 const deleteExerciseById = `-- name: DeleteExerciseById :execrows
-DELETE FROM exercises where id = ?1
+DELETE FROM exercises 
+WHERE id = ?1
+AND user_id = ?2
 `
 
-func (q *Queries) DeleteExerciseById(ctx context.Context, id string) (int64, error) {
-	result, err := q.db.ExecContext(ctx, deleteExerciseById, id)
+type DeleteExerciseByIdParams struct {
+	ID     string `json:"id"`
+	UserID string `json:"user_id"`
+}
+
+func (q *Queries) DeleteExerciseById(ctx context.Context, arg DeleteExerciseByIdParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteExerciseById, arg.ID, arg.UserID)
 	if err != nil {
 		return 0, err
 	}
@@ -54,12 +63,13 @@ func (q *Queries) DeleteExerciseById(ctx context.Context, id string) (int64, err
 }
 
 const getAllExercises = `-- name: GetAllExercises :many
-SELECT id, name, created_on, updated_on, workout_id, exercise_type_id FROM exercises 
+SELECT id, name, created_on, updated_on, user_id, workout_id, exercise_type_id, "foreign" FROM exercises 
+WHERE user_id = ?1
 ORDER by id
 `
 
-func (q *Queries) GetAllExercises(ctx context.Context) ([]Exercise, error) {
-	rows, err := q.db.QueryContext(ctx, getAllExercises)
+func (q *Queries) GetAllExercises(ctx context.Context, userID string) ([]Exercise, error) {
+	rows, err := q.db.QueryContext(ctx, getAllExercises, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -72,8 +82,10 @@ func (q *Queries) GetAllExercises(ctx context.Context) ([]Exercise, error) {
 			&i.Name,
 			&i.CreatedOn,
 			&i.UpdatedOn,
+			&i.UserID,
 			&i.WorkoutID,
 			&i.ExerciseTypeID,
+			&i.Foreign,
 		); err != nil {
 			return nil, err
 		}
@@ -89,31 +101,45 @@ func (q *Queries) GetAllExercises(ctx context.Context) ([]Exercise, error) {
 }
 
 const getExerciseById = `-- name: GetExerciseById :one
-SELECT id, name, created_on, updated_on, workout_id, exercise_type_id FROM exercises 
+SELECT id, name, created_on, updated_on, user_id, workout_id, exercise_type_id, "foreign" FROM exercises 
 WHERE id = ?1
+AND user_id = ?2
 `
 
-func (q *Queries) GetExerciseById(ctx context.Context, id string) (Exercise, error) {
-	row := q.db.QueryRowContext(ctx, getExerciseById, id)
+type GetExerciseByIdParams struct {
+	ID     string `json:"id"`
+	UserID string `json:"user_id"`
+}
+
+func (q *Queries) GetExerciseById(ctx context.Context, arg GetExerciseByIdParams) (Exercise, error) {
+	row := q.db.QueryRowContext(ctx, getExerciseById, arg.ID, arg.UserID)
 	var i Exercise
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.CreatedOn,
 		&i.UpdatedOn,
+		&i.UserID,
 		&i.WorkoutID,
 		&i.ExerciseTypeID,
+		&i.Foreign,
 	)
 	return i, err
 }
 
 const getExercisesByWorkoutId = `-- name: GetExercisesByWorkoutId :many
-SELECT id, name, created_on, updated_on, workout_id, exercise_type_id FROM exercises
+SELECT id, name, created_on, updated_on, user_id, workout_id, exercise_type_id, "foreign" FROM exercises
 WHERE workout_id = ?1
+AND user_id = ?2
 `
 
-func (q *Queries) GetExercisesByWorkoutId(ctx context.Context, workoutID string) ([]Exercise, error) {
-	rows, err := q.db.QueryContext(ctx, getExercisesByWorkoutId, workoutID)
+type GetExercisesByWorkoutIdParams struct {
+	WorkoutID string `json:"workout_id"`
+	UserID    string `json:"user_id"`
+}
+
+func (q *Queries) GetExercisesByWorkoutId(ctx context.Context, arg GetExercisesByWorkoutIdParams) ([]Exercise, error) {
+	rows, err := q.db.QueryContext(ctx, getExercisesByWorkoutId, arg.WorkoutID, arg.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -126,8 +152,10 @@ func (q *Queries) GetExercisesByWorkoutId(ctx context.Context, workoutID string)
 			&i.Name,
 			&i.CreatedOn,
 			&i.UpdatedOn,
+			&i.UserID,
 			&i.WorkoutID,
 			&i.ExerciseTypeID,
+			&i.Foreign,
 		); err != nil {
 			return nil, err
 		}

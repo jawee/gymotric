@@ -5,12 +5,14 @@
 package repository
 
 type Exercise struct {
-	ID             string `json:"id"`
-	Name           string `json:"name"`
-	CreatedOn      string `json:"created_on"`
-	UpdatedOn      string `json:"updated_on"`
-	WorkoutID      string `json:"workout_id"`
-	ExerciseTypeID string `json:"exercise_type_id"`
+	ID             string      `json:"id"`
+	Name           string      `json:"name"`
+	CreatedOn      string      `json:"created_on"`
+	UpdatedOn      string      `json:"updated_on"`
+	UserID         string      `json:"user_id"`
+	WorkoutID      string      `json:"workout_id"`
+	ExerciseTypeID string      `json:"exercise_type_id"`
+	Foreign        interface{} `json:"foreign"`
 }
 
 type ExerciseType struct {
@@ -18,15 +20,18 @@ type ExerciseType struct {
 	Name      string `json:"name"`
 	CreatedOn string `json:"created_on"`
 	UpdatedOn string `json:"updated_on"`
+	UserID    string `json:"user_id"`
 }
 
 type Set struct {
-	ID          string  `json:"id"`
-	Repetitions int64   `json:"repetitions"`
-	Weight      float64 `json:"weight"`
-	CreatedOn   string  `json:"created_on"`
-	UpdatedOn   string  `json:"updated_on"`
-	ExerciseID  string  `json:"exercise_id"`
+	ID          string      `json:"id"`
+	Repetitions int64       `json:"repetitions"`
+	Weight      float64     `json:"weight"`
+	CreatedOn   string      `json:"created_on"`
+	UpdatedOn   string      `json:"updated_on"`
+	UserID      string      `json:"user_id"`
+	ExerciseID  string      `json:"exercise_id"`
+	Foreign     interface{} `json:"foreign"`
 }
 
 type User struct {
@@ -43,4 +48,5 @@ type Workout struct {
 	CompletedOn interface{} `json:"completed_on"`
 	CreatedOn   string      `json:"created_on"`
 	UpdatedOn   string      `json:"updated_on"`
+	UserID      string      `json:"user_id"`
 }

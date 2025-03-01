@@ -14,14 +14,23 @@ CREATE TABLE workouts (
     completed_on text null,
 
     created_on text not null,
-    updated_on text not null
+    updated_on text not null,
+
+    user_id text not null,
+
+    FOREIGN KEY(user_id) REFERENCES users(id)
 );
 
 CREATE TABLE exercise_types (
     id text primary key,
     name text not null,
+
     created_on text not null,
-    updated_on text not null
+    updated_on text not null,
+
+    user_id text not null,
+
+    FOREIGN KEY(user_id) REFERENCES users(id)
 );
 
 CREATE TABLE exercises (
@@ -30,9 +39,11 @@ CREATE TABLE exercises (
     created_on text not null,
     updated_on text not null,
 
+    user_id text not null,
     workout_id text not null,
     exercise_type_id text not null,
 
+    FOREIGN KEY(user_id) REFERENCES users(id)
     FOREIGN KEY(exercise_type_id) REFERENCES exercise_types(id),
     FOREIGN KEY(workout_id) REFERENCES workouts(id)
 
@@ -45,8 +56,10 @@ CREATE TABLE sets (
     created_on text not null,
     updated_on text not null,
 
+    user_id text not null,
     exercise_id text not null,
 
+    FOREIGN KEY(user_id) REFERENCES users(id)
     FOREIGN KEY(exercise_id) REFERENCES exercises(id)
 );
 -- +goose StatementEnd

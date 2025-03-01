@@ -17,23 +17,23 @@ type Workout struct {
 type WorkoutsRepository interface {
 	CompleteById(ctx context.Context, arg repository.CompleteWorkoutByIdParams) (int64, error)
 	CreateAndReturnId(ctx context.Context, arg repository.CreateWorkoutAndReturnIdParams) (string, error)
-	GetAll(ctx context.Context) ([]Workout, error)
-	GetById(ctx context.Context, id string) (Workout, error)
-	DeleteById(ctx context.Context, id string) error
+	GetAll(ctx context.Context, userId string) ([]Workout, error)
+	GetById(ctx context.Context, arg repository.GetWorkoutByIdParams) (Workout, error)
+	DeleteById(ctx context.Context, arg repository.DeleteWorkoutByIdParams) error
 }
 
 type workoutsRepository struct {
 	repo repository.Querier
 }
 
-func (w *workoutsRepository) DeleteById(ctx context.Context, id string) error {
-	rows, err := w.repo.DeleteWorkoutById(ctx, id)
+func (w *workoutsRepository) DeleteById(ctx context.Context, arg repository.DeleteWorkoutByIdParams) error {
+	rows, err := w.repo.DeleteWorkoutById(ctx, arg)
 	if err != nil {
 		return err
 	}
 
 	if rows == 0 {
-		slog.Info("Tried to delete workout that did not exist", "workoutId", id)
+		slog.Info("Tried to delete workout that did not exist", "workoutId", arg.ID)
 	}
 	return nil
 }
@@ -47,8 +47,8 @@ func (w *workoutsRepository) CreateAndReturnId(ctx context.Context, arg reposito
 	return w.repo.CreateWorkoutAndReturnId(ctx, arg)
 }
 
-func (w *workoutsRepository) GetAll(ctx context.Context) ([]Workout, error) {
-	workouts, err := w.repo.GetAllWorkouts(ctx)
+func (w *workoutsRepository) GetAll(ctx context.Context, userId string) ([]Workout, error) {
+	workouts, err := w.repo.GetAllWorkouts(ctx, userId)
 	if err != nil {
 		return []Workout{}, err
 	}
@@ -72,8 +72,8 @@ func newWorkout(v repository.Workout) Workout {
 	return workout
 }
 
-func (w *workoutsRepository) GetById(ctx context.Context, id string) (Workout, error) {
-	workout, err := w.repo.GetWorkoutById(ctx, id)
+func (w *workoutsRepository) GetById(ctx context.Context, arg repository.GetWorkoutByIdParams) (Workout, error) {
+	workout, err := w.repo.GetWorkoutById(ctx, arg)
 	if err != nil {
 		return Workout{}, err
 	}

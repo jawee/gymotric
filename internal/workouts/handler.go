@@ -25,8 +25,9 @@ func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper 
 }
 
 func (s *handler) deleteWorkoutByIdHandler(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("sub").(string)
 	id := r.PathValue("id")
-	err := s.service.DeleteById(r.Context(), id)
+	err := s.service.DeleteById(r.Context(), id, userId)
 
 	if err != nil {
 		http.Error(w, "Failed to delete workout", http.StatusInternalServerError)
@@ -38,8 +39,9 @@ func (s *handler) deleteWorkoutByIdHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (s *handler) getAllWorkoutsHandler(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("sub").(string)
 	slog.Info("Getting all workouts")
-	workouts, err := s.service.GetAll(r.Context())
+	workouts, err := s.service.GetAll(r.Context(), userId)
 
 	slog.Debug(fmt.Sprintf("returning %d workouts", len(workouts)))
 
@@ -56,8 +58,9 @@ func (s *handler) getAllWorkoutsHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *handler) getWorkoutByIdHandler(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("sub").(string)
 	id := r.PathValue("id")
-	workout, err := s.service.GetById(r.Context(), id)
+	workout, err := s.service.GetById(r.Context(), id, userId)
 
 	if err != nil {
 		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
@@ -77,6 +80,7 @@ func (s *handler) getWorkoutByIdHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *handler) createWorkoutHandler(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("sub").(string)
 	decoder := json.NewDecoder(r.Body)
 	var t createWorkoutRequest
 	err := decoder.Decode(&t)
@@ -87,7 +91,7 @@ func (s *handler) createWorkoutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := s.service.CreateAndReturnId(r.Context(), t)
+	id, err := s.service.CreateAndReturnId(r.Context(), t, userId)
 
 	if err != nil {
 		slog.Warn("Failed to create workout", "error", err)
@@ -110,9 +114,10 @@ func (s *handler) createWorkoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *handler) completeWorkoutById(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("sub").(string)
 	workoutId := r.PathValue("id")
 
-	err := s.service.CompleteById(r.Context(), workoutId)
+	err := s.service.CompleteById(r.Context(), workoutId, userId)
 
 	if err != nil {
 		slog.Warn("Failed to complete workout", "error", err, "workoutId", workoutId)

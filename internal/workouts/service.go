@@ -10,25 +10,30 @@ import (
 )
 
 type Service interface {
-	GetAll(context context.Context) ([]Workout, error)
-	GetById(context context.Context, id string) (Workout, error)
-	CreateAndReturnId(context context.Context, t createWorkoutRequest) (string, error)
-	CompleteById(context context.Context, workoutId string) error
-	DeleteById(context context.Context, workoutId string) error
+	GetAll(context context.Context, userId string) ([]Workout, error)
+	GetById(context context.Context, id string, userId string) (Workout, error)
+	CreateAndReturnId(context context.Context, t createWorkoutRequest, userId string) (string, error)
+	CompleteById(context context.Context, workoutId string, userId string) error
+	DeleteById(context context.Context, workoutId string, userId string) error
 }
 
 type workoutsService struct {
 	repo WorkoutsRepository
 }
 
-func (w *workoutsService) DeleteById(context context.Context, workoutId string) error {
-	return w.repo.DeleteById(context, workoutId)
+func (w *workoutsService) DeleteById(context context.Context, workoutId string, userId string) error {
+	arg := repository.DeleteWorkoutByIdParams{
+		ID:     workoutId,
+		UserID: userId,
+	}
+	return w.repo.DeleteById(context, arg)
 }
 
-func (w *workoutsService) CompleteById(context context.Context, workoutId string) error {
+func (w *workoutsService) CompleteById(context context.Context, workoutId string, userId string) error {
 	completeParams := repository.CompleteWorkoutByIdParams{
 		ID:          workoutId,
 		CompletedOn: time.Now().UTC().Format(time.RFC3339),
+		UserID:      userId,
 	}
 
 	_, err := w.repo.CompleteById(context, completeParams)
@@ -36,7 +41,7 @@ func (w *workoutsService) CompleteById(context context.Context, workoutId string
 	return err
 }
 
-func (w *workoutsService) CreateAndReturnId(context context.Context, t createWorkoutRequest) (string, error) {
+func (w *workoutsService) CreateAndReturnId(context context.Context, t createWorkoutRequest, userId string) (string, error) {
 	uuid, err := uuid.NewV7()
 	if err != nil {
 		return "", err
@@ -47,6 +52,7 @@ func (w *workoutsService) CreateAndReturnId(context context.Context, t createWor
 		Name:      t.Name,
 		CreatedOn: time.Now().UTC().Format(time.RFC3339),
 		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
+		UserID:    userId,
 	}
 
 	id, err := w.repo.CreateAndReturnId(context, workout)
@@ -54,8 +60,8 @@ func (w *workoutsService) CreateAndReturnId(context context.Context, t createWor
 	return id, err
 }
 
-func (w *workoutsService) GetAll(context context.Context) ([]Workout, error) {
-	workouts, err := w.repo.GetAll(context)
+func (w *workoutsService) GetAll(context context.Context, userId string) ([]Workout, error) {
+	workouts, err := w.repo.GetAll(context, userId)
 
 	if err != nil {
 		return []Workout{}, err
@@ -79,8 +85,12 @@ func (w *workoutsService) GetAll(context context.Context) ([]Workout, error) {
 	return workouts, nil
 }
 
-func (w *workoutsService) GetById(context context.Context, id string) (Workout, error) {
-	workout, err := w.repo.GetById(context, id)
+func (w *workoutsService) GetById(context context.Context, id string, userId string) (Workout, error) {
+	arg := repository.GetWorkoutByIdParams{
+		ID:     id,
+		UserID: userId,
+	}
+	workout, err := w.repo.GetById(context, arg)
 	return workout, err
 }
 

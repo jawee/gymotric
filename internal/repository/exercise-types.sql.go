@@ -11,9 +11,9 @@ import (
 
 const createExerciseTypeAndReturnId = `-- name: CreateExerciseTypeAndReturnId :one
 INSERT INTO exercise_types (
-  id, name, created_on, updated_on
+  id, name, created_on, updated_on, user_id
 ) VALUES (
-  ?1, ?2, ?3, ?4
+  ?1, ?2, ?3, ?4, ?5
 )
 RETURNING id
 `
@@ -23,6 +23,7 @@ type CreateExerciseTypeAndReturnIdParams struct {
 	Name      string `json:"name"`
 	CreatedOn string `json:"created_on"`
 	UpdatedOn string `json:"updated_on"`
+	UserID    string `json:"user_id"`
 }
 
 func (q *Queries) CreateExerciseTypeAndReturnId(ctx context.Context, arg CreateExerciseTypeAndReturnIdParams) (string, error) {
@@ -31,6 +32,7 @@ func (q *Queries) CreateExerciseTypeAndReturnId(ctx context.Context, arg CreateE
 		arg.Name,
 		arg.CreatedOn,
 		arg.UpdatedOn,
+		arg.UserID,
 	)
 	var id string
 	err := row.Scan(&id)
@@ -40,10 +42,16 @@ func (q *Queries) CreateExerciseTypeAndReturnId(ctx context.Context, arg CreateE
 const deleteExerciseTypeById = `-- name: DeleteExerciseTypeById :execrows
 DELETE FROM exercise_types
 WHERE id = ?1
+AND user_id = ?2
 `
 
-func (q *Queries) DeleteExerciseTypeById(ctx context.Context, id string) (int64, error) {
-	result, err := q.db.ExecContext(ctx, deleteExerciseTypeById, id)
+type DeleteExerciseTypeByIdParams struct {
+	ID     string `json:"id"`
+	UserID string `json:"user_id"`
+}
+
+func (q *Queries) DeleteExerciseTypeById(ctx context.Context, arg DeleteExerciseTypeByIdParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteExerciseTypeById, arg.ID, arg.UserID)
 	if err != nil {
 		return 0, err
 	}
@@ -51,12 +59,13 @@ func (q *Queries) DeleteExerciseTypeById(ctx context.Context, id string) (int64,
 }
 
 const getAllExerciseTypes = `-- name: GetAllExerciseTypes :many
-SELECT id, name, created_on, updated_on FROM exercise_types 
+SELECT id, name, created_on, updated_on, user_id FROM exercise_types 
+WHERE user_id = ?1
 ORDER by id asc
 `
 
-func (q *Queries) GetAllExerciseTypes(ctx context.Context) ([]ExerciseType, error) {
-	rows, err := q.db.QueryContext(ctx, getAllExerciseTypes)
+func (q *Queries) GetAllExerciseTypes(ctx context.Context, userID string) ([]ExerciseType, error) {
+	rows, err := q.db.QueryContext(ctx, getAllExerciseTypes, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -69,6 +78,7 @@ func (q *Queries) GetAllExerciseTypes(ctx context.Context) ([]ExerciseType, erro
 			&i.Name,
 			&i.CreatedOn,
 			&i.UpdatedOn,
+			&i.UserID,
 		); err != nil {
 			return nil, err
 		}
@@ -84,18 +94,25 @@ func (q *Queries) GetAllExerciseTypes(ctx context.Context) ([]ExerciseType, erro
 }
 
 const getExerciseTypeById = `-- name: GetExerciseTypeById :one
-SELECT id, name, created_on, updated_on FROM exercise_types 
+SELECT id, name, created_on, updated_on, user_id FROM exercise_types 
 WHERE id = ?1
+AND user_id = ?2
 `
 
-func (q *Queries) GetExerciseTypeById(ctx context.Context, id string) (ExerciseType, error) {
-	row := q.db.QueryRowContext(ctx, getExerciseTypeById, id)
+type GetExerciseTypeByIdParams struct {
+	ID     string `json:"id"`
+	UserID string `json:"user_id"`
+}
+
+func (q *Queries) GetExerciseTypeById(ctx context.Context, arg GetExerciseTypeByIdParams) (ExerciseType, error) {
+	row := q.db.QueryRowContext(ctx, getExerciseTypeById, arg.ID, arg.UserID)
 	var i ExerciseType
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.CreatedOn,
 		&i.UpdatedOn,
+		&i.UserID,
 	)
 	return i, err
 }

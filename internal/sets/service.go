@@ -9,21 +9,29 @@ import (
 )
 
 type Service interface {
-	GetByExerciseId(context context.Context, exerciseId string) ([]Set, error)
-	DeleteById(context context.Context, setId string) error
-	CreateAndReturnId(context context.Context, t createSetRequest, exerciseId string) (string, error)
+	GetByExerciseId(context context.Context, exerciseId string, userId string) ([]Set, error)
+	DeleteById(context context.Context, setId string, userId string) error
+	CreateAndReturnId(context context.Context, t createSetRequest, exerciseId string, userId string) (string, error)
 }
 
-func (s *setsService) GetByExerciseId(context context.Context, exerciseId string) ([]Set, error) {
-	return s.repo.GetByExerciseId(context, exerciseId)
+func (s *setsService) GetByExerciseId(context context.Context, exerciseId string, userId string) ([]Set, error) {
+	arg := repository.GetSetsByExerciseIdParams{
+		ExerciseID: exerciseId,
+		UserID: userId,
+	}
+	return s.repo.GetByExerciseId(context, arg)
 }
 
-func (s *setsService) DeleteById(context context.Context, setId string) error {
-	_, err := s.repo.DeleteById(context, setId)
+func (s *setsService) DeleteById(context context.Context, setId string, userId string) error {
+	arg := repository.DeleteSetByIdParams{
+		ID:     setId,
+		UserID: userId,
+	}
+	_, err := s.repo.DeleteById(context, arg)
 	return err
 }
 
-func (s *setsService) CreateAndReturnId(context context.Context, t createSetRequest, exerciseId string) (string, error) {
+func (s *setsService) CreateAndReturnId(context context.Context, t createSetRequest, exerciseId string, userId string) (string, error) {
 	uuid, err := uuid.NewV7()
 	if err != nil {
 		return "", err
@@ -36,6 +44,7 @@ func (s *setsService) CreateAndReturnId(context context.Context, t createSetRequ
 		ExerciseID:  exerciseId,
 		CreatedOn: time.Now().UTC().Format(time.RFC3339),
 		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
+		UserID: userId,
 	}
 	id, err := s.repo.CreateAndReturnId(context, set)
 	return id, err
