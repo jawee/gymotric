@@ -39,8 +39,8 @@ func (s *handler) loginHandler(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&t)
 
 	if err != nil {
-		slog.Warn("Failed to decode request body", "error", err)
-		http.Error(w, "Failed to create workout", http.StatusBadRequest)
+		slog.Error("Failed to decode request body", "error", err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
@@ -55,7 +55,8 @@ func (s *handler) loginHandler(w http.ResponseWriter, r *http.Request) {
 	resp := map[string]interface{}{"token": token}
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
-		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+		slog.Error("Failed to marshal response", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 	cookie := http.Cookie{
@@ -79,8 +80,8 @@ func (s *handler) createUserHandler(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&t)
 
 	if err != nil {
-		slog.Warn("Failed to decode request body", "error", err)
-		http.Error(w, "Failed to create workout", http.StatusBadRequest)
+		slog.Warn("Invalid request body", "error", err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
@@ -97,12 +98,14 @@ func (s *handler) createUserHandler(w http.ResponseWriter, r *http.Request) {
 	resp := map[string]interface{}{"id": id}
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
-		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+		slog.Error("Failed to marshal response", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := w.Write(jsonResp); err != nil {
 		slog.Warn("Failed to write response", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
 	}
 }
 

@@ -11,9 +11,9 @@ import (
 
 const createSetAndReturnId = `-- name: CreateSetAndReturnId :one
 INSERT INTO sets (
-  id, repetitions, weight, exercise_id, created_on, updated_on
+  id, repetitions, weight, exercise_id, created_on, updated_on, user_id
 ) VALUES (
-  ?1, ?2, ?3, ?4, ?5, ?6
+  ?1, ?2, ?3, ?4, ?5, ?6, ?7
 )
 RETURNING id
 `
@@ -25,6 +25,7 @@ type CreateSetAndReturnIdParams struct {
 	ExerciseID  string  `json:"exercise_id"`
 	CreatedOn   string  `json:"created_on"`
 	UpdatedOn   string  `json:"updated_on"`
+	UserID      string  `json:"user_id"`
 }
 
 func (q *Queries) CreateSetAndReturnId(ctx context.Context, arg CreateSetAndReturnIdParams) (string, error) {
@@ -35,6 +36,7 @@ func (q *Queries) CreateSetAndReturnId(ctx context.Context, arg CreateSetAndRetu
 		arg.ExerciseID,
 		arg.CreatedOn,
 		arg.UpdatedOn,
+		arg.UserID,
 	)
 	var id string
 	err := row.Scan(&id)
@@ -43,11 +45,17 @@ func (q *Queries) CreateSetAndReturnId(ctx context.Context, arg CreateSetAndRetu
 
 const deleteSetById = `-- name: DeleteSetById :execrows
 DELETE FROM sets 
-where id = ?1
+WHERE id = ?1
+AND user_id = ?2
 `
 
-func (q *Queries) DeleteSetById(ctx context.Context, id string) (int64, error) {
-	result, err := q.db.ExecContext(ctx, deleteSetById, id)
+type DeleteSetByIdParams struct {
+	ID     string `json:"id"`
+	UserID string `json:"user_id"`
+}
+
+func (q *Queries) DeleteSetById(ctx context.Context, arg DeleteSetByIdParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteSetById, arg.ID, arg.UserID)
 	if err != nil {
 		return 0, err
 	}
@@ -55,12 +63,13 @@ func (q *Queries) DeleteSetById(ctx context.Context, id string) (int64, error) {
 }
 
 const getAllSets = `-- name: GetAllSets :many
-SELECT id, repetitions, weight, created_on, updated_on, exercise_id FROM sets 
+SELECT id, repetitions, weight, created_on, updated_on, user_id, exercise_id, "foreign" FROM sets 
+WHERE user_id = ?1
 ORDER by id
 `
 
-func (q *Queries) GetAllSets(ctx context.Context) ([]Set, error) {
-	rows, err := q.db.QueryContext(ctx, getAllSets)
+func (q *Queries) GetAllSets(ctx context.Context, userID string) ([]Set, error) {
+	rows, err := q.db.QueryContext(ctx, getAllSets, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +83,9 @@ func (q *Queries) GetAllSets(ctx context.Context) ([]Set, error) {
 			&i.Weight,
 			&i.CreatedOn,
 			&i.UpdatedOn,
+			&i.UserID,
 			&i.ExerciseID,
+			&i.Foreign,
 		); err != nil {
 			return nil, err
 		}
@@ -90,12 +101,17 @@ func (q *Queries) GetAllSets(ctx context.Context) ([]Set, error) {
 }
 
 const getSetById = `-- name: GetSetById :one
-SELECT id, repetitions, weight, created_on, updated_on, exercise_id FROM sets 
-WHERE id = ?1
+SELECT id, repetitions, weight, created_on, updated_on, user_id, exercise_id, "foreign" FROM sets 
+WHERE id = ?1 AND user_id = ?2
 `
 
-func (q *Queries) GetSetById(ctx context.Context, id string) (Set, error) {
-	row := q.db.QueryRowContext(ctx, getSetById, id)
+type GetSetByIdParams struct {
+	ID     string `json:"id"`
+	UserID string `json:"user_id"`
+}
+
+func (q *Queries) GetSetById(ctx context.Context, arg GetSetByIdParams) (Set, error) {
+	row := q.db.QueryRowContext(ctx, getSetById, arg.ID, arg.UserID)
 	var i Set
 	err := row.Scan(
 		&i.ID,
@@ -103,18 +119,26 @@ func (q *Queries) GetSetById(ctx context.Context, id string) (Set, error) {
 		&i.Weight,
 		&i.CreatedOn,
 		&i.UpdatedOn,
+		&i.UserID,
 		&i.ExerciseID,
+		&i.Foreign,
 	)
 	return i, err
 }
 
 const getSetsByExerciseId = `-- name: GetSetsByExerciseId :many
-SELECT id, repetitions, weight, created_on, updated_on, exercise_id FROM sets 
+SELECT id, repetitions, weight, created_on, updated_on, user_id, exercise_id, "foreign" FROM sets 
 WHERE exercise_id = ?1
+AND user_id = ?2
 `
 
-func (q *Queries) GetSetsByExerciseId(ctx context.Context, exerciseID string) ([]Set, error) {
-	rows, err := q.db.QueryContext(ctx, getSetsByExerciseId, exerciseID)
+type GetSetsByExerciseIdParams struct {
+	ExerciseID string `json:"exercise_id"`
+	UserID     string `json:"user_id"`
+}
+
+func (q *Queries) GetSetsByExerciseId(ctx context.Context, arg GetSetsByExerciseIdParams) ([]Set, error) {
+	rows, err := q.db.QueryContext(ctx, getSetsByExerciseId, arg.ExerciseID, arg.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +152,9 @@ func (q *Queries) GetSetsByExerciseId(ctx context.Context, exerciseID string) ([
 			&i.Weight,
 			&i.CreatedOn,
 			&i.UpdatedOn,
+			&i.UserID,
 			&i.ExerciseID,
+			&i.Foreign,
 		); err != nil {
 			return nil, err
 		}

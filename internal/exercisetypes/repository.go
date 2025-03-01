@@ -13,12 +13,12 @@ type ExerciseType struct {
 
 type ExerciseTypeRepository interface {
 	CreateAndReturnId(context context.Context, exerciseType repository.CreateExerciseTypeAndReturnIdParams) (string, error)
-	DeleteById(context context.Context, exerciseTypeId string) error
-	GetAll(context context.Context) ([]ExerciseType, error)
+	DeleteById(context context.Context, arg repository.DeleteExerciseTypeByIdParams) error
+	GetAll(context context.Context, userId string) ([]ExerciseType, error)
 }
 
-func (e exerciseTypeRepository) GetAll(context context.Context) ([]ExerciseType, error) {
-	exerciseTypes, err := e.repo.GetAllExerciseTypes(context)
+func (e exerciseTypeRepository) GetAll(context context.Context, userId string) ([]ExerciseType, error) {
+	exerciseTypes, err := e.repo.GetAllExerciseTypes(context, userId)
 	if err != nil {
 		return []ExerciseType{}, err
 	}
@@ -37,14 +37,14 @@ func newExerciseType(v repository.ExerciseType) ExerciseType {
 	}
 }
 
-func (e exerciseTypeRepository) DeleteById(context context.Context, exerciseTypeId string) error {
-	rows, err := e.repo.DeleteExerciseTypeById(context, exerciseTypeId)
+func (e exerciseTypeRepository) DeleteById(context context.Context, arg repository.DeleteExerciseTypeByIdParams) error {
+	rows, err := e.repo.DeleteExerciseTypeById(context, arg)
 	if err != nil {
 		return err
 	}
 
 	if rows == 0 {
-		slog.Info("Tried to delete exercise type that did not exist", "exerciseTypeId", exerciseTypeId)
+		slog.Info("Tried to delete exercise type that did not exist", "exerciseTypeId", arg.ID)
 	}
 	return nil
 }

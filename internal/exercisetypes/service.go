@@ -14,12 +14,12 @@ func NewService(repo ExerciseTypeRepository) Service {
 }
 
 type Service interface {
-	GetAll(context context.Context) ([]ExerciseType, error)
-	DeleteById(context context.Context, exerciseTypeId string) error
-	CreateAndReturnId(context context.Context, exerciseType createExerciseTypeRequest) (string, error)
+	GetAll(context context.Context, userId string) ([]ExerciseType, error)
+	DeleteById(context context.Context, exerciseTypeId string, userId string) error
+	CreateAndReturnId(context context.Context, exerciseType createExerciseTypeRequest, userId string) (string, error)
 }
 
-func (s *exerciseTypeService) CreateAndReturnId(context context.Context, exerciseType createExerciseTypeRequest) (string, error) {
+func (s *exerciseTypeService) CreateAndReturnId(context context.Context, exerciseType createExerciseTypeRequest, userId string) (string, error) {
 	uuid, err := uuid.NewV7()
 	if err != nil {
 		return "", err
@@ -30,6 +30,7 @@ func (s *exerciseTypeService) CreateAndReturnId(context context.Context, exercis
 		Name: exerciseType.Name,
 		CreatedOn: time.Now().UTC().Format(time.RFC3339),
 		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
+		UserID: userId,
 	}
 
 	id, err := s.repo.CreateAndReturnId(context, toCreate)
@@ -39,12 +40,16 @@ func (s *exerciseTypeService) CreateAndReturnId(context context.Context, exercis
 	return id, nil
 }
 
-func (s *exerciseTypeService) DeleteById(context context.Context, exerciseTypeId string) error {
-	return s.repo.DeleteById(context, exerciseTypeId)
+func (s *exerciseTypeService) DeleteById(context context.Context, exerciseTypeId string, userId string) error {
+	arg := repository.DeleteExerciseTypeByIdParams{
+		ID:     exerciseTypeId,
+		UserID: userId,
+	}
+	return s.repo.DeleteById(context, arg)
 }
 
-func (s *exerciseTypeService) GetAll(context context.Context) ([]ExerciseType, error) {
-	exerciseTypes, err := s.repo.GetAll(context)
+func (s *exerciseTypeService) GetAll(context context.Context, userId string) ([]ExerciseType, error) {
+	exerciseTypes, err := s.repo.GetAll(context, userId)
 	if err != nil {
 		return []ExerciseType{}, err
 	}

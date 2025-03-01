@@ -15,18 +15,18 @@ type Exercise struct {
 }
 
 type ExerciseRepository interface {
-	GetAll(context context.Context) ([]Exercise, error)
-	GetByWorkoutId(context context.Context, workoutId string) ([]Exercise, error)
-	DeleteById(context context.Context, id string) error
-	CreateAndReturnId(context context.Context, exercise repository.CreateExerciseAndReturnIdParams, workoutId string) (string, error)
-	GetExerciseTypeById(context context.Context, exerciseTypeId string) (*exercisetypes.ExerciseType, error)
+	GetAll(context context.Context, userId string) ([]Exercise, error)
+	GetByWorkoutId(context context.Context, arg repository.GetExercisesByWorkoutIdParams) ([]Exercise, error)
+	DeleteById(context context.Context, arg repository.DeleteExerciseByIdParams) error
+	CreateAndReturnId(context context.Context, exercise repository.CreateExerciseAndReturnIdParams) (string, error)
+	GetExerciseTypeById(context context.Context, arg repository.GetExerciseTypeByIdParams) (*exercisetypes.ExerciseType, error)
 }
 
 type exerciseRepository struct {
 	repo repository.Querier
 }
 
-func (e exerciseRepository) CreateAndReturnId(context context.Context, exercise repository.CreateExerciseAndReturnIdParams, workoutId string) (string, error) {
+func (e exerciseRepository) CreateAndReturnId(context context.Context, exercise repository.CreateExerciseAndReturnIdParams) (string, error) {
 	id, err := e.repo.CreateExerciseAndReturnId(context, exercise)
 
 	if err != nil {
@@ -36,8 +36,8 @@ func (e exerciseRepository) CreateAndReturnId(context context.Context, exercise 
 	return id, nil
 }
 
-func (e exerciseRepository) GetExerciseTypeById(context context.Context, exerciseTypeId string) (*exercisetypes.ExerciseType, error) {
-	exerciseType, err := e.repo.GetExerciseTypeById(context, exerciseTypeId)
+func (e exerciseRepository) GetExerciseTypeById(context context.Context, arg repository.GetExerciseTypeByIdParams) (*exercisetypes.ExerciseType, error) {
+	exerciseType, err := e.repo.GetExerciseTypeById(context, arg)
 	if err != nil {
 		slog.Warn("Failed GetExerciseTypeById", "error", err)
 		return nil, err
@@ -46,22 +46,22 @@ func (e exerciseRepository) GetExerciseTypeById(context context.Context, exercis
 	return &exercisetypes.ExerciseType{ID: exerciseType.ID, Name: exerciseType.Name}, nil
 }
 
-func (e exerciseRepository) DeleteById(context context.Context, id string) error {
-	rows, err := e.repo.DeleteExerciseById(context, id)
+func (e exerciseRepository) DeleteById(context context.Context, arg repository.DeleteExerciseByIdParams) error {
+	rows, err := e.repo.DeleteExerciseById(context, arg)
 
 	if err != nil {
 		return err
 	}
 
 	if rows == 0 {
-		slog.Info("Tried to delete exercise that did not exist", "exerciseId", id)
+		slog.Info("Tried to delete exercise that did not exist", "exerciseId", arg.ID)
 	}
 
 	return nil
 }
 
-func (e exerciseRepository) GetAll(context context.Context) ([]Exercise, error) {
-	exercises, err := e.repo.GetAllExercises(context)
+func (e exerciseRepository) GetAll(context context.Context, userId string) ([]Exercise, error) {
+	exercises, err := e.repo.GetAllExercises(context, userId)
 
 	if err != nil {
 		return []Exercise{}, err
@@ -86,8 +86,8 @@ func newExercise(v repository.Exercise) Exercise {
 	return exercise
 }
 
-func (e exerciseRepository) GetByWorkoutId(context context.Context, exerciseId string) ([]Exercise, error) {
-	exercises, err := e.repo.GetExercisesByWorkoutId(context, exerciseId)
+func (e exerciseRepository) GetByWorkoutId(context context.Context, arg repository.GetExercisesByWorkoutIdParams) ([]Exercise, error) {
+	exercises, err := e.repo.GetExercisesByWorkoutId(context, arg)
 	slog.Debug("GetExercisesByWorkoutId returns", "exercises", exercises)
 
 	if err != nil {

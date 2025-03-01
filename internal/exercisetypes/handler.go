@@ -23,25 +23,30 @@ type handler struct {
 }
 
 func (s *handler) getAllWorkoutTypesHandler(w http.ResponseWriter, r *http.Request) {
-	exerciseTypes, err := s.service.GetAll(r.Context())
+	userId := r.Context().Value("sub").(string)
+	exerciseTypes, err := s.service.GetAll(r.Context(), userId)
 
 	slog.Debug(fmt.Sprintf("returning %d exercise types", len(exerciseTypes)))
 
 	resp := map[string]interface{}{"exercise_types": exerciseTypes}
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
-		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+		slog.Warn("Failed to marshal response", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := w.Write(jsonResp); err != nil {
 		slog.Warn("Failed to write response", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
 	}
 }
 
 func (s *handler) deleteExerciseTypeByIdHandler(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("sub").(string)
 	exerciseTypeId := r.PathValue("id")
-	err := s.service.DeleteById(r.Context(), exerciseTypeId)
+	err := s.service.DeleteById(r.Context(), exerciseTypeId, userId)
 
 	if err != nil {
 		slog.Warn("Failed to delete exercise type", "error", err, "exerciseTypeId", exerciseTypeId)
@@ -54,17 +59,18 @@ func (s *handler) deleteExerciseTypeByIdHandler(w http.ResponseWriter, r *http.R
 }
 
 func (s *handler) createExerciseTypeHandler(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("sub").(string)
 	decoder := json.NewDecoder(r.Body)
 	var t createExerciseTypeRequest
 	err := decoder.Decode(&t)
 
 	if err != nil {
-		slog.Warn("Failed to decode request body", "error", err)
-		http.Error(w, "Failed to create exercise type", http.StatusBadRequest)
+		slog.Error("Failed to decode request body", "error", err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	id, err := s.service.CreateAndReturnId(r.Context(), t)
+	id, err := s.service.CreateAndReturnId(r.Context(), t, userId)
 
 	if err != nil {
 		slog.Warn("Failed to create workout", "error", err)
@@ -77,7 +83,8 @@ func (s *handler) createExerciseTypeHandler(w http.ResponseWriter, r *http.Reque
 	resp := map[string]interface{}{"id": id}
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
-		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+		slog.Warn("Failed to marshal response", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

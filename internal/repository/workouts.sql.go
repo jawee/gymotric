@@ -11,17 +11,19 @@ import (
 
 const completeWorkoutById = `-- name: CompleteWorkoutById :execrows
 UPDATE workouts 
-set completed_on = ?1 
-where id = ?2
+SET completed_on = ?1 
+WHERE id = ?2
+AND user_id = ?3
 `
 
 type CompleteWorkoutByIdParams struct {
 	CompletedOn interface{} `json:"completed_on"`
 	ID          string      `json:"id"`
+	UserID      string      `json:"user_id"`
 }
 
 func (q *Queries) CompleteWorkoutById(ctx context.Context, arg CompleteWorkoutByIdParams) (int64, error) {
-	result, err := q.db.ExecContext(ctx, completeWorkoutById, arg.CompletedOn, arg.ID)
+	result, err := q.db.ExecContext(ctx, completeWorkoutById, arg.CompletedOn, arg.ID, arg.UserID)
 	if err != nil {
 		return 0, err
 	}
@@ -30,9 +32,9 @@ func (q *Queries) CompleteWorkoutById(ctx context.Context, arg CompleteWorkoutBy
 
 const createWorkoutAndReturnId = `-- name: CreateWorkoutAndReturnId :one
 INSERT INTO workouts (
-  id, name, created_on, updated_on
+  id, name, created_on, updated_on, user_id
 ) VALUES (
-  ?1, ?2, ?3, ?4
+  ?1, ?2, ?3, ?4, ?5
 )
 RETURNING id
 `
@@ -42,6 +44,7 @@ type CreateWorkoutAndReturnIdParams struct {
 	Name      string `json:"name"`
 	CreatedOn string `json:"created_on"`
 	UpdatedOn string `json:"updated_on"`
+	UserID    string `json:"user_id"`
 }
 
 func (q *Queries) CreateWorkoutAndReturnId(ctx context.Context, arg CreateWorkoutAndReturnIdParams) (string, error) {
@@ -50,6 +53,7 @@ func (q *Queries) CreateWorkoutAndReturnId(ctx context.Context, arg CreateWorkou
 		arg.Name,
 		arg.CreatedOn,
 		arg.UpdatedOn,
+		arg.UserID,
 	)
 	var id string
 	err := row.Scan(&id)
@@ -59,10 +63,16 @@ func (q *Queries) CreateWorkoutAndReturnId(ctx context.Context, arg CreateWorkou
 const deleteWorkoutById = `-- name: DeleteWorkoutById :execrows
 DELETE FROM workouts
 WHERE id = ?1
+AND user_id = ?2
 `
 
-func (q *Queries) DeleteWorkoutById(ctx context.Context, id string) (int64, error) {
-	result, err := q.db.ExecContext(ctx, deleteWorkoutById, id)
+type DeleteWorkoutByIdParams struct {
+	ID     string `json:"id"`
+	UserID string `json:"user_id"`
+}
+
+func (q *Queries) DeleteWorkoutById(ctx context.Context, arg DeleteWorkoutByIdParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteWorkoutById, arg.ID, arg.UserID)
 	if err != nil {
 		return 0, err
 	}
@@ -70,12 +80,13 @@ func (q *Queries) DeleteWorkoutById(ctx context.Context, id string) (int64, erro
 }
 
 const getAllWorkouts = `-- name: GetAllWorkouts :many
-SELECT id, name, completed_on, created_on, updated_on FROM workouts 
+SELECT id, name, completed_on, created_on, updated_on, user_id FROM workouts 
+WHERE user_id = ?1
 ORDER by id asc
 `
 
-func (q *Queries) GetAllWorkouts(ctx context.Context) ([]Workout, error) {
-	rows, err := q.db.QueryContext(ctx, getAllWorkouts)
+func (q *Queries) GetAllWorkouts(ctx context.Context, userID string) ([]Workout, error) {
+	rows, err := q.db.QueryContext(ctx, getAllWorkouts, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -89,6 +100,7 @@ func (q *Queries) GetAllWorkouts(ctx context.Context) ([]Workout, error) {
 			&i.CompletedOn,
 			&i.CreatedOn,
 			&i.UpdatedOn,
+			&i.UserID,
 		); err != nil {
 			return nil, err
 		}
@@ -104,12 +116,18 @@ func (q *Queries) GetAllWorkouts(ctx context.Context) ([]Workout, error) {
 }
 
 const getWorkoutById = `-- name: GetWorkoutById :one
-SELECT id, name, completed_on, created_on, updated_on FROM workouts 
+SELECT id, name, completed_on, created_on, updated_on, user_id FROM workouts 
 WHERE id = ?1
+AND user_id = ?2
 `
 
-func (q *Queries) GetWorkoutById(ctx context.Context, id string) (Workout, error) {
-	row := q.db.QueryRowContext(ctx, getWorkoutById, id)
+type GetWorkoutByIdParams struct {
+	ID     string `json:"id"`
+	UserID string `json:"user_id"`
+}
+
+func (q *Queries) GetWorkoutById(ctx context.Context, arg GetWorkoutByIdParams) (Workout, error) {
+	row := q.db.QueryRowContext(ctx, getWorkoutById, arg.ID, arg.UserID)
 	var i Workout
 	err := row.Scan(
 		&i.ID,
@@ -117,6 +135,7 @@ func (q *Queries) GetWorkoutById(ctx context.Context, id string) (Workout, error
 		&i.CompletedOn,
 		&i.CreatedOn,
 		&i.UpdatedOn,
+		&i.UserID,
 	)
 	return i, err
 }
