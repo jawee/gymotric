@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  frontend:
+    name: Build and lint Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: npm install --prefix ./frontend
+      - run: npm run lint --prefix ./frontend
+      - run: npm run build --prefix ./frontend
+
+
+  backend:
+    name: Build and test Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        with:
+          fetch-depth: 0
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+
+      - name: Build
+        run: go build cmd/api/main.go 
+
+      - name: Run Unit tests.
+        run: go test ./...

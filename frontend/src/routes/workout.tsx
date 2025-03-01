@@ -9,7 +9,7 @@ type ExerciseProps = {
 
 type EditableExerciseProps = {
     exercise: Exercise,
-    deleteExerciseFunc: Function
+    deleteExerciseFunc: (exerciseId: string) => Promise<void>;
 };
 
 const fetchSets = async (wId: string, eId: string, setSets: React.Dispatch<React.SetStateAction<Set[]>>) => {
