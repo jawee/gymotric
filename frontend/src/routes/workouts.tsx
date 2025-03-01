@@ -5,10 +5,9 @@ interface WorkoutsState {
   error: string | null;
 }
 
-const workouts = () => {
+const Workouts = () => {
     const location = useLocation();
     const state = location.state as WorkoutsState | null;
-
     return (
         <>
             <h1>Workouts</h1>
@@ -18,4 +17,4 @@ const workouts = () => {
     );
 };
 
-export default workouts;
+export default Workouts;
