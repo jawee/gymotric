@@ -58,7 +58,7 @@ const WorkoutsList = () => {
             <ul>
                 {workouts.map(workout => {
                     return (
-                        <li key={workout.id}><Link to={"/workouts/" + workout.id}>{new Date(workout.created_on).toDateString()}: {workout.name}</Link></li>
+                        <li key={workout.id}><Link to={"/app/workouts/" + workout.id}>{new Date(workout.created_on).toDateString()}: {workout.name}</Link></li>
                     )
                 })}
             </ul>

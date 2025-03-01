@@ -52,19 +52,25 @@ func (s *Server) AuthenticatedMiddleware(next http.Handler) http.Handler {
 								return []byte(signingKey), nil
 						})
 
-						if claims, ok := cookieToken.Claims.(jwt.MapClaims); ok {
-								sub, err := claims.GetSubject()
-								if err != nil {
-										slog.Error("Cookie: GetSubject", "error", err)
+						if err != nil {
+								slog.Error("Cookie: request failed authentication", "error", err)
+						}
+
+						if err == nil {
+								if claims, ok := cookieToken.Claims.(jwt.MapClaims); ok {
+										sub, err := claims.GetSubject()
+										if err != nil {
+												slog.Error("Cookie: GetSubject", "error", err)
+												return
+										}
+										claimsCtx := context.WithValue(r.Context(), "sub", sub)
+										r = r.WithContext(claimsCtx)
+										slog.Info("Cookie: Success", "sub", sub)
+										next.ServeHTTP(w, r)
 										return
+								} else {
+										slog.Error("Cookie: error getting claims", "error", err)
 								}
-								claimsCtx := context.WithValue(r.Context(), "sub", sub)
-								r = r.WithContext(claimsCtx)
-								slog.Info("Cookie: Success", "sub", sub)
-								next.ServeHTTP(w, r)
-								return
-						} else {
-								slog.Error("Cookie: error getting claims", "error", err)
 						}
 				}
 
