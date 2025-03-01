@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Exercise, Workout, Set, ExerciseType } from "../models/workout";
 import { useNavigate, useParams } from "react-router";
 import ApiService from "../services/api-service";
@@ -123,7 +123,7 @@ const WorkoutComponent = () => {
         fetchExerciseTypes();
     }, []);
 
-    const fetchWorkout = useCallback(async () => async () => {
+    const fetchWorkout = async () => {
         if (id === undefined) {
             return;
         }
@@ -133,11 +133,11 @@ const WorkoutComponent = () => {
             const resObj = await res.json();
             setWorkout(resObj.workout);
         }
-    }, [id]);
+    };
 
     useEffect(() => {
         fetchWorkout();
-    }, [fetchWorkout]);
+    }, []);
 
     const deleteWorkout = async () => {
         if (workout === null) {
@@ -153,7 +153,7 @@ const WorkoutComponent = () => {
         navigate("/workouts");
     };
 
-    const fetchExercises = useCallback(async () => async () => {
+    const fetchExercises = async () => {
         if (id === undefined) {
             return;
         }
@@ -163,11 +163,11 @@ const WorkoutComponent = () => {
             const resObj = await res.json();
             setExercises(resObj.exercises);
         }
-    }, [id]);;
+    };
 
     useEffect(() => {
         fetchExercises();
-    }, [fetchExercises]);
+    }, []);
 
     const deleteExercise = async (exerciseId: string) => {
         if (id === undefined) {
