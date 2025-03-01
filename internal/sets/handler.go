@@ -28,7 +28,7 @@ func (s *handler) deleteSetByIdHandler(w http.ResponseWriter, r *http.Request) {
 	err := s.service.DeleteById(r.Context(), setId, userId)
 
 	if err != nil {
-		slog.Warn("Failed to delete set", "error", err, "setId", setId)
+		slog.Error("Failed to delete set", "error", err, "setId", setId)
 		http.Error(w, "Failed to delete set", http.StatusBadRequest)
 		return
 	}
@@ -45,8 +45,8 @@ func (s *handler) createSetHandler(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&t)
 
 	if err != nil {
-		slog.Warn("Failed to decode request body", "error", err)
-		http.Error(w, "Failed to create workout", http.StatusBadRequest)
+		slog.Error("Failed to decode request body", "error", err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
@@ -63,7 +63,8 @@ func (s *handler) createSetHandler(w http.ResponseWriter, r *http.Request) {
 	resp := map[string]interface{}{"id": id}
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
-		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+		slog.Error("Failed to marshal response", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -93,12 +94,14 @@ func (s *handler) getSetsByExerciseIdHandler(w http.ResponseWriter, r *http.Requ
 	resp := map[string]interface{}{"sets": sets}
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
-		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+		slog.Warn("Failed to marshal response", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := w.Write(jsonResp); err != nil {
 		slog.Warn("Failed to write response", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
 	}
 }
 
