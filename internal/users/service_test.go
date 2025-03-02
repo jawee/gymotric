@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"os"
 	"testing"
 	"weight-tracker/internal/repository"
 
@@ -44,6 +45,7 @@ func TestCreateAndReturnId(t *testing.T) {
 }
 
 func TestLoginAndReturnToken(t *testing.T) {
+	os.Setenv("JWT_EXPIRE_MINUTES", "10")
 	ctx := context.Background()
 
 	userId, _ := uuid.NewV7()

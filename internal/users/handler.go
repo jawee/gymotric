@@ -4,8 +4,12 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 	"weight-tracker/internal/database"
+
+	_ "github.com/joho/godotenv/autoload"
 )
 
 type createUserAndReturnIdRequest struct {
@@ -64,9 +68,16 @@ func (s *handler) logoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *handler) loginHandler(w http.ResponseWriter, r *http.Request) {
+	tokenExpiration, err := strconv.Atoi(os.Getenv("JWT_EXPIRE_MINUTES"))
+	if err != nil {
+		slog.Error("Failed to convert JWT_EXPIRE_MINUTES to int", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	var t loginRequest
-	err := decoder.Decode(&t)
+	err = decoder.Decode(&t)
 
 	if err != nil {
 		slog.Error("Failed to decode request body", "error", err)
@@ -82,20 +93,13 @@ func (s *handler) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := map[string]interface{}{"token": token}
-	jsonResp, err := json.Marshal(resp)
-	if err != nil {
-		slog.Error("Failed to marshal response", "error", err)
-		http.Error(w, "", http.StatusBadRequest)
-		return
-	}
 	cookie := http.Cookie{
 		Name:     "X-wt-token",
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   true,
-		Expires:  time.Now().Add(time.Minute * 15),
+		Expires: time.Now().Add(time.Minute * time.Duration(tokenExpiration)),
 		SameSite: http.SameSiteLaxMode,
 	}
 
@@ -111,6 +115,21 @@ func (s *handler) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, &cookie)
 	http.SetCookie(w, &refresh_cookie)
+
+	resp := map[string]interface{}{
+		"access_token": token,
+		"token_type": "Bearer",
+		"expires_in": tokenExpiration*60,
+		"refresh_token": "refresh_token",
+	}
+
+	jsonResp, err := json.Marshal(resp)
+	if err != nil {
+		slog.Error("Failed to marshal response", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := w.Write(jsonResp); err != nil {
 		slog.Warn("Failed to write response", "error", err)
