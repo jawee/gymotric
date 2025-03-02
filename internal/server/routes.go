@@ -22,7 +22,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	mux.Handle("GET /health", s.AuthenticatedMiddleware(http.HandlerFunc(s.healthHandler)))
 
-	users.AddEndpoints(mux, s.db)
+	users.AddEndpoints(mux, s.db, s.AuthenticatedMiddleware)
 
 	exercisetypes.AddEndpoints(mux, s.db, s.AuthenticatedMiddleware)
 
@@ -42,7 +42,7 @@ func (s *Server) AuthenticatedMiddleware(next http.Handler) http.Handler {
 		//cookie token
 		cookieTokenStr := ""
 		for _, cookie := range r.Cookies() {
-			if cookie.Name == "weight-tracker-auth" {
+			if cookie.Name == "X-wt-token" {
 				cookieTokenStr = cookie.Value
 			}
 		}

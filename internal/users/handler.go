@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"time"
 	"weight-tracker/internal/database"
 )
 
@@ -21,7 +22,7 @@ type handler struct {
 	service Service
 }
 
-func AddEndpoints(mux *http.ServeMux, s database.Service) {
+func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper func(next http.Handler) http.Handler) {
 	handler := handler{
 		service: NewService(&usersRepository{s.GetRepository()}),
 	}
@@ -31,6 +32,35 @@ func AddEndpoints(mux *http.ServeMux, s database.Service) {
 
 	mux.Handle("POST /users", http.HandlerFunc(handler.createUserHandler))
 	mux.Handle("POST /login", http.HandlerFunc(handler.loginHandler))
+
+	mux.Handle("POST /logout", authenticationWrapper(http.HandlerFunc(handler.logoutHandler)))
+}
+
+func (s *handler) logoutHandler(w http.ResponseWriter, r *http.Request) {
+	cookie := http.Cookie{
+		Name:     "X-wt-token",
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Now().Add(time.Second),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	}
+
+	refresh_cookie := http.Cookie{
+		Name:     "X-wt-refresh-token",
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Now().Add(time.Second),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	}
+
+
+	http.SetCookie(w, &cookie)
+	http.SetCookie(w, &refresh_cookie)
+	w.Header().Set("Content-Type", "application/json")
 }
 
 func (s *handler) loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -60,14 +90,27 @@ func (s *handler) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cookie := http.Cookie{
-        Name:     "weight-tracker-auth",
-        Value:    token,
-        Path:     "/",
-        HttpOnly: true,
-        Secure:   true,
-        SameSite: http.SameSiteLaxMode,
-    }
+		Name:     "X-wt-token",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		Expires:  time.Now().Add(time.Minute * 15),
+		SameSite: http.SameSiteLaxMode,
+	}
+
+	refresh_cookie := http.Cookie{
+		Name:     "X-wt-refresh-token",
+		Value:    "TODO",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		Expires:  time.Now().Add(time.Hour * 24),
+		SameSite: http.SameSiteLaxMode,
+	}
+
 	http.SetCookie(w, &cookie)
+	http.SetCookie(w, &refresh_cookie)
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := w.Write(jsonResp); err != nil {
 		slog.Warn("Failed to write response", "error", err)
@@ -108,4 +151,3 @@ func (s *handler) createUserHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", http.StatusBadRequest)
 	}
 }
-
