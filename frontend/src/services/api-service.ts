@@ -144,8 +144,18 @@ const deleteExercise = async (workoutId: string, exerciseId: string) => {
   return res;
 };
 
+const logout = async () => {
+  const res = await fetch("/api/logout", {
+    method: "POST",
+    credentials: "include",
+  });
+
+  return res;
+};
+
 const ApiService = {
   login,
+  logout,
   fetchWorkouts,
   fetchWorkout,
   createWorkout,

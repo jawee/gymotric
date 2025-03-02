@@ -8,6 +8,7 @@ import Login from './routes/login';
 import Workouts from './routes/workouts';
 import Workout from './routes/workout';
 import ExerciseTypes from './routes/exercise-types';
+import Logout from './routes/logout';
 
 // const router = createBrowserRouter([
 //   {
@@ -67,6 +68,8 @@ createRoot(document.getElementById('root')!).render(
                     <Route path="workouts" element={<Workouts />} />
                     <Route path="workouts/:id" element={<Workout />} />
                     <Route path="exercise-types" element={<ExerciseTypes />} />
+                    <Route path="*" element={<Home />} />
+                    <Route path="logout" element={<Logout />} />
                 </Route>
             </Routes>
         </BrowserRouter>
