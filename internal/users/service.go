@@ -2,7 +2,9 @@ package users
 
 import (
 	"context"
+	"log/slog"
 	"os"
+	"strconv"
 	"time"
 	"weight-tracker/internal/repository"
 
@@ -46,6 +48,12 @@ func (u *usersService) CreateAndReturnId(ctx context.Context, arg createUserAndR
 
 func (u *usersService) Login(ctx context.Context, arg loginRequest) (string, error) {
 	signingKey := os.Getenv("JWT_SIGN_KEY")
+	tokenExpiration, err := strconv.Atoi(os.Getenv("JWT_EXPIRE_MINUTES"))
+	if err != nil {
+		slog.Error("Failed to convert JWT_EXPIRATION to int", "error", err)
+		return "", err
+	}
+
 	mySigningKey := []byte(signingKey)
 	user, err := u.repo.GetByUsername(ctx, arg.Username)
 	if err != nil {
@@ -58,7 +66,7 @@ func (u *usersService) Login(ctx context.Context, arg loginRequest) (string, err
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Minute * 15)),
+		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Minute * time.Duration(tokenExpiration))),
 		Issuer:    "weight-tracker",
 		Subject:   user.ID,
 		Audience:  []string{"weight-tracker"},
