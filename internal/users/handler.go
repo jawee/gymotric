@@ -2,13 +2,16 @@ package users
 
 import (
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 	"weight-tracker/internal/database"
+	"weight-tracker/internal/utils"
 
+	"github.com/golang-jwt/jwt/v5"
 	_ "github.com/joho/godotenv/autoload"
 )
 
@@ -35,14 +38,15 @@ func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper 
 	// mux.Handle("DELETE /workouts/{id}/exercises/{exerciseId}/sets/{setId}", authenticationWrapper(http.HandlerFunc(handler.deleteSetByIdHandler)))
 
 	mux.Handle("POST /users", http.HandlerFunc(handler.createUserHandler))
-	mux.Handle("POST /login", http.HandlerFunc(handler.loginHandler))
+	mux.Handle("POST /auth/login", http.HandlerFunc(handler.loginHandler))
+	mux.Handle("POST /auth/token", http.HandlerFunc(handler.refreshHandler))
 
 	mux.Handle("POST /logout", authenticationWrapper(http.HandlerFunc(handler.logoutHandler)))
 }
 
 func (s *handler) logoutHandler(w http.ResponseWriter, r *http.Request) {
 	cookie := http.Cookie{
-		Name:     "X-wt-token",
+		Name:     utils.AccessTokenCookieName,
 		Value:    "",
 		Path:     "/",
 		Expires:  time.Now().Add(time.Second),
@@ -52,7 +56,7 @@ func (s *handler) logoutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	refresh_cookie := http.Cookie{
-		Name:     "X-wt-refresh-token",
+		Name:     utils.RefreshTokenCookieName,
 		Value:    "",
 		Path:     "/",
 		Expires:  time.Now().Add(time.Second),
@@ -61,14 +65,168 @@ func (s *handler) logoutHandler(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	}
 
-
 	http.SetCookie(w, &cookie)
 	http.SetCookie(w, &refresh_cookie)
 	w.Header().Set("Content-Type", "application/json")
 }
 
+func getSubjectFromCookie(cookieName string, signingKey string, r *http.Request) (string, error) {
+	cookieTokenStr := ""
+	for _, cookie := range r.Cookies() {
+		if cookie.Name == cookieName {
+			cookieTokenStr = cookie.Value
+		}
+	}
+
+	if cookieTokenStr != "" {
+		cookieToken, err := jwt.Parse(cookieTokenStr, func(token *jwt.Token) (interface{}, error) {
+			return []byte(signingKey), nil
+		})
+
+		if err != nil {
+			slog.Error("Cookie: refresh token error", "error", err)
+			return "", err
+		}
+
+		if claims, ok := cookieToken.Claims.(jwt.MapClaims); ok {
+			sub, err := claims.GetSubject()
+			if err != nil {
+				slog.Error("Cookie: GetSubject", "error", err)
+				return "", err
+			}
+			return sub, nil
+		}
+		slog.Error("Cookie: error getting claims", "error", err)
+		return "", errors.New("error getting claims")
+	}
+
+	return "", errors.New("No token found")
+}
+
+func (s *handler) createTokenResponse(w http.ResponseWriter, sub string) error {
+	tokenExpiration, err := strconv.Atoi(os.Getenv(utils.EnvJwtExpireMinutes))
+
+	if err != nil {
+		slog.Error("Failed to convert JWT_EXPIRE_MINUTES to int", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return err
+	}
+
+	newToken, err := s.service.CreateToken(sub)
+
+	if err != nil {
+		slog.Error("Failed to create new token", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return err
+	}
+
+	cookie := http.Cookie{
+		Name:     utils.AccessTokenCookieName,
+		Value:    newToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		Expires:  time.Now().Add(time.Minute * time.Duration(tokenExpiration)),
+		SameSite: http.SameSiteLaxMode,
+	}
+
+	refresh_cookie := http.Cookie{
+		Name:     utils.RefreshTokenCookieName,
+		Value:    "TODO",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		Expires:  time.Now().Add(time.Hour * 24),
+		SameSite: http.SameSiteLaxMode,
+	}
+
+	http.SetCookie(w, &cookie)
+	http.SetCookie(w, &refresh_cookie)
+
+	resp := map[string]interface{}{
+		"access_token":  newToken,
+		"token_type":    "Bearer",
+		"expires_in":    tokenExpiration * 60,
+		"refresh_token": "refresh_token",
+	}
+
+	jsonResp, err := json.Marshal(resp)
+	if err != nil {
+		slog.Error("Failed to marshal response", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(jsonResp); err != nil {
+		slog.Warn("Failed to write response", "error", err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *handler) refreshHandler(w http.ResponseWriter, r *http.Request) {
+	signingKey := os.Getenv(utils.EnvJwtSignKey)
+
+	cookieSub, err := getSubjectFromCookie(utils.RefreshTokenCookieName, signingKey, r)
+	if err == nil {
+		err = s.createTokenResponse(w, cookieSub)
+
+		if err != nil {
+			slog.Error("request failed authentication", "error", err)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		return
+	}
+
+	slog.Error("Cookie: Failed to get subject from refresh token", "error", err)
+	slog.Info("Cookie failed. Trying query parameter token")
+
+	//body
+	refreshToken := r.URL.Query().Get("refresh_token")
+	if refreshToken == "" {
+		slog.Error("No refresh token found")
+		http.Error(w, "", http.StatusUnauthorized)
+		return
+	}
+
+	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
+		return []byte(signingKey), nil
+	})
+
+	if err != nil {
+		slog.Error("request failed authentication", "error", err)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		sub, err := claims.GetSubject()
+		if err != nil {
+			slog.Error("Couldn't get sub claim from token", "error", err)
+			http.Error(w, "", http.StatusUnauthorized)
+			return
+		}
+		slog.Info("Success", "sub", sub)
+
+		err = s.createTokenResponse(w, sub)
+
+		if err != nil {
+			slog.Error("request failed authentication", "error", err)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		return
+	}
+	slog.Error("error getting claims", "error", err)
+	w.WriteHeader(http.StatusUnauthorized)
+	return
+}
+
 func (s *handler) loginHandler(w http.ResponseWriter, r *http.Request) {
-	tokenExpiration, err := strconv.Atoi(os.Getenv("JWT_EXPIRE_MINUTES"))
+	tokenExpiration, err := strconv.Atoi(os.Getenv(utils.EnvJwtExpireMinutes))
 	if err != nil {
 		slog.Error("Failed to convert JWT_EXPIRE_MINUTES to int", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
@@ -94,17 +252,17 @@ func (s *handler) loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cookie := http.Cookie{
-		Name:     "X-wt-token",
+		Name:     utils.AccessTokenCookieName,
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   true,
-		Expires: time.Now().Add(time.Minute * time.Duration(tokenExpiration)),
+		Expires:  time.Now().Add(time.Minute * time.Duration(tokenExpiration)),
 		SameSite: http.SameSiteLaxMode,
 	}
 
 	refresh_cookie := http.Cookie{
-		Name:     "X-wt-refresh-token",
+		Name:     utils.RefreshTokenCookieName,
 		Value:    "TODO",
 		Path:     "/",
 		HttpOnly: true,
@@ -117,9 +275,9 @@ func (s *handler) loginHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &refresh_cookie)
 
 	resp := map[string]interface{}{
-		"access_token": token,
-		"token_type": "Bearer",
-		"expires_in": tokenExpiration*60,
+		"access_token":  token,
+		"token_type":    "Bearer",
+		"expires_in":    tokenExpiration * 60,
 		"refresh_token": "refresh_token",
 	}
 

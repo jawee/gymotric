@@ -51,6 +51,12 @@ seed:
 db-status:
 	goose status
 
+db-create:
+	cp .default.env .env
+	mkdir db
+	go run cmd/goose/main.go
+	go run cmd/seed/main.go
+
 db-up:
 	goose up
 

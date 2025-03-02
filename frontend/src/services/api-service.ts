@@ -4,10 +4,21 @@ const checkIfUnauthorized = (res: Response) => {
   }
 };
 const login = async (username: string, password: string) => {
-  const res = await fetch("/api/login", {
+  const res = await fetch("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({ username: username, password: password }),
   });
+
+  return res;
+};
+
+const refreshToken = async () => {
+  const res = await fetch("/api/auth/token", {
+    method: "POST",
+    credentials: "include",
+  });
+
+  checkIfUnauthorized(res);
 
   return res;
 };
@@ -156,6 +167,7 @@ const logout = async () => {
 const ApiService = {
   login,
   logout,
+  refreshToken,
   fetchWorkouts,
   fetchWorkout,
   createWorkout,
