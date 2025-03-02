@@ -15,9 +15,14 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type loginResponse struct {
+	Token string
+	UserId string
+}
+
 type Service interface {
 	CreateAndReturnId(ctx context.Context, arg createUserAndReturnIdRequest) (string, error)
-	Login(ctx context.Context, arg loginRequest) (string, error)
+	Login(ctx context.Context, arg loginRequest) (loginResponse, error)
 	CreateToken(userId string) (string, error)
 }
 
@@ -67,23 +72,23 @@ func (u *usersService) CreateAndReturnId(ctx context.Context, arg createUserAndR
 	return id, err
 }
 
-func (u *usersService) Login(ctx context.Context, arg loginRequest) (string, error) {
+func (u *usersService) Login(ctx context.Context, arg loginRequest) (loginResponse, error) {
 	signingKey := os.Getenv(utils.EnvJwtSignKey)
 	tokenExpiration, err := strconv.Atoi(os.Getenv(utils.EnvJwtExpireMinutes))
 	if err != nil {
 		slog.Error("Failed to convert JWT_EXPIRATION to int", "error", err)
-		return "", err
+		return loginResponse{}, err
 	}
 
 	mySigningKey := []byte(signingKey)
 	user, err := u.repo.GetByUsername(ctx, arg.Username)
 	if err != nil {
-		return "", err
+		return loginResponse{}, err
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(arg.Password))
 	if err != nil {
-		return "", err
+		return loginResponse{}, err
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
@@ -92,7 +97,13 @@ func (u *usersService) Login(ctx context.Context, arg loginRequest) (string, err
 		Subject:   user.ID,
 		Audience:  []string{"weight-tracker"},
 	})
-	return token.SignedString(mySigningKey)
+
+	signedToken, err := token.SignedString(mySigningKey)
+	if err != nil {
+		return loginResponse{}, err
+	}
+
+	return loginResponse { Token: signedToken, UserId: user.ID }, nil
 }
 
 func NewService(repo UsersRepository) Service {

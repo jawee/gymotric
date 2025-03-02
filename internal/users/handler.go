@@ -45,29 +45,43 @@ func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper 
 }
 
 func (s *handler) logoutHandler(w http.ResponseWriter, r *http.Request) {
-	cookie := http.Cookie{
-		Name:     utils.AccessTokenCookieName,
-		Value:    "",
-		Path:     "/",
-		Expires:  time.Now().Add(time.Second),
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
-	}
-
-	refresh_cookie := http.Cookie{
-		Name:     utils.RefreshTokenCookieName,
-		Value:    "",
-		Path:     "/",
-		Expires:  time.Now().Add(time.Second),
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
-	}
+	cookie := createCookie(utils.AccessTokenCookieName, "", time.Now().Add(time.Second))
+	refresh_cookie := createCookie(utils.RefreshTokenCookieName, "", time.Now().Add(time.Second))
 
 	http.SetCookie(w, &cookie)
 	http.SetCookie(w, &refresh_cookie)
 	w.Header().Set("Content-Type", "application/json")
+}
+
+func createRefreshToken(userId string) (string, error) {
+	signingKey := os.Getenv(utils.EnvJwtRefreshSignKey)
+	tokenExpiration, err := strconv.Atoi(os.Getenv(utils.EnvJwtRefreshExpireMinutes))
+	if err != nil {
+		slog.Error("Failed to convert JWT_EXPIRATION to int", "error", err)
+		return "", err
+	}
+
+	mySigningKey := []byte(signingKey)
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Minute * time.Duration(tokenExpiration))),
+		Issuer:    "weight-tracker",
+		Subject:   userId,
+		Audience:  []string{"weight-tracker"},
+	})
+	return token.SignedString(mySigningKey)
+}
+
+func createCookie(name string, value string, expiration time.Time) http.Cookie {
+	return http.Cookie{
+		Name:     name,
+		Value:    value,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		Expires:  expiration,
+		SameSite: http.SameSiteLaxMode,
+	}
 }
 
 func getSubjectFromCookie(cookieName string, signingKey string, r *http.Request) (string, error) {
@@ -120,25 +134,16 @@ func (s *handler) createTokenResponse(w http.ResponseWriter, sub string) error {
 		return err
 	}
 
-	cookie := http.Cookie{
-		Name:     utils.AccessTokenCookieName,
-		Value:    newToken,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,
-		Expires:  time.Now().Add(time.Minute * time.Duration(tokenExpiration)),
-		SameSite: http.SameSiteLaxMode,
+	cookie := createCookie(utils.AccessTokenCookieName, newToken, time.Now().Add(time.Minute*time.Duration(tokenExpiration)))
+
+	refresh_token, err := createRefreshToken(sub)
+	if err != nil {
+		slog.Error("Failed to create refresh token", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return err
 	}
 
-	refresh_cookie := http.Cookie{
-		Name:     utils.RefreshTokenCookieName,
-		Value:    "TODO",
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,
-		Expires:  time.Now().Add(time.Hour * 24),
-		SameSite: http.SameSiteLaxMode,
-	}
+	refresh_cookie := createCookie(utils.RefreshTokenCookieName, refresh_token, time.Now().Add(time.Hour*24))
 
 	http.SetCookie(w, &cookie)
 	http.SetCookie(w, &refresh_cookie)
@@ -147,7 +152,7 @@ func (s *handler) createTokenResponse(w http.ResponseWriter, sub string) error {
 		"access_token":  newToken,
 		"token_type":    "Bearer",
 		"expires_in":    tokenExpiration * 60,
-		"refresh_token": "refresh_token",
+		"refresh_token": refresh_token,
 	}
 
 	jsonResp, err := json.Marshal(resp)
@@ -167,7 +172,7 @@ func (s *handler) createTokenResponse(w http.ResponseWriter, sub string) error {
 }
 
 func (s *handler) refreshHandler(w http.ResponseWriter, r *http.Request) {
-	signingKey := os.Getenv(utils.EnvJwtSignKey)
+	signingKey := os.Getenv(utils.EnvJwtRefreshSignKey)
 
 	cookieSub, err := getSubjectFromCookie(utils.RefreshTokenCookieName, signingKey, r)
 	if err == nil {
@@ -251,25 +256,16 @@ func (s *handler) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie := http.Cookie{
-		Name:     utils.AccessTokenCookieName,
-		Value:    token,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,
-		Expires:  time.Now().Add(time.Minute * time.Duration(tokenExpiration)),
-		SameSite: http.SameSiteLaxMode,
+	cookie := createCookie(utils.AccessTokenCookieName, token.Token, time.Now().Add(time.Minute*time.Duration(tokenExpiration)))
+
+	refresh_token, err := createRefreshToken(token.UserId)
+	if err != nil {
+		slog.Warn("Failed to create refresh token", "error", err)
+		http.Error(w, "Failed to login", http.StatusBadRequest)
+		return
 	}
 
-	refresh_cookie := http.Cookie{
-		Name:     utils.RefreshTokenCookieName,
-		Value:    "TODO",
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,
-		Expires:  time.Now().Add(time.Hour * 24),
-		SameSite: http.SameSiteLaxMode,
-	}
+	refresh_cookie := createCookie(utils.RefreshTokenCookieName, refresh_token, time.Now().Add(time.Hour*24))
 
 	http.SetCookie(w, &cookie)
 	http.SetCookie(w, &refresh_cookie)
