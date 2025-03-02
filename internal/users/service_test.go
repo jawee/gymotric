@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 	"weight-tracker/internal/repository"
+	"weight-tracker/internal/utils"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -45,7 +46,7 @@ func TestCreateAndReturnId(t *testing.T) {
 }
 
 func TestLoginAndReturnToken(t *testing.T) {
-	os.Setenv("JWT_EXPIRE_MINUTES", "10")
+	os.Setenv(utils.EnvJwtExpireMinutes, "10")
 	ctx := context.Background()
 
 	userId, _ := uuid.NewV7()

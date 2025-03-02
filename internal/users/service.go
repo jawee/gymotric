@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 	"weight-tracker/internal/repository"
+	"weight-tracker/internal/utils"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -14,13 +15,38 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type loginResponse struct {
+	Token string
+	UserId string
+}
+
 type Service interface {
 	CreateAndReturnId(ctx context.Context, arg createUserAndReturnIdRequest) (string, error)
-	Login(ctx context.Context, arg loginRequest) (string, error)
+	Login(ctx context.Context, arg loginRequest) (loginResponse, error)
+	CreateToken(userId string) (string, error)
 }
 
 type usersService struct {
 	repo UsersRepository
+}
+
+func (u *usersService) CreateToken(userId string) (string, error) {
+	signingKey := os.Getenv(utils.EnvJwtSignKey)
+	tokenExpiration, err := strconv.Atoi(os.Getenv(utils.EnvJwtExpireMinutes))
+	if err != nil {
+		slog.Error("Failed to convert JWT_EXPIRATION to int", "error", err)
+		return "", err
+	}
+
+	mySigningKey := []byte(signingKey)
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Minute * time.Duration(tokenExpiration))),
+		Issuer:    "weight-tracker",
+		Subject:   userId,
+		Audience:  []string{"weight-tracker"},
+	})
+	return token.SignedString(mySigningKey)
 }
 
 // CreateUserAndReturnId implements Service.
@@ -46,23 +72,23 @@ func (u *usersService) CreateAndReturnId(ctx context.Context, arg createUserAndR
 	return id, err
 }
 
-func (u *usersService) Login(ctx context.Context, arg loginRequest) (string, error) {
-	signingKey := os.Getenv("JWT_SIGN_KEY")
-	tokenExpiration, err := strconv.Atoi(os.Getenv("JWT_EXPIRE_MINUTES"))
+func (u *usersService) Login(ctx context.Context, arg loginRequest) (loginResponse, error) {
+	signingKey := os.Getenv(utils.EnvJwtSignKey)
+	tokenExpiration, err := strconv.Atoi(os.Getenv(utils.EnvJwtExpireMinutes))
 	if err != nil {
 		slog.Error("Failed to convert JWT_EXPIRATION to int", "error", err)
-		return "", err
+		return loginResponse{}, err
 	}
 
 	mySigningKey := []byte(signingKey)
 	user, err := u.repo.GetByUsername(ctx, arg.Username)
 	if err != nil {
-		return "", err
+		return loginResponse{}, err
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(arg.Password))
 	if err != nil {
-		return "", err
+		return loginResponse{}, err
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
@@ -71,7 +97,13 @@ func (u *usersService) Login(ctx context.Context, arg loginRequest) (string, err
 		Subject:   user.ID,
 		Audience:  []string{"weight-tracker"},
 	})
-	return token.SignedString(mySigningKey)
+
+	signedToken, err := token.SignedString(mySigningKey)
+	if err != nil {
+		return loginResponse{}, err
+	}
+
+	return loginResponse { Token: signedToken, UserId: user.ID }, nil
 }
 
 func NewService(repo UsersRepository) Service {

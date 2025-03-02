@@ -10,6 +10,7 @@ import (
 	"weight-tracker/internal/exercisetypes"
 	"weight-tracker/internal/sets"
 	"weight-tracker/internal/users"
+	"weight-tracker/internal/utils"
 	"weight-tracker/internal/workouts"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -37,12 +38,11 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 func (s *Server) AuthenticatedMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		signingKey := os.Getenv("JWT_SIGN_KEY")
+		signingKey := os.Getenv(utils.EnvJwtSignKey)
 
-		//cookie token
 		cookieTokenStr := ""
 		for _, cookie := range r.Cookies() {
-			if cookie.Name == "X-wt-token" {
+			if cookie.Name == utils.AccessTokenCookieName {
 				cookieTokenStr = cookie.Value
 			}
 		}

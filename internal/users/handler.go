@@ -2,13 +2,16 @@ package users
 
 import (
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 	"weight-tracker/internal/database"
+	"weight-tracker/internal/utils"
 
+	"github.com/golang-jwt/jwt/v5"
 	_ "github.com/joho/godotenv/autoload"
 )
 
@@ -35,40 +38,200 @@ func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper 
 	// mux.Handle("DELETE /workouts/{id}/exercises/{exerciseId}/sets/{setId}", authenticationWrapper(http.HandlerFunc(handler.deleteSetByIdHandler)))
 
 	mux.Handle("POST /users", http.HandlerFunc(handler.createUserHandler))
-	mux.Handle("POST /login", http.HandlerFunc(handler.loginHandler))
+	mux.Handle("POST /auth/login", http.HandlerFunc(handler.loginHandler))
+	mux.Handle("POST /auth/token", http.HandlerFunc(handler.refreshHandler))
 
 	mux.Handle("POST /logout", authenticationWrapper(http.HandlerFunc(handler.logoutHandler)))
 }
 
 func (s *handler) logoutHandler(w http.ResponseWriter, r *http.Request) {
-	cookie := http.Cookie{
-		Name:     "X-wt-token",
-		Value:    "",
-		Path:     "/",
-		Expires:  time.Now().Add(time.Second),
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
-	}
-
-	refresh_cookie := http.Cookie{
-		Name:     "X-wt-refresh-token",
-		Value:    "",
-		Path:     "/",
-		Expires:  time.Now().Add(time.Second),
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
-	}
-
+	cookie := createCookie(utils.AccessTokenCookieName, "", time.Now().Add(time.Second))
+	refresh_cookie := createCookie(utils.RefreshTokenCookieName, "", time.Now().Add(time.Second))
 
 	http.SetCookie(w, &cookie)
 	http.SetCookie(w, &refresh_cookie)
 	w.Header().Set("Content-Type", "application/json")
 }
 
+func createRefreshToken(userId string) (string, error) {
+	signingKey := os.Getenv(utils.EnvJwtRefreshSignKey)
+	tokenExpiration, err := strconv.Atoi(os.Getenv(utils.EnvJwtRefreshExpireMinutes))
+	if err != nil {
+		slog.Error("Failed to convert JWT_EXPIRATION to int", "error", err)
+		return "", err
+	}
+
+	mySigningKey := []byte(signingKey)
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Minute * time.Duration(tokenExpiration))),
+		Issuer:    "weight-tracker",
+		Subject:   userId,
+		Audience:  []string{"weight-tracker"},
+	})
+	return token.SignedString(mySigningKey)
+}
+
+func createCookie(name string, value string, expiration time.Time) http.Cookie {
+	return http.Cookie{
+		Name:     name,
+		Value:    value,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		Expires:  expiration,
+		SameSite: http.SameSiteLaxMode,
+	}
+}
+
+func getSubjectFromCookie(cookieName string, signingKey string, r *http.Request) (string, error) {
+	cookieTokenStr := ""
+	for _, cookie := range r.Cookies() {
+		if cookie.Name == cookieName {
+			cookieTokenStr = cookie.Value
+		}
+	}
+
+	if cookieTokenStr != "" {
+		cookieToken, err := jwt.Parse(cookieTokenStr, func(token *jwt.Token) (interface{}, error) {
+			return []byte(signingKey), nil
+		})
+
+		if err != nil {
+			slog.Error("Cookie: refresh token error", "error", err)
+			return "", err
+		}
+
+		if claims, ok := cookieToken.Claims.(jwt.MapClaims); ok {
+			sub, err := claims.GetSubject()
+			if err != nil {
+				slog.Error("Cookie: GetSubject", "error", err)
+				return "", err
+			}
+			return sub, nil
+		}
+		slog.Error("Cookie: error getting claims", "error", err)
+		return "", errors.New("error getting claims")
+	}
+
+	return "", errors.New("No token found")
+}
+
+func (s *handler) createTokenResponse(w http.ResponseWriter, sub string) error {
+	tokenExpiration, err := strconv.Atoi(os.Getenv(utils.EnvJwtExpireMinutes))
+
+	if err != nil {
+		slog.Error("Failed to convert JWT_EXPIRE_MINUTES to int", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return err
+	}
+
+	newToken, err := s.service.CreateToken(sub)
+
+	if err != nil {
+		slog.Error("Failed to create new token", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return err
+	}
+
+	cookie := createCookie(utils.AccessTokenCookieName, newToken, time.Now().Add(time.Minute*time.Duration(tokenExpiration)))
+
+	refresh_token, err := createRefreshToken(sub)
+	if err != nil {
+		slog.Error("Failed to create refresh token", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return err
+	}
+
+	refresh_cookie := createCookie(utils.RefreshTokenCookieName, refresh_token, time.Now().Add(time.Hour*24))
+
+	http.SetCookie(w, &cookie)
+	http.SetCookie(w, &refresh_cookie)
+
+	resp := map[string]interface{}{
+		"access_token":  newToken,
+		"token_type":    "Bearer",
+		"expires_in":    tokenExpiration * 60,
+		"refresh_token": refresh_token,
+	}
+
+	jsonResp, err := json.Marshal(resp)
+	if err != nil {
+		slog.Error("Failed to marshal response", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(jsonResp); err != nil {
+		slog.Warn("Failed to write response", "error", err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *handler) refreshHandler(w http.ResponseWriter, r *http.Request) {
+	signingKey := os.Getenv(utils.EnvJwtRefreshSignKey)
+
+	cookieSub, err := getSubjectFromCookie(utils.RefreshTokenCookieName, signingKey, r)
+	if err == nil {
+		err = s.createTokenResponse(w, cookieSub)
+
+		if err != nil {
+			slog.Error("request failed authentication", "error", err)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		return
+	}
+
+	slog.Error("Cookie: Failed to get subject from refresh token", "error", err)
+	slog.Info("Cookie failed. Trying query parameter token")
+
+	//body
+	refreshToken := r.URL.Query().Get("refresh_token")
+	if refreshToken == "" {
+		slog.Error("No refresh token found")
+		http.Error(w, "", http.StatusUnauthorized)
+		return
+	}
+
+	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
+		return []byte(signingKey), nil
+	})
+
+	if err != nil {
+		slog.Error("request failed authentication", "error", err)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		sub, err := claims.GetSubject()
+		if err != nil {
+			slog.Error("Couldn't get sub claim from token", "error", err)
+			http.Error(w, "", http.StatusUnauthorized)
+			return
+		}
+		slog.Info("Success", "sub", sub)
+
+		err = s.createTokenResponse(w, sub)
+
+		if err != nil {
+			slog.Error("request failed authentication", "error", err)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		return
+	}
+	slog.Error("error getting claims", "error", err)
+	w.WriteHeader(http.StatusUnauthorized)
+	return
+}
+
 func (s *handler) loginHandler(w http.ResponseWriter, r *http.Request) {
-	tokenExpiration, err := strconv.Atoi(os.Getenv("JWT_EXPIRE_MINUTES"))
+	tokenExpiration, err := strconv.Atoi(os.Getenv(utils.EnvJwtExpireMinutes))
 	if err != nil {
 		slog.Error("Failed to convert JWT_EXPIRE_MINUTES to int", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
@@ -93,33 +256,24 @@ func (s *handler) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie := http.Cookie{
-		Name:     "X-wt-token",
-		Value:    token,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,
-		Expires: time.Now().Add(time.Minute * time.Duration(tokenExpiration)),
-		SameSite: http.SameSiteLaxMode,
+	cookie := createCookie(utils.AccessTokenCookieName, token.Token, time.Now().Add(time.Minute*time.Duration(tokenExpiration)))
+
+	refresh_token, err := createRefreshToken(token.UserId)
+	if err != nil {
+		slog.Warn("Failed to create refresh token", "error", err)
+		http.Error(w, "Failed to login", http.StatusBadRequest)
+		return
 	}
 
-	refresh_cookie := http.Cookie{
-		Name:     "X-wt-refresh-token",
-		Value:    "TODO",
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,
-		Expires:  time.Now().Add(time.Hour * 24),
-		SameSite: http.SameSiteLaxMode,
-	}
+	refresh_cookie := createCookie(utils.RefreshTokenCookieName, refresh_token, time.Now().Add(time.Hour*24))
 
 	http.SetCookie(w, &cookie)
 	http.SetCookie(w, &refresh_cookie)
 
 	resp := map[string]interface{}{
-		"access_token": token,
-		"token_type": "Bearer",
-		"expires_in": tokenExpiration*60,
+		"access_token":  token,
+		"token_type":    "Bearer",
+		"expires_in":    tokenExpiration * 60,
 		"refresh_token": "refresh_token",
 	}
 
