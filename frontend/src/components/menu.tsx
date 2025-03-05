@@ -1,13 +1,18 @@
 import { Link } from "react-router";
+import {
+  NavigationMenu,
+  NavigationMenuLink,
+} from "@/components/ui/navigation-menu"
 
 const Menu = () => {
     return (
-        <>
-            <Link to="/app">Home</Link><span> | </span>
-            <Link to="/app/workouts">Workouts</Link><span> | </span>
-            <Link to="/app/exercise-types">Exercise types</Link><span> | </span>
-            <Link to="/app/logout">Log Out</Link>
-        </>
+        <NavigationMenu>
+            <NavigationMenuLink asChild><Link to="/app">Home</Link></NavigationMenuLink>
+            <NavigationMenuLink><Link to="/app/workouts">Workouts</Link></NavigationMenuLink>
+            <NavigationMenuLink><Link to="/app/exercise-types">Exercise types</Link></NavigationMenuLink>
+            <NavigationMenuLink><Link to="/app/logout">Log Out</Link></NavigationMenuLink>
+
+        </NavigationMenu>
     );
 };
 

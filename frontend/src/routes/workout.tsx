@@ -155,7 +155,7 @@ const WorkoutComponent = () => {
       return;
     }
 
-    navigate("/workouts");
+    navigate("/app/workouts");
   };
 
   const fetchExercises = async () => {
