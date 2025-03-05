@@ -1,5 +1,7 @@
 import { useId, useState } from "react";
 import ApiService from "../services/api-service";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const Login = () => {
   const [error, setError] = useState<string | null>(null);
@@ -29,9 +31,9 @@ const Login = () => {
     <>
       <h1>Login</h1>
       <form onSubmit={login}>
-        <input id={usernameFieldId} name="username" type="text" placeholder="Username" />
-        <input id={passwordFieldId} name="password" type="password" placeholder="Password" />
-        <button type="submit">Login</button>
+        <Input id={usernameFieldId} name="username" type="text" placeholder="Username" />
+        <Input id={passwordFieldId} name="password" type="password" placeholder="Password" />
+        <Button type="submit">Login</Button>
         {error ?? <p>{error}</p>}
 
       </form>

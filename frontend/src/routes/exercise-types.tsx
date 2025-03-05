@@ -1,6 +1,8 @@
+import { Input } from "@/components/ui/input";
 import { useEffect, useId, useState } from "react";
 import { ExerciseType } from "../models/workout";
 import ApiService from "../services/api-service";
+import { Button } from "@/components/ui/button";
 
 const ExerciseTypes = () => {
     const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([]);
@@ -60,12 +62,12 @@ const ExerciseTypes = () => {
             <h1>Exercise types</h1>
             <ul>
                 {exerciseTypes.map((et) => {
-                    return (<li key={et.id}>{et.name}<button onClick={() => deleteExerciseType(et.id)}>Delete</button></li>);
+                    return (<li key={et.id}>{et.name}<Button onClick={() => deleteExerciseType(et.id)}>Delete</Button></li>);
                 })}
             </ul>
             <form onSubmit={addExercise}>
-                Add new: <input id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
-                <button type="submit">Add exercise type</button>
+                Add new: <Input id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
+                <Button type="submit">Add exercise type</Button>
             </form>
         </>
     );

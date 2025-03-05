@@ -1,7 +1,9 @@
+import { Input } from "@/components/ui/input";
 import { useEffect, useId, useState } from "react";
 import { Exercise, Workout, Set, ExerciseType } from "../models/workout";
 import { useNavigate, useParams } from "react-router";
 import ApiService from "../services/api-service";
+import { Button } from "@/components/ui/button";
 
 type ExerciseProps = {
   exercise: Exercise,
@@ -81,17 +83,17 @@ const EditableExercise = (props: EditableExerciseProps) => {
 
   return (
     <>
-      <li key={ex.id}>{ex.name}<button onClick={async () => { await props.deleteExerciseFunc(ex.id) }}>Delete</button>
+      <li key={ex.id}>{ex.name}<Button onClick={async () => { await props.deleteExerciseFunc(ex.id) }}>Delete</Button>
         <ul>
           {sets.map((set, i) => {
             return (
-              <li key={ex.id + " " + i}>{set.weight}kg for {set.repetitions} reps<button onClick={() => deleteSet(set.id)}>Delete</button></li>
+              <li key={ex.id + " " + i}>{set.weight}kg for {set.repetitions} reps<Button onClick={() => deleteSet(set.id)}>Delete</Button></li>
             );
           })}
         </ul>
         <form onSubmit={addSet}>
-          <input id={weightId} value={weight} onChange={e => setWeight(+e.target.value)} step=".5" type="number" />kg for <input value={reps} onChange={e => setReps(+e.target.value)} id={repsId} type="number" /> reps<br />
-          <button type="submit">Add set</button>
+          <Input id={weightId} value={weight} onChange={e => setWeight(+e.target.value)} step=".5" type="number" />kg for <Input value={reps} onChange={e => setReps(+e.target.value)} id={repsId} type="number" /> reps<br />
+          <Button type="submit">Add set</Button>
         </form>
       </li >
     </>
@@ -209,7 +211,7 @@ const WorkoutComponent = () => {
             );
           })}
         </ul>
-        <button onClick={deleteWorkout}>Delete workout</button>
+        <Button onClick={deleteWorkout}>Delete workout</Button>
       </>
     );
   }
@@ -277,7 +279,7 @@ const WorkoutComponent = () => {
     <>
       <h1>Workout {workout.name}</h1>
       <h2>{new Date(workout.created_on).toDateString()}</h2>
-      <button onClick={finishWorkout}>Finish workout</button>
+      <Button onClick={finishWorkout}>Finish workout</Button>
       <h3>Exercises</h3>
       <ul>
         {exercises.map(e => {
@@ -285,17 +287,17 @@ const WorkoutComponent = () => {
         })}
       </ul>
       <form onSubmit={addExercise}>
-        Add new: <input id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
+        Add new: <Input id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
         <select name={existingExerciseTypeSelectName} onChange={e => setExerciseTypeId(e.target.value)}>
           <option>None</option>
           {exerciseTypes.map(e => {
             return (<option key={e.id} value={e.id}>{e.name}</option>);
           })}
         </select>
-        <button type="submit">Add exercise</button>
+        <Button type="submit">Add exercise</Button>
       </form>
 
-      <button onClick={deleteWorkout}>Delete workout</button>
+      <Button onClick={deleteWorkout}>Delete workout</Button>
     </>
   );
 };

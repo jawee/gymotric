@@ -1,7 +1,9 @@
+import { Input } from "@/components/ui/input";
 import { useEffect, useId, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { Workout } from "../models/workout";
 import ApiService from "../services/api-service";
+import { Button } from "./ui/button";
 
 const CreateWorkoutForm = () => {
     const [name, setName] = useState<string>("");
@@ -26,8 +28,8 @@ const CreateWorkoutForm = () => {
     return (
         <>
             <form onSubmit={createWorkout}>
-                <input id={nameId} value={name} onChange={e => setName(e.target.value)} type="text" placeholder="Name of workout" />
-                <button type="submit">Create workout</button>
+                <Input id={nameId} value={name} onChange={e => setName(e.target.value)} type="text" placeholder="Name of workout" />
+                <Button type="submit">Create workout</Button>
             </form>
         </>
     );
@@ -62,7 +64,7 @@ const WorkoutsList = () => {
                     )
                 })}
             </ul>
-            {!isCreateWorkoutMode && <button onClick={addWorkout}>Create workout</button>}
+            {!isCreateWorkoutMode && <Button onClick={addWorkout}>Create workout</Button>}
             {isCreateWorkoutMode && <CreateWorkoutForm />}
         </>
     );
