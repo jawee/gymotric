@@ -74,6 +74,7 @@ const WorkoutsList = () => {
           <TableRow>
             <TableHead>Workout name</TableHead>
             <TableHead>Date</TableHead>
+            <TableHead>Completed</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -85,6 +86,9 @@ const WorkoutsList = () => {
                 </TableCell>
                 <TableCell>
                   {new Date(workout.created_on).toDateString()}
+                </TableCell>
+                <TableCell>
+                  {(workout.completed_on === null ? "In progress" : new Date(workout.completed_on).toDateString())}
                 </TableCell>
               </TableRow>
             )
