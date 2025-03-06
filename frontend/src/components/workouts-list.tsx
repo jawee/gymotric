@@ -12,46 +12,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 
-const CreateWorkoutForm = () => {
+const WorkoutsList = () => {
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [name, setName] = useState<string>("");
   const nameId = useId()
 
   const navigate = useNavigate();
-
-  const createWorkout = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const res = await ApiService.createWorkout(name);
-
-    if (res.status !== 201) {
-      console.log("Error");
-      return
-    }
-
-    const response = await res.json()
-
-    navigate("/app/workouts/" + response.id);
-  };
-
-  return (
-    <>
-      <form className="mt-5" onSubmit={createWorkout}>
-        <Input id={nameId} value={name} onChange={e => setName(e.target.value)} type="text" placeholder="Name of workout" />
-        <Button type="submit">Create workout</Button>
-      </form>
-    </>
-  );
-};
-
-const WorkoutsList = () => {
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
-  const [isCreateWorkoutMode, setIsCreateWorkoutMode] = useState<boolean>(false);
-
-  const navigate = useNavigate();
-
-  const addWorkout = () => {
-    setIsCreateWorkoutMode(true);
-  };
 
   useEffect(() => {
     const fetchWorkouts = async () => {
@@ -65,6 +41,20 @@ const WorkoutsList = () => {
 
     fetchWorkouts();
   }, []);
+
+  const createWorkout = async () => {
+    debugger;
+    const res = await ApiService.createWorkout(name);
+
+    if (res.status !== 201) {
+      console.log("Error");
+      return
+    }
+
+    const response = await res.json()
+
+    navigate("/app/workouts/" + response.id);
+  };
 
 
   return (
@@ -82,7 +72,7 @@ const WorkoutsList = () => {
             return (
               <TableRow key={workout.id} onClick={() => navigate("/app/workouts/" + workout.id)}>
                 <TableCell className="font-medium">
-                    {workout.name}
+                  {workout.name}
                 </TableCell>
                 <TableCell>
                   {new Date(workout.created_on).toDateString()}
@@ -95,8 +85,22 @@ const WorkoutsList = () => {
           })}
         </TableBody>
       </Table>
-      {!isCreateWorkoutMode && <Button className="mt-5" onClick={addWorkout}>Create workout</Button>}
-      {isCreateWorkoutMode && <CreateWorkoutForm />}
+      {/* {!isCreateWorkoutMode && <Button className="mt-5" onClick={addWorkout}>Create workout</Button>} */}
+      {/* {isCreateWorkoutMode && <CreateWorkoutForm />} */}
+      <Dialog>
+        <DialogTrigger>Create workout</DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create workout</DialogTitle>
+            <DialogDescription>
+            </DialogDescription>
+          </DialogHeader>
+          <Input id={nameId} value={name} onChange={e => setName(e.target.value)} type="text" placeholder="Name of workout" />
+          <DialogFooter>
+            <Button onClick={createWorkout}>Create workout</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
