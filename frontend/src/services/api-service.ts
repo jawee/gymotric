@@ -34,11 +34,6 @@ const refreshToken = async () => {
     credentials: "include",
   });
 
-  const shouldRetry = await checkIfUnauthorized(res);
-  if (shouldRetry) {
-    return await refreshToken();
-  }
-
   return res;
 };
 
