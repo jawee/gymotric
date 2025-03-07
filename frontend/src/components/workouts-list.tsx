@@ -8,8 +8,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
-  TableHeader,
   TableRow,
 } from "@/components/ui/table"
 import {
@@ -60,13 +58,6 @@ const WorkoutsList = () => {
   return (
     <>
       <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Workout name</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Completed</TableHead>
-          </TableRow>
-        </TableHeader>
         <TableBody>
           {workouts.map(workout => {
             return (
@@ -85,10 +76,8 @@ const WorkoutsList = () => {
           })}
         </TableBody>
       </Table>
-      {/* {!isCreateWorkoutMode && <Button className="mt-5" onClick={addWorkout}>Create workout</Button>} */}
-      {/* {isCreateWorkoutMode && <CreateWorkoutForm />} */}
       <Dialog>
-        <DialogTrigger>Create workout</DialogTrigger>
+        <DialogTrigger><Button>Create workout</Button></DialogTrigger>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create workout</DialogTitle>
