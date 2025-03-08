@@ -3,24 +3,13 @@ import { useEffect, useId, useState } from "react";
 import { useNavigate } from "react-router";
 import { Workout } from "../models/workout";
 import ApiService from "../services/api-service";
-import { Button, buttonVariants } from "./ui/button";
 import {
   Table,
   TableBody,
   TableCell,
   TableRow,
 } from "@/components/ui/table"
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { cn } from "@/lib/utils";
+import WtDialog from "./wt-dialog";
 
 const WorkoutsList = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -77,21 +66,22 @@ const WorkoutsList = () => {
           })}
         </TableBody>
       </Table>
-      <Dialog>
-        <DialogTrigger className={buttonVariants({ variant: "default" })}>Create workout</DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create workout</DialogTitle>
-            <DialogDescription>
-            </DialogDescription>
-          </DialogHeader>
-          <Input id={nameId} value={name} onChange={e => setName(e.target.value)} type="text" placeholder="Name of workout" />
-          <DialogFooter>
-            <DialogClose className={cn(buttonVariants({ variant: "default" }), "bg-red-500", "hover:bg-red-700")}>Cancel</DialogClose>
-            <DialogClose asChild><Button onClick={() => createWorkout()}>Create workout</Button></DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <WtDialog openButtonTitle="Create workout" form={<Input id={nameId} value={name} onChange={e => setName(e.target.value)} type="text" placeholder="Name of workout" />} onSubmitButtonClick={createWorkout} onSubmitButtonTitle="Create workout" title="Create workout" />
+      {/* <Dialog> */}
+      {/*   <DialogTrigger className={buttonVariants({ variant: "default" })}>Create workout</DialogTrigger> */}
+      {/*   <DialogContent> */}
+      {/*     <DialogHeader> */}
+      {/*       <DialogTitle>Create workout</DialogTitle> */}
+      {/*       <DialogDescription> */}
+      {/*       </DialogDescription> */}
+      {/*     </DialogHeader> */}
+      {/*     <Input id={nameId} value={name} onChange={e => setName(e.target.value)} type="text" placeholder="Name of workout" /> */}
+      {/*     <DialogFooter> */}
+      {/*       <DialogClose className={cn(buttonVariants({ variant: "default" }), "bg-red-500", "hover:bg-red-700")}>Cancel</DialogClose> */}
+      {/*       <DialogClose asChild><Button onClick={() => createWorkout()}>Create workout</Button></DialogClose> */}
+      {/*     </DialogFooter> */}
+      {/*   </DialogContent> */}
+      {/* </Dialog> */}
     </>
   );
 }

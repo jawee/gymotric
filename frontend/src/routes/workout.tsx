@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/popover"
 import React from "react";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import WtDialog from "../components/wt-dialog";
 
 type ExerciseProps = {
   exercise: Exercise,
@@ -308,14 +308,8 @@ const WorkoutComponent = () => {
           return (<EditableExercise key={e.id} exercise={e} deleteExerciseFunc={deleteExercise} />);
         })}
       </ul>
-      <Dialog>
-        <DialogTrigger className={buttonVariants({ variant: "default" })}>Add Exercise</DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Exercise</DialogTitle>
-            <DialogDescription>
-            </DialogDescription>
-          </DialogHeader>
+      <WtDialog openButtonTitle="Add Exercise" form={
+        <>
           <Label htmlFor="exerciseName">Add new:</Label>
           <Input name="exerciseName" id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
           <select name={existingExerciseTypeSelectName} onChange={e => setExerciseTypeId(e.target.value)}>
@@ -324,16 +318,8 @@ const WorkoutComponent = () => {
               return (<option key={e.id} value={e.id}>{e.name}</option>);
             })}
           </select>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button>Cancel</Button>
-            </DialogClose>
-            <DialogClose asChild>
-              <Button type="submit" onClick={addExercise}>Add exercise</Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </>
+      } onSubmitButtonClick={addExercise} onSubmitButtonTitle="Add exercise" title="Add Exercise" />
       <div>
         <Button onClick={deleteWorkout}>Delete workout</Button>
       </div>
