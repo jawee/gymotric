@@ -131,7 +131,6 @@ const WorkoutComponent = () => {
   const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([]);
   //form
   const [exerciseName, setExerciseName] = useState<string>("");
-  const [exerciseTypeId, setExerciseTypeId] = useState<string | null>(null);
 
   const id = params.id;
 
@@ -215,6 +214,8 @@ const WorkoutComponent = () => {
   const exerciseNameId = useId();
   const existingExerciseTypeSelectName = "exerciseTypeSelect";
 
+  const [value, setValue] = useState("");
+
   if (workout === null) {
     return (
       <p>Loading</p>
@@ -240,8 +241,9 @@ const WorkoutComponent = () => {
   }
 
   const addExercise = async () => {
-    if (exerciseTypeId !== "None" && exerciseTypeId !== null) {
-      const exerciseType = exerciseTypes.filter(et => et.id == exerciseTypeId)[0];
+    if (value !== "" && value !== null) {
+      debugger;
+      const exerciseType = exerciseTypes.filter(et => et.id == value)[0];
 
       const res = await ApiService.createExercise(workout.id, exerciseType.id);
 
@@ -250,6 +252,7 @@ const WorkoutComponent = () => {
         return
       }
 
+      setValue("");
       const obj = await res.json();
 
       setExercises([...exercises, { id: obj.id, exercise_type_id: exerciseType.id, workout_id: workout.id, name: exerciseType.name }]);
@@ -310,62 +313,54 @@ const WorkoutComponent = () => {
       </ul>
       <WtDialog openButtonTitle="Add Exercise" form={
         <>
-          <Label htmlFor="exerciseName">Add new:</Label>
+          <Label htmlFor={existingExerciseTypeSelectName}>Select existing:</Label>
+          <ComboboxDemo setValue={setValue} options={exerciseTypes.map(e => { return { label: e.name, value: e.id }; })} />
+          <Label htmlFor="exerciseName">or add new:</Label>
           <Input name="exerciseName" id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
-          <select name={existingExerciseTypeSelectName} onChange={e => setExerciseTypeId(e.target.value)}>
-            <option>None</option>
-            {exerciseTypes.map(e => {
-              return (<option key={e.id} value={e.id}>{e.name}</option>);
-            })}
-          </select>
         </>
       } onSubmitButtonClick={addExercise} onSubmitButtonTitle="Add exercise" title="Add Exercise" />
       <div>
         <Button onClick={deleteWorkout}>Delete workout</Button>
       </div>
-      <div>
-        <ComboboxDemo />
-      </div>
     </>
   );
 };
 
-const ComboboxDemo = () => {
+type comboBoxDemoProps = {
+  options: { label: string, value: string }[]
+  setValue: (value: string) => void
+};
+const ComboboxDemo = ({ options, setValue }: comboBoxDemoProps) => {
   const [open, setOpen] = useState(false)
-  const [value, setValue] = useState("")
-
-  const frameworks = [
-    { label: "React", value: "react" },
-    { label: "Vue", value: "vue" },
-    { label: "Angular", value: "angular" },
-  ]
+  const [value, internalSetValue] = useState("")
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger className={buttonVariants({ variant: "default" }) + " w-[200px] justify-between"}>
-        {value ? frameworks.find((framework) => framework.value === value)?.label : "Select framework..."}
+        {value ? options.find((option) => option.value === value)?.label : "Select exercise..."}
         <ChevronsUpDown className="opacity-50" />
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0">
         <Command>
-          <CommandInput placeholder="Search framework..." />
+          <CommandInput placeholder="Search option..." />
           <CommandList>
-            <CommandEmpty>No framework found.</CommandEmpty>
+            <CommandEmpty>No option found.</CommandEmpty>
             <CommandGroup>
-              {frameworks.map((framework) => (
+              {options.map((option) => (
                 <CommandItem
-                  key={framework.value}
-                  value={framework.value}
+                  key={option.value}
+                  value={option.value}
                   onSelect={(currentValue) => {
                     setValue(currentValue === value ? "" : currentValue)
+                    internalSetValue(currentValue === value ? "" : currentValue)
                     setOpen(false)
                   }}
                 >
-                  {framework.label}
+                  {option.label}
                   <Check
                     className={cn(
                       "ml-auto",
-                      value === framework.value ? "opacity-100" : "opacity-0"
+                      value === option.value ? "opacity-100" : "opacity-0"
                     )}
                   />
                 </CommandItem>
