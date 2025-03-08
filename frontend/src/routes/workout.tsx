@@ -242,7 +242,6 @@ const WorkoutComponent = () => {
 
   const addExercise = async () => {
     if (value !== "" && value !== null) {
-      debugger;
       const exerciseType = exerciseTypes.filter(et => et.id == value)[0];
 
       const res = await ApiService.createExercise(workout.id, exerciseType.id);
