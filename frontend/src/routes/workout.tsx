@@ -1,9 +1,33 @@
 import { Input } from "@/components/ui/input";
 import { useEffect, useId, useState } from "react";
-import { Exercise, Workout, Set, ExerciseType } from "../models/workout";
+import { Workout } from "../models/workout";
+import { Exercise } from "../models/exercise";
+import { Set } from "../models/set";
+import { ExerciseType } from "../models/exercise-type";
 import { useNavigate, useParams } from "react-router";
 import ApiService from "../services/api-service";
 import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button"
+
+import { Check, ChevronsUpDown } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import React from "react";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 type ExerciseProps = {
   exercise: Exercise,
@@ -91,7 +115,7 @@ const EditableExercise = (props: EditableExerciseProps) => {
             );
           })}
         </ul>
-        <form onSubmit={addSet}>
+        <form onSubmit={addSet} className="flex w-full max-w-sm items-center space-x-2">
           <Input id={weightId} value={weight} onChange={e => setWeight(+e.target.value)} step=".5" type="number" />kg for <Input value={reps} onChange={e => setReps(+e.target.value)} id={repsId} type="number" /> reps<br />
           <Button type="submit">Add set</Button>
         </form>
@@ -197,7 +221,6 @@ const WorkoutComponent = () => {
     );
   }
 
-
   if (workout.completed_on !== null) {
     return (
       <>
@@ -216,9 +239,7 @@ const WorkoutComponent = () => {
     );
   }
 
-  const addExercise = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const addExercise = async () => {
     if (exerciseTypeId !== "None" && exerciseTypeId !== null) {
       const exerciseType = exerciseTypes.filter(et => et.id == exerciseTypeId)[0];
 
@@ -275,6 +296,7 @@ const WorkoutComponent = () => {
     await fetchWorkout();
   };
 
+
   return (
     <>
       <h1>Workout {workout.name}</h1>
@@ -286,20 +308,88 @@ const WorkoutComponent = () => {
           return (<EditableExercise key={e.id} exercise={e} deleteExerciseFunc={deleteExercise} />);
         })}
       </ul>
-      <form onSubmit={addExercise}>
-        Add new: <Input id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
-        <select name={existingExerciseTypeSelectName} onChange={e => setExerciseTypeId(e.target.value)}>
-          <option>None</option>
-          {exerciseTypes.map(e => {
-            return (<option key={e.id} value={e.id}>{e.name}</option>);
-          })}
-        </select>
-        <Button type="submit">Add exercise</Button>
-      </form>
-
-      <Button onClick={deleteWorkout}>Delete workout</Button>
+      <Dialog>
+        <DialogTrigger className={buttonVariants({ variant: "default" })}>Add Exercise</DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Exercise</DialogTitle>
+            <DialogDescription>
+            </DialogDescription>
+          </DialogHeader>
+          <Label htmlFor="exerciseName">Add new:</Label>
+          <Input name="exerciseName" id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
+          <select name={existingExerciseTypeSelectName} onChange={e => setExerciseTypeId(e.target.value)}>
+            <option>None</option>
+            {exerciseTypes.map(e => {
+              return (<option key={e.id} value={e.id}>{e.name}</option>);
+            })}
+          </select>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button>Cancel</Button>
+            </DialogClose>
+            <DialogClose asChild>
+              <Button type="submit" onClick={addExercise}>Add exercise</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <div>
+        <Button onClick={deleteWorkout}>Delete workout</Button>
+      </div>
+      <div>
+        <ComboboxDemo />
+      </div>
     </>
   );
 };
+
+const ComboboxDemo = () => {
+  const [open, setOpen] = useState(false)
+  const [value, setValue] = useState("")
+
+  const frameworks = [
+    { label: "React", value: "react" },
+    { label: "Vue", value: "vue" },
+    { label: "Angular", value: "angular" },
+  ]
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger className={buttonVariants({ variant: "default" }) + " w-[200px] justify-between"}>
+        {value ? frameworks.find((framework) => framework.value === value)?.label : "Select framework..."}
+        <ChevronsUpDown className="opacity-50" />
+      </PopoverTrigger>
+      <PopoverContent className="w-[200px] p-0">
+        <Command>
+          <CommandInput placeholder="Search framework..." />
+          <CommandList>
+            <CommandEmpty>No framework found.</CommandEmpty>
+            <CommandGroup>
+              {frameworks.map((framework) => (
+                <CommandItem
+                  key={framework.value}
+                  value={framework.value}
+                  onSelect={(currentValue) => {
+                    setValue(currentValue === value ? "" : currentValue)
+                    setOpen(false)
+                  }}
+                >
+                  {framework.label}
+                  <Check
+                    className={cn(
+                      "ml-auto",
+                      value === framework.value ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  )
+}
 
 export default WorkoutComponent;

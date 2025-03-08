@@ -3,7 +3,7 @@ import { useEffect, useId, useState } from "react";
 import { useNavigate } from "react-router";
 import { Workout } from "../models/workout";
 import ApiService from "../services/api-service";
-import { Button } from "./ui/button";
+import { Button, buttonVariants } from "./ui/button";
 import {
   Table,
   TableBody,
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table"
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -19,6 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { cn } from "@/lib/utils";
 
 const WorkoutsList = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -41,7 +43,6 @@ const WorkoutsList = () => {
   }, []);
 
   const createWorkout = async () => {
-    debugger;
     const res = await ApiService.createWorkout(name);
 
     if (res.status !== 201) {
@@ -77,7 +78,7 @@ const WorkoutsList = () => {
         </TableBody>
       </Table>
       <Dialog>
-        <DialogTrigger><Button>Create workout</Button></DialogTrigger>
+        <DialogTrigger className={buttonVariants({ variant: "default" })}>Create workout</DialogTrigger>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create workout</DialogTitle>
@@ -86,7 +87,8 @@ const WorkoutsList = () => {
           </DialogHeader>
           <Input id={nameId} value={name} onChange={e => setName(e.target.value)} type="text" placeholder="Name of workout" />
           <DialogFooter>
-            <Button onClick={createWorkout}>Create workout</Button>
+            <DialogClose className={cn(buttonVariants({ variant: "default" }), "bg-red-500", "hover:bg-red-700")}>Cancel</DialogClose>
+            <DialogClose asChild><Button onClick={() => createWorkout()}>Create workout</Button></DialogClose>
           </DialogFooter>
         </DialogContent>
       </Dialog>
