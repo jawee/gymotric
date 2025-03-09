@@ -1,4 +1,15 @@
 services:
+  migrations:
+    build:
+      context: .
+      dockerfile: Dockerfile.goose
+    # environment:
+    #   APP_ENV: ${APP_ENV}
+    #   BLUEPRINT_DB_URL: ${BLUEPRINT_DB_URL}
+    env_file: ".env"
+    volumes:
+      - ./db:/app/db
+
   app:
     build:
       context: .
@@ -7,12 +18,17 @@ services:
     restart: unless-stopped
     ports:
       - ${PORT}:${PORT}
-    environment:
-      APP_ENV: ${APP_ENV}
-      PORT: ${PORT}
-      BLUEPRINT_DB_URL: ${BLUEPRINT_DB_URL}
+    # environment:
+    #   APP_ENV: ${APP_ENV}
+    #   PORT: ${PORT}
+    #   BLUEPRINT_DB_URL: ${BLUEPRINT_DB_URL}
+    env_file: ".env"
     volumes:
       - ./db:/app/db
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+
   frontend:
     build:
       context: .
@@ -23,3 +39,16 @@ services:
       - 5173:5173
     depends_on:
       - app
+
+  proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile.proxy
+      target: proxy
+    restart: unless-stopped
+    ports:
+      - 3000:80
+    depends_on:
+      - app
+      - frontend
+
