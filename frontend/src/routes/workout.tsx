@@ -235,7 +235,7 @@ const WorkoutComponent = () => {
             );
           })}
         </ul>
-        <Button onClick={deleteWorkout}>Delete workout</Button>
+        <Button onClick={deleteWorkout} className={cn(buttonVariants({ variant: "default" }), "bg-red-500", "hover:bg-red-700")}>Delete workout</Button>
       </>
     );
   }
@@ -319,7 +319,7 @@ const WorkoutComponent = () => {
         </>
       } onSubmitButtonClick={addExercise} onSubmitButtonTitle="Add exercise" title="Add Exercise" />
       <div>
-        <Button onClick={deleteWorkout}>Delete workout</Button>
+        <Button onClick={deleteWorkout} className={cn(buttonVariants({ variant: "default" }), "bg-red-500", "hover:bg-red-700")}>Delete workout</Button>
       </div>
     </>
   );

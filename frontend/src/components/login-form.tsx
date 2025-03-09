@@ -12,11 +12,6 @@ import { Label } from "@/components/ui/label"
 import ApiService from "@/services/api-service"
 
 const LoginForm = () => {
-  // const [error, setError] = useState<string | null>(null);
-  //
-  // const usernameFieldId = useId();
-  // const passwordFieldId = useId();
-  //
   const login = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const target = event.target as typeof event.target & {
