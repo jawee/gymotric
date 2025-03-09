@@ -57,7 +57,7 @@ const ExerciseComponent = (props: ExerciseProps) => {
 
   return (
     <li key={ex.id}>{ex.name}
-      <ul>
+      <ul className="border-2 border-black m-2 p-2">
         {sets.map((set, i) => {
           return (
             <li key={ex.id + " " + i}>{set.weight}kg for {set.repetitions} reps</li>
@@ -106,21 +106,24 @@ const EditableExercise = (props: EditableExerciseProps) => {
   };
 
   return (
-    <>
-      <li key={ex.id}>{ex.name}<Button onClick={async () => { await props.deleteExerciseFunc(ex.id) }}>Delete</Button>
+    <div className="border-2 border-black m-2 p-2">
+      <li key={ex.id}>{ex.name} <Button onClick={async () => { await props.deleteExerciseFunc(ex.id) }}>Delete exercise</Button>
         <ul>
           {sets.map((set, i) => {
             return (
-              <li key={ex.id + " " + i}>{set.weight}kg for {set.repetitions} reps<Button onClick={() => deleteSet(set.id)}>Delete</Button></li>
+              <li key={ex.id + " " + i}>{set.weight}kg for {set.repetitions} reps <Button onClick={() => deleteSet(set.id)}>Delete set</Button></li>
             );
           })}
         </ul>
         <form onSubmit={addSet} className="flex w-full max-w-sm items-center space-x-2">
-          <Input id={weightId} value={weight} onChange={e => setWeight(+e.target.value)} step=".5" type="number" />kg for <Input value={reps} onChange={e => setReps(+e.target.value)} id={repsId} type="number" /> reps<br />
+          <Input id={weightId} value={weight} onChange={e => setWeight(+e.target.value)} step=".5" type="number" />
+          <span className="mr-1">kg for</span>
+          <Input value={reps} onChange={e => setReps(+e.target.value)} id={repsId} type="number" />
+          <span className="mr-1">reps</span>
           <Button type="submit">Add set</Button>
         </form>
       </li >
-    </>
+    </div>
   );
 };
 
@@ -225,9 +228,9 @@ const WorkoutComponent = () => {
   if (workout.completed_on !== null) {
     return (
       <>
-        <h1>Workout {workout.name}</h1>
-        <h2>{new Date(workout.created_on).toDateString()}</h2>
-        <h3>Exercises</h3>
+        <h1 className="text-2xl">Workout {workout.name}</h1>
+        <h2 className="text-l font-bold">{new Date(workout.created_on).toDateString()}</h2>
+        <h3 className="text-2xl mt-3">Exercises</h3>
         <ul>
           {exercises.map(e => {
             return (
@@ -301,10 +304,10 @@ const WorkoutComponent = () => {
 
   return (
     <>
-      <h1>Workout {workout.name}</h1>
-      <h2>{new Date(workout.created_on).toDateString()}</h2>
+      <h1 className="text-2xl">Workout {workout.name}</h1>
+      <h2 className="text-l font-bold">{new Date(workout.created_on).toDateString()}</h2>
       <Button onClick={finishWorkout}>Finish workout</Button>
-      <h3>Exercises</h3>
+      <h3 className="text-2xl mt-3">Exercises</h3>
       <ul>
         {exercises.map(e => {
           return (<EditableExercise key={e.id} exercise={e} deleteExerciseFunc={deleteExercise} />);
