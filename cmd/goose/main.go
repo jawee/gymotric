@@ -17,7 +17,7 @@ func main() {
 	// setup database
 	dburl := os.Getenv("BLUEPRINT_DB_URL")
 	if dburl == "" {
-		panic("dburl is empty")
+		panic("BLUEPRINT_DB_URL is empty")
 	}
 	db, err := sql.Open("sqlite3", dburl)
 

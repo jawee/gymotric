@@ -57,6 +57,12 @@ db-create:
 	go run cmd/goose/main.go
 	go run cmd/seed/main.go
 
+db-create-docker:
+	cp .default.env .env
+	mkdir db
+	docker build -t goose -f Dockerfile.goose .
+	docker run --rm --env-file .env -v ./db:/app/db goose
+
 db-up:
 	goose up
 
