@@ -1,71 +1,89 @@
+import { Input } from "@/components/ui/input";
 import { useEffect, useId, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { Workout } from "../models/workout";
 import ApiService from "../services/api-service";
-
-const CreateWorkoutForm = () => {
-    const [name, setName] = useState<string>("");
-    const nameId = useId()
-
-    const navigate = useNavigate();
-
-    const createWorkout = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        const res = await ApiService.createWorkout(name);
-
-        if (res.status !== 201) {
-            console.log("Error");
-            return
-        }
-
-        const response = await res.json()
-
-        navigate("/app/workouts/" + response.id);
-    };
-
-    return (
-        <>
-            <form onSubmit={createWorkout}>
-                <input id={nameId} value={name} onChange={e => setName(e.target.value)} type="text" placeholder="Name of workout" />
-                <button type="submit">Create workout</button>
-            </form>
-        </>
-    );
-};
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table"
+import WtDialog from "./wt-dialog";
 
 const WorkoutsList = () => {
-    const [workouts, setWorkouts] = useState<Workout[]>([]);
-    const [isCreateWorkoutMode, setIsCreateWorkoutMode] = useState<boolean>(false);
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [name, setName] = useState<string>("");
+  const nameId = useId()
 
-    const addWorkout = () => {
-        setIsCreateWorkoutMode(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchWorkouts = async () => {
+      const res = await ApiService.fetchWorkouts();
+
+      if (res.status === 200) {
+        const resObj = await res.json();
+        setWorkouts(resObj.workouts);
+      }
     };
-    useEffect(() => {
-        const fetchWorkouts = async () => {
-            const res = await ApiService.fetchWorkouts();
 
-            if (res.status === 200) {
-                const resObj = await res.json();
-                setWorkouts(resObj.workouts);
-            }
-        };
+    fetchWorkouts();
+  }, []);
 
-        fetchWorkouts();
-    }, []);
+  const createWorkout = async () => {
+    const res = await ApiService.createWorkout(name);
 
-    return (
-        <>
-            <ul>
-                {workouts.map(workout => {
-                    return (
-                        <li key={workout.id}><Link to={"/app/workouts/" + workout.id}>{new Date(workout.created_on).toDateString()}: {workout.name}</Link></li>
-                    )
-                })}
-            </ul>
-            {!isCreateWorkoutMode && <button onClick={addWorkout}>Create workout</button>}
-            {isCreateWorkoutMode && <CreateWorkoutForm />}
-        </>
-    );
+    if (res.status !== 201) {
+      console.log("Error");
+      return
+    }
+
+    const response = await res.json()
+
+    navigate("/app/workouts/" + response.id);
+  };
+
+
+  return (
+    <>
+      <Table>
+        <TableBody>
+          {workouts.map(workout => {
+            return (
+              <TableRow key={workout.id} onClick={() => navigate("/app/workouts/" + workout.id)}>
+                <TableCell className="font-medium">
+                  {workout.name}
+                </TableCell>
+                <TableCell>
+                  {new Date(workout.created_on).toDateString()}
+                </TableCell>
+                <TableCell>
+                  {(workout.completed_on === null ? "In progress" : new Date(workout.completed_on).toDateString())}
+                </TableCell>
+              </TableRow>
+            )
+          })}
+        </TableBody>
+      </Table>
+      <WtDialog openButtonTitle="Create workout" form={<Input id={nameId} value={name} onChange={e => setName(e.target.value)} type="text" placeholder="Name of workout" />} onSubmitButtonClick={createWorkout} onSubmitButtonTitle="Create workout" title="Create workout" />
+      {/* <Dialog> */}
+      {/*   <DialogTrigger className={buttonVariants({ variant: "default" })}>Create workout</DialogTrigger> */}
+      {/*   <DialogContent> */}
+      {/*     <DialogHeader> */}
+      {/*       <DialogTitle>Create workout</DialogTitle> */}
+      {/*       <DialogDescription> */}
+      {/*       </DialogDescription> */}
+      {/*     </DialogHeader> */}
+      {/*     <Input id={nameId} value={name} onChange={e => setName(e.target.value)} type="text" placeholder="Name of workout" /> */}
+      {/*     <DialogFooter> */}
+      {/*       <DialogClose className={cn(buttonVariants({ variant: "default" }), "bg-red-500", "hover:bg-red-700")}>Cancel</DialogClose> */}
+      {/*       <DialogClose asChild><Button onClick={() => createWorkout()}>Create workout</Button></DialogClose> */}
+      {/*     </DialogFooter> */}
+      {/*   </DialogContent> */}
+      {/* </Dialog> */}
+    </>
+  );
 }
 
 export default WorkoutsList;

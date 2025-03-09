@@ -9,7 +9,7 @@ import Workouts from './routes/workouts';
 import Workout from './routes/workout';
 import ExerciseTypes from './routes/exercise-types';
 import Logout from './routes/logout';
-
+import './index.css';
 // const router = createBrowserRouter([
 //   {
 //     // errorElement: <ErrorPage />,

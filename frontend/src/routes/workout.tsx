@@ -1,7 +1,33 @@
+import { Input } from "@/components/ui/input";
 import { useEffect, useId, useState } from "react";
-import { Exercise, Workout, Set, ExerciseType } from "../models/workout";
+import { Workout } from "../models/workout";
+import { Exercise } from "../models/exercise";
+import { Set } from "../models/set";
+import { ExerciseType } from "../models/exercise-type";
 import { useNavigate, useParams } from "react-router";
 import ApiService from "../services/api-service";
+import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button"
+
+import { Check, ChevronsUpDown } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import React from "react";
+import { Label } from "@/components/ui/label";
+import WtDialog from "../components/wt-dialog";
 
 type ExerciseProps = {
   exercise: Exercise,
@@ -31,7 +57,7 @@ const ExerciseComponent = (props: ExerciseProps) => {
 
   return (
     <li key={ex.id}>{ex.name}
-      <ul>
+      <ul className="border-2 border-black m-2 p-2">
         {sets.map((set, i) => {
           return (
             <li key={ex.id + " " + i}>{set.weight}kg for {set.repetitions} reps</li>
@@ -80,21 +106,24 @@ const EditableExercise = (props: EditableExerciseProps) => {
   };
 
   return (
-    <>
-      <li key={ex.id}>{ex.name}<button onClick={async () => { await props.deleteExerciseFunc(ex.id) }}>Delete</button>
+    <div className="border-2 border-black m-2 p-2">
+      <li key={ex.id}>{ex.name} <Button onClick={async () => { await props.deleteExerciseFunc(ex.id) }}>Delete exercise</Button>
         <ul>
           {sets.map((set, i) => {
             return (
-              <li key={ex.id + " " + i}>{set.weight}kg for {set.repetitions} reps<button onClick={() => deleteSet(set.id)}>Delete</button></li>
+              <li key={ex.id + " " + i}>{set.weight}kg for {set.repetitions} reps <Button onClick={() => deleteSet(set.id)}>Delete set</Button></li>
             );
           })}
         </ul>
-        <form onSubmit={addSet}>
-          <input id={weightId} value={weight} onChange={e => setWeight(+e.target.value)} step=".5" type="number" />kg for <input value={reps} onChange={e => setReps(+e.target.value)} id={repsId} type="number" /> reps<br />
-          <button type="submit">Add set</button>
+        <form onSubmit={addSet} className="flex w-full max-w-sm items-center space-x-2">
+          <Input id={weightId} value={weight} onChange={e => setWeight(+e.target.value)} step=".5" type="number" />
+          <span className="mr-1">kg for</span>
+          <Input value={reps} onChange={e => setReps(+e.target.value)} id={repsId} type="number" />
+          <span className="mr-1">reps</span>
+          <Button type="submit">Add set</Button>
         </form>
       </li >
-    </>
+    </div>
   );
 };
 
@@ -105,7 +134,6 @@ const WorkoutComponent = () => {
   const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([]);
   //form
   const [exerciseName, setExerciseName] = useState<string>("");
-  const [exerciseTypeId, setExerciseTypeId] = useState<string | null>(null);
 
   const id = params.id;
 
@@ -153,7 +181,7 @@ const WorkoutComponent = () => {
       return;
     }
 
-    navigate("/workouts");
+    navigate("/app/workouts");
   };
 
   const fetchExercises = async () => {
@@ -189,19 +217,20 @@ const WorkoutComponent = () => {
   const exerciseNameId = useId();
   const existingExerciseTypeSelectName = "exerciseTypeSelect";
 
+  const [value, setValue] = useState("");
+
   if (workout === null) {
     return (
       <p>Loading</p>
     );
   }
 
-
   if (workout.completed_on !== null) {
     return (
       <>
-        <h1>Workout {workout.name}</h1>
-        <h2>{new Date(workout.created_on).toDateString()}</h2>
-        <h3>Exercises</h3>
+        <h1 className="text-2xl">Workout {workout.name}</h1>
+        <h2 className="text-l font-bold">{new Date(workout.created_on).toDateString()}</h2>
+        <h3 className="text-2xl mt-3">Exercises</h3>
         <ul>
           {exercises.map(e => {
             return (
@@ -209,16 +238,14 @@ const WorkoutComponent = () => {
             );
           })}
         </ul>
-        <button onClick={deleteWorkout}>Delete workout</button>
+        <Button onClick={deleteWorkout} className={cn(buttonVariants({ variant: "default" }), "bg-red-500", "hover:bg-red-700")}>Delete workout</Button>
       </>
     );
   }
 
-  const addExercise = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (exerciseTypeId !== "None" && exerciseTypeId !== null) {
-      const exerciseType = exerciseTypes.filter(et => et.id == exerciseTypeId)[0];
+  const addExercise = async () => {
+    if (value !== "" && value !== null) {
+      const exerciseType = exerciseTypes.filter(et => et.id == value)[0];
 
       const res = await ApiService.createExercise(workout.id, exerciseType.id);
 
@@ -227,6 +254,7 @@ const WorkoutComponent = () => {
         return
       }
 
+      setValue("");
       const obj = await res.json();
 
       setExercises([...exercises, { id: obj.id, exercise_type_id: exerciseType.id, workout_id: workout.id, name: exerciseType.name }]);
@@ -273,31 +301,78 @@ const WorkoutComponent = () => {
     await fetchWorkout();
   };
 
+
   return (
     <>
-      <h1>Workout {workout.name}</h1>
-      <h2>{new Date(workout.created_on).toDateString()}</h2>
-      <button onClick={finishWorkout}>Finish workout</button>
-      <h3>Exercises</h3>
+      <h1 className="text-2xl">Workout {workout.name}</h1>
+      <h2 className="text-l font-bold">{new Date(workout.created_on).toDateString()}</h2>
+      <Button onClick={finishWorkout}>Finish workout</Button>
+      <h3 className="text-2xl mt-3">Exercises</h3>
       <ul>
         {exercises.map(e => {
           return (<EditableExercise key={e.id} exercise={e} deleteExerciseFunc={deleteExercise} />);
         })}
       </ul>
-      <form onSubmit={addExercise}>
-        Add new: <input id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
-        <select name={existingExerciseTypeSelectName} onChange={e => setExerciseTypeId(e.target.value)}>
-          <option>None</option>
-          {exerciseTypes.map(e => {
-            return (<option key={e.id} value={e.id}>{e.name}</option>);
-          })}
-        </select>
-        <button type="submit">Add exercise</button>
-      </form>
-
-      <button onClick={deleteWorkout}>Delete workout</button>
+      <WtDialog openButtonTitle="Add Exercise" form={
+        <>
+          <Label htmlFor={existingExerciseTypeSelectName}>Select existing:</Label>
+          <ComboboxDemo setValue={setValue} options={exerciseTypes.map(e => { return { label: e.name, value: e.id }; })} />
+          <Label htmlFor="exerciseName">or add new:</Label>
+          <Input name="exerciseName" id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
+        </>
+      } onSubmitButtonClick={addExercise} onSubmitButtonTitle="Add exercise" title="Add Exercise" />
+      <div>
+        <Button onClick={deleteWorkout} className={cn(buttonVariants({ variant: "default" }), "bg-red-500", "hover:bg-red-700")}>Delete workout</Button>
+      </div>
     </>
   );
 };
+
+type comboBoxDemoProps = {
+  options: { label: string, value: string }[]
+  setValue: (value: string) => void
+};
+const ComboboxDemo = ({ options, setValue }: comboBoxDemoProps) => {
+  const [open, setOpen] = useState(false)
+  const [value, internalSetValue] = useState("")
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger className={buttonVariants({ variant: "default" }) + " w-[200px] justify-between"}>
+        {value ? options.find((option) => option.value === value)?.label : "Select exercise..."}
+        <ChevronsUpDown className="opacity-50" />
+      </PopoverTrigger>
+      <PopoverContent className="w-[200px] p-0">
+        <Command>
+          <CommandInput placeholder="Search option..." />
+          <CommandList>
+            <CommandEmpty>No option found.</CommandEmpty>
+            <CommandGroup>
+              {options.map((option) => (
+                <CommandItem
+                  key={option.value}
+                  value={option.value}
+                  onSelect={(currentValue) => {
+                    setValue(currentValue === value ? "" : currentValue)
+                    internalSetValue(currentValue === value ? "" : currentValue)
+                    setOpen(false)
+                  }}
+                >
+                  {option.label}
+                  <Check
+                    className={cn(
+                      "ml-auto",
+                      value === option.value ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  )
+}
 
 export default WorkoutComponent;
