@@ -13,7 +13,7 @@ const Menu = () => {
             </div>
             <NavigationMenuLink asChild><Link to="/app">Home</Link></NavigationMenuLink>
             <NavigationMenuLink asChild><Link to="/app/workouts">Workouts</Link></NavigationMenuLink>
-            <NavigationMenuLink asChild><Link to="/app/exercise-types">Exercise types</Link></NavigationMenuLink>
+            <NavigationMenuLink asChild><Link to="/app/exercise-types">Exercises</Link></NavigationMenuLink>
             <NavigationMenuLink asChild><Link to="/app/logout">Log Out</Link></NavigationMenuLink>
         </NavigationMenu>
     );
