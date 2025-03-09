@@ -25,6 +25,7 @@ const checkIfUnauthorized = async (res: Response, isRetry: boolean = false): Pro
 
   return false
 };
+
 const login = async (username: string, password: string) => {
   const res = await fetch("/api/auth/login", {
     method: "POST",
