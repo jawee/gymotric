@@ -116,3 +116,50 @@ func (q *Queries) GetExerciseTypeById(ctx context.Context, arg GetExerciseTypeBy
 	)
 	return i, err
 }
+
+const getLastWeightRepsById = `-- name: GetLastWeightRepsById :one
+SELECT s.repetitions, s.weight FROM exercises e
+JOIN sets s ON s.exercise_id = e.id
+WHERE exercise_type_id = ?1 AND s.user_id = ?2
+ORDER BY id desc LIMIT 1
+`
+
+type GetLastWeightRepsByIdParams struct {
+	ID     string `json:"id"`
+	UserID string `json:"user_id"`
+}
+
+type GetLastWeightRepsByIdRow struct {
+	Repetitions int64   `json:"repetitions"`
+	Weight      float64 `json:"weight"`
+}
+
+func (q *Queries) GetLastWeightRepsById(ctx context.Context, arg GetLastWeightRepsByIdParams) (GetLastWeightRepsByIdRow, error) {
+	row := q.db.QueryRowContext(ctx, getLastWeightRepsById, arg.ID, arg.UserID)
+	var i GetLastWeightRepsByIdRow
+	err := row.Scan(&i.Repetitions, &i.Weight)
+	return i, err
+}
+
+const getMaxWeightRepsById = `-- name: GetMaxWeightRepsById :one
+SELECT s.repetitions, Max(s.weight) FROM exercises e
+JOIN sets s ON s.exercise_id = e.id
+WHERE exercise_type_id = ?1 AND s.user_id = ?2
+`
+
+type GetMaxWeightRepsByIdParams struct {
+	ID     string `json:"id"`
+	UserID string `json:"user_id"`
+}
+
+type GetMaxWeightRepsByIdRow struct {
+	Repetitions int64       `json:"repetitions"`
+	Max         interface{} `json:"max"`
+}
+
+func (q *Queries) GetMaxWeightRepsById(ctx context.Context, arg GetMaxWeightRepsByIdParams) (GetMaxWeightRepsByIdRow, error) {
+	row := q.db.QueryRowContext(ctx, getMaxWeightRepsById, arg.ID, arg.UserID)
+	var i GetMaxWeightRepsByIdRow
+	err := row.Scan(&i.Repetitions, &i.Max)
+	return i, err
+}
