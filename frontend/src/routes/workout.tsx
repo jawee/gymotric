@@ -116,9 +116,9 @@ const EditableExercise = (props: EditableExerciseProps) => {
           })}
         </ul>
         <form onSubmit={addSet} className="flex w-full max-w-sm items-center space-x-2">
-          <Input id={weightId} value={weight} onChange={e => setWeight(+e.target.value)} step=".5" type="number" />
+          <Input id={weightId} value={weight} onChange={e => setWeight(+e.target.value)} inputMode="decimal" step=".5" type="number" />
           <span className="mr-1">kg for</span>
-          <Input value={reps} onChange={e => setReps(+e.target.value)} id={repsId} type="number" />
+          <Input value={reps} onChange={e => setReps(+e.target.value)} id={repsId} inputMode="numeric" type="number" />
           <span className="mr-1">reps</span>
           <Button type="submit">Add set</Button>
         </form>
