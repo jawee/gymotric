@@ -70,12 +70,7 @@ const ExerciseComponent = (props: ExerciseProps) => {
 
 const EditableExercise = (props: EditableExerciseProps) => {
   const [ex] = useState<Exercise>(props.exercise);
-  const [weight, setWeight] = useState<number>(0);
   const [sets, setSets] = useState<Set[]>([]);
-  const [reps, setReps] = useState<number>(0);
-
-  const weightId = useId();
-  const repsId = useId();
 
   useEffect(() => {
     fetchSets(ex.workout_id, ex.id, setSets);
@@ -93,7 +88,15 @@ const EditableExercise = (props: EditableExerciseProps) => {
   };
 
   const addSet = async (event: React.FormEvent<HTMLFormElement>) => {
+    debugger;
     event.preventDefault();
+    const target = event.target as typeof event.target & {
+      weight: { value: number };
+      reps: { value: number };
+    };
+    const weight = +target.weight.value; // typechecks!
+    const reps = +target.reps.value; // typechecks!
+
     const res = await ApiService.createSet(ex.workout_id, ex.id, reps, weight);
 
     if (res.status !== 201) {
@@ -115,12 +118,13 @@ const EditableExercise = (props: EditableExerciseProps) => {
             );
           })}
         </ul>
+        <p className="font-bold">Add set</p>
         <form onSubmit={addSet} className="flex w-full max-w-sm items-center space-x-2">
-          <Input id={weightId} value={weight} onChange={e => setWeight(+e.target.value)} inputMode="decimal" step=".5" type="number" />
+          <Input id="weight" inputMode="decimal" step=".5" type="number" />
           <span className="mr-1">kg for</span>
-          <Input value={reps} onChange={e => setReps(+e.target.value)} id={repsId} inputMode="numeric" type="number" />
+          <Input id="reps" inputMode="numeric" type="number" />
           <span className="mr-1">reps</span>
-          <Button type="submit">Add set</Button>
+          <Button className="" type="submit">Add</Button>
         </form>
       </li >
     </div>
