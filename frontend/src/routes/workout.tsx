@@ -93,8 +93,9 @@ const EditableExercise = (props: EditableExerciseProps) => {
       weight: { value: number };
       reps: { value: number };
     };
-    const weight = +target.weight.value; // typechecks!
-    const reps = +target.reps.value; // typechecks!
+
+    const weight = +target.weight.value;
+    const reps = +target.reps.value;
 
     const res = await ApiService.createSet(ex.workout_id, ex.id, reps, weight);
 
