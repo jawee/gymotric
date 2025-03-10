@@ -88,7 +88,6 @@ const EditableExercise = (props: EditableExerciseProps) => {
   };
 
   const addSet = async (event: React.FormEvent<HTMLFormElement>) => {
-    debugger;
     event.preventDefault();
     const target = event.target as typeof event.target & {
       weight: { value: number };
