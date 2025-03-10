@@ -16,10 +16,68 @@ func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper 
 	mux.Handle("GET /exercise-types", authenticationWrapper(http.HandlerFunc(handler.getAllWorkoutTypesHandler)))
 	mux.Handle("POST /exercise-types", authenticationWrapper(http.HandlerFunc(handler.createExerciseTypeHandler)))
 	mux.Handle("DELETE /exercise-types/{id}", authenticationWrapper(http.HandlerFunc(handler.deleteExerciseTypeByIdHandler)))
+	mux.Handle("GET /exercise-types/{id}/max", authenticationWrapper(http.HandlerFunc(handler.getMaxSet)))
+	mux.Handle("GET /exercise-types/{id}/last", authenticationWrapper(http.HandlerFunc(handler.getLastSet)))
 }
 
 type handler struct {
 	service Service
+}
+
+func (s *handler) getLastSet(w http.ResponseWriter, r *http.Request) {
+	_ = r.Context().Value("sub").(string)
+	_ = r.PathValue("id")
+
+	http.Error(w, "Not implemented", http.StatusNotImplemented)
+	// maxSet, err := s.service.GetMaxSet(r.Context(), exerciseTypeId, userId)
+	//
+	// if err != nil {
+	// 	slog.Warn("Failed to get max set", "error", err)
+	// 	http.Error(w, "Failed to get max set", http.StatusBadRequest)
+	// 	return
+	// }
+	//
+	// resp := map[string]interface{}{"max_set": maxSet}
+	// jsonResp, err := json.Marshal(resp)
+	// if err != nil {
+	// 	slog.Warn("Failed to marshal response", "error", err)
+	// 	http.Error(w, "", http.StatusBadRequest)
+	// 	return
+	// }
+	//
+	// w.Header().Set("Content-Type", "application/json")
+	// if _, err := w.Write(jsonResp); err != nil {
+	// 	slog.Warn("Failed to write response", "error", err)
+	// 	http.Error(w, "", http.StatusBadRequest)
+	// }
+}
+
+func (s *handler) getMaxSet(w http.ResponseWriter, r *http.Request) {
+	_ = r.Context().Value("sub").(string)
+	_ = r.PathValue("id")
+
+	http.Error(w, "Not implemented", http.StatusNotImplemented)
+	// maxSet, err := s.service.GetMaxSet(r.Context(), exerciseTypeId, userId)
+	//
+	// if err != nil {
+	// 	slog.Warn("Failed to get max set", "error", err)
+	// 	http.Error(w, "Failed to get max set", http.StatusBadRequest)
+	// 	return
+	// }
+	//
+	// resp := map[string]interface{}{"max_set": maxSet}
+	// jsonResp, err := json.Marshal(resp)
+	// if err != nil {
+	// 	slog.Warn("Failed to marshal response", "error", err)
+	// 	http.Error(w, "", http.StatusBadRequest)
+	// 	return
+	// }
+	//
+	// w.Header().Set("Content-Type", "application/json")
+	// if _, err := w.Write(jsonResp); err != nil {
+	// 	slog.Warn("Failed to write response", "error", err)
+	// 	http.Error(w, "", http.StatusBadRequest)
+	// }
 }
 
 func (s *handler) getAllWorkoutTypesHandler(w http.ResponseWriter, r *http.Request) {
