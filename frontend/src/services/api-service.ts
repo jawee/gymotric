@@ -225,6 +225,27 @@ const logout = async () => {
   return res;
 };
 
+const fetchMaxWeightAndReps = async (exercise_type_id: string, isRetry: boolean = false) => {
+  const res = await fetch("/api/exercise-types/" + exercise_type_id + "/max", {
+    credentials: "include",
+  });
+  const shouldRetry = await checkIfUnauthorized(res, isRetry);
+  if (shouldRetry && !isRetry) {
+    return await fetchExerciseTypes(true);
+  }
+  return res;
+};
+const fetchLastWeightAndReps = async (exercise_type_id: string, isRetry: boolean = false) => {
+  const res = await fetch("/api/exercise-types/" + exercise_type_id + "/last", {
+    credentials: "include",
+  });
+  const shouldRetry = await checkIfUnauthorized(res, isRetry);
+  if (shouldRetry && !isRetry) {
+    return await fetchExerciseTypes(true);
+  }
+  return res;
+};
+
 const ApiService = {
   login,
   logout,
@@ -243,6 +264,8 @@ const ApiService = {
   fetchExercises,
   createExercise,
   deleteExercise,
+  fetchMaxWeightAndReps,
+  fetchLastWeightAndReps
 };
 
 export default ApiService;

@@ -17,6 +17,26 @@ type Service interface {
 	GetAll(context context.Context, userId string) ([]ExerciseType, error)
 	DeleteById(context context.Context, exerciseTypeId string, userId string) error
 	CreateAndReturnId(context context.Context, exerciseType createExerciseTypeRequest, userId string) (string, error)
+	GetLastWeightRepsByExerciseTypeId(context context.Context, exerciseTypeId string, userId string) (MaxLastWeightReps, error)
+	GetMaxWeightRepsByExerciseTypeId(context context.Context, exerciseTypeId string, userId string) (MaxLastWeightReps, error)
+}
+
+func (s *exerciseTypeService) GetLastWeightRepsByExerciseTypeId(context context.Context, exerciseTypeId string, userId string) (MaxLastWeightReps, error) {
+	arg := repository.GetLastWeightRepsByExerciseTypeIdParams{
+		ID:     exerciseTypeId,
+		UserID: userId,
+	}
+
+	return s.repo.GetLastWeightRepsByExerciseTypeId(context, arg)
+}
+
+func (s *exerciseTypeService) GetMaxWeightRepsByExerciseTypeId(context context.Context, exerciseTypeId string, userId string) (MaxLastWeightReps, error) {
+	arg := repository.GetMaxWeightRepsByExerciseTypeIdParams{
+		ID:     exerciseTypeId,
+		UserID: userId,
+	}
+
+	return s.repo.GetMaxWeightRepsByExerciseTypeId(context, arg)
 }
 
 func (s *exerciseTypeService) CreateAndReturnId(context context.Context, exerciseType createExerciseTypeRequest, userId string) (string, error) {
@@ -26,11 +46,11 @@ func (s *exerciseTypeService) CreateAndReturnId(context context.Context, exercis
 	}
 
 	toCreate := repository.CreateExerciseTypeAndReturnIdParams{
-		ID:   uuid.String(),
-		Name: exerciseType.Name,
+		ID:        uuid.String(),
+		Name:      exerciseType.Name,
 		CreatedOn: time.Now().UTC().Format(time.RFC3339),
 		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
-		UserID: userId,
+		UserID:    userId,
 	}
 
 	id, err := s.repo.CreateAndReturnId(context, toCreate)

@@ -71,6 +71,35 @@ const ExerciseComponent = (props: ExerciseProps) => {
 const EditableExercise = (props: EditableExerciseProps) => {
   const [ex] = useState<Exercise>(props.exercise);
   const [sets, setSets] = useState<Set[]>([]);
+  const [lastWeight, setLastWeight] = useState<number | null>(null);
+  const [lastReps, setLastReps] = useState<number | null>(null);
+  const [maxWeight, setMaxWeight] = useState<number | null>(null);
+  const [maxReps, setMaxReps] = useState<number | null>(null);
+
+  const fetchMaxWeightAndReps = async () => {
+    const res = await ApiService.fetchMaxWeightAndReps(ex.exercise_type_id);
+
+    if (res.status === 200) {
+      const resObj = await res.json();
+      setMaxWeight(resObj.weight);
+      setMaxReps(resObj.reps);
+    }
+  };
+
+  const fetchLastWeightAndReps = async () => {
+    const res = await ApiService.fetchLastWeightAndReps(ex.exercise_type_id);
+
+    if (res.status === 200) {
+      const resObj = await res.json();
+      setLastWeight(resObj.weight);
+      setLastReps(resObj.reps);
+    }
+  };
+
+  useEffect(() => {
+    fetchMaxWeightAndReps();
+    fetchLastWeightAndReps();
+  }, []);
 
   useEffect(() => {
     fetchSets(ex.workout_id, ex.id, setSets);
@@ -126,6 +155,8 @@ const EditableExercise = (props: EditableExerciseProps) => {
           <span className="mr-1">reps</span>
           <Button className="" type="submit">Add</Button>
         </form>
+        <p className="font-bold">Last set: {lastWeight}kg for {lastReps}reps</p>
+        <p className="font-bold">Max set: {maxWeight}kg for {maxReps}reps</p>
       </li >
     </div>
   );

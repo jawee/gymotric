@@ -28,6 +28,16 @@ func (m *repoMock) GetAll(context context.Context, userId string) ([]ExerciseTyp
 	return args.Get(0).([]ExerciseType), args.Error(1)
 }
 
+func (m *repoMock) GetLastWeightRepsByExerciseTypeId(ctx context.Context, arg repository.GetLastWeightRepsByExerciseTypeIdParams) (MaxLastWeightReps, error) {
+	args := m.Called(ctx, arg)
+	return args.Get(0).(MaxLastWeightReps), args.Error(1)
+}
+
+func (m *repoMock) GetMaxWeightRepsByExerciseTypeId(ctx context.Context, arg repository.GetMaxWeightRepsByExerciseTypeIdParams) (MaxLastWeightReps, error) {
+	args := m.Called(ctx, arg)
+	return args.Get(0).(MaxLastWeightReps), args.Error(1)
+}
+
 func TestGetAll(t *testing.T) {
 	userId := "userid"
 

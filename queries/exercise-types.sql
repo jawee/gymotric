@@ -22,14 +22,14 @@ WHERE id = sqlc.arg(id)
 AND user_id = sqlc.arg(user_id);
 
 
--- name: GetMaxWeightRepsById :one
+-- name: GetMaxWeightRepsByExerciseTypeId :one
 SELECT s.repetitions, Max(s.weight) FROM exercises e
 JOIN sets s ON s.exercise_id = e.id
 WHERE exercise_type_id = sqlc.arg(id) AND s.user_id = sqlc.arg(user_id);
 
--- name: GetLastWeightRepsById :one
+-- name: GetLastWeightRepsByExerciseTypeId :one
 SELECT s.repetitions, s.weight FROM exercises e
 JOIN sets s ON s.exercise_id = e.id
 WHERE exercise_type_id = sqlc.arg(id) AND s.user_id = sqlc.arg(user_id)
-ORDER BY id desc LIMIT 1;
+ORDER BY s.id desc LIMIT 1;
 

@@ -117,49 +117,49 @@ func (q *Queries) GetExerciseTypeById(ctx context.Context, arg GetExerciseTypeBy
 	return i, err
 }
 
-const getLastWeightRepsById = `-- name: GetLastWeightRepsById :one
+const getLastWeightRepsByExerciseTypeId = `-- name: GetLastWeightRepsByExerciseTypeId :one
 SELECT s.repetitions, s.weight FROM exercises e
 JOIN sets s ON s.exercise_id = e.id
 WHERE exercise_type_id = ?1 AND s.user_id = ?2
-ORDER BY id desc LIMIT 1
+ORDER BY s.id desc LIMIT 1
 `
 
-type GetLastWeightRepsByIdParams struct {
+type GetLastWeightRepsByExerciseTypeIdParams struct {
 	ID     string `json:"id"`
 	UserID string `json:"user_id"`
 }
 
-type GetLastWeightRepsByIdRow struct {
+type GetLastWeightRepsByExerciseTypeIdRow struct {
 	Repetitions int64   `json:"repetitions"`
 	Weight      float64 `json:"weight"`
 }
 
-func (q *Queries) GetLastWeightRepsById(ctx context.Context, arg GetLastWeightRepsByIdParams) (GetLastWeightRepsByIdRow, error) {
-	row := q.db.QueryRowContext(ctx, getLastWeightRepsById, arg.ID, arg.UserID)
-	var i GetLastWeightRepsByIdRow
+func (q *Queries) GetLastWeightRepsByExerciseTypeId(ctx context.Context, arg GetLastWeightRepsByExerciseTypeIdParams) (GetLastWeightRepsByExerciseTypeIdRow, error) {
+	row := q.db.QueryRowContext(ctx, getLastWeightRepsByExerciseTypeId, arg.ID, arg.UserID)
+	var i GetLastWeightRepsByExerciseTypeIdRow
 	err := row.Scan(&i.Repetitions, &i.Weight)
 	return i, err
 }
 
-const getMaxWeightRepsById = `-- name: GetMaxWeightRepsById :one
+const getMaxWeightRepsByExerciseTypeId = `-- name: GetMaxWeightRepsByExerciseTypeId :one
 SELECT s.repetitions, Max(s.weight) FROM exercises e
 JOIN sets s ON s.exercise_id = e.id
 WHERE exercise_type_id = ?1 AND s.user_id = ?2
 `
 
-type GetMaxWeightRepsByIdParams struct {
+type GetMaxWeightRepsByExerciseTypeIdParams struct {
 	ID     string `json:"id"`
 	UserID string `json:"user_id"`
 }
 
-type GetMaxWeightRepsByIdRow struct {
+type GetMaxWeightRepsByExerciseTypeIdRow struct {
 	Repetitions int64       `json:"repetitions"`
 	Max         interface{} `json:"max"`
 }
 
-func (q *Queries) GetMaxWeightRepsById(ctx context.Context, arg GetMaxWeightRepsByIdParams) (GetMaxWeightRepsByIdRow, error) {
-	row := q.db.QueryRowContext(ctx, getMaxWeightRepsById, arg.ID, arg.UserID)
-	var i GetMaxWeightRepsByIdRow
+func (q *Queries) GetMaxWeightRepsByExerciseTypeId(ctx context.Context, arg GetMaxWeightRepsByExerciseTypeIdParams) (GetMaxWeightRepsByExerciseTypeIdRow, error) {
+	row := q.db.QueryRowContext(ctx, getMaxWeightRepsByExerciseTypeId, arg.ID, arg.UserID)
+	var i GetMaxWeightRepsByExerciseTypeIdRow
 	err := row.Scan(&i.Repetitions, &i.Max)
 	return i, err
 }

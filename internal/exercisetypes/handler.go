@@ -1,6 +1,7 @@
 package exercisetypes
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -25,59 +26,65 @@ type handler struct {
 }
 
 func (s *handler) getLastSet(w http.ResponseWriter, r *http.Request) {
-	_ = r.Context().Value("sub").(string)
-	_ = r.PathValue("id")
+	userId := r.Context().Value("sub").(string)
+	exerciseTypeId := r.PathValue("id")
 
-	http.Error(w, "Not implemented", http.StatusNotImplemented)
-	// maxSet, err := s.service.GetMaxSet(r.Context(), exerciseTypeId, userId)
-	//
-	// if err != nil {
-	// 	slog.Warn("Failed to get max set", "error", err)
-	// 	http.Error(w, "Failed to get max set", http.StatusBadRequest)
-	// 	return
-	// }
-	//
-	// resp := map[string]interface{}{"max_set": maxSet}
-	// jsonResp, err := json.Marshal(resp)
-	// if err != nil {
-	// 	slog.Warn("Failed to marshal response", "error", err)
-	// 	http.Error(w, "", http.StatusBadRequest)
-	// 	return
-	// }
-	//
-	// w.Header().Set("Content-Type", "application/json")
-	// if _, err := w.Write(jsonResp); err != nil {
-	// 	slog.Warn("Failed to write response", "error", err)
-	// 	http.Error(w, "", http.StatusBadRequest)
-	// }
+	lastSet, err := s.service.GetLastWeightRepsByExerciseTypeId(r.Context(), exerciseTypeId, userId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "", http.StatusNotFound)
+			return
+		}
+
+		slog.Warn("Failed to get last set", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	resp := map[string]interface{}{"weight": lastSet.Weight, "reps": lastSet.Reps}
+	jsonResp, err := json.Marshal(resp)
+	if err != nil {
+		slog.Warn("Failed to marshal response", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(jsonResp); err != nil {
+		slog.Warn("Failed to write response", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+	}
 }
 
 func (s *handler) getMaxSet(w http.ResponseWriter, r *http.Request) {
-	_ = r.Context().Value("sub").(string)
-	_ = r.PathValue("id")
+	userId := r.Context().Value("sub").(string)
+	exerciseTypeId := r.PathValue("id")
 
-	http.Error(w, "Not implemented", http.StatusNotImplemented)
-	// maxSet, err := s.service.GetMaxSet(r.Context(), exerciseTypeId, userId)
-	//
-	// if err != nil {
-	// 	slog.Warn("Failed to get max set", "error", err)
-	// 	http.Error(w, "Failed to get max set", http.StatusBadRequest)
-	// 	return
-	// }
-	//
-	// resp := map[string]interface{}{"max_set": maxSet}
-	// jsonResp, err := json.Marshal(resp)
-	// if err != nil {
-	// 	slog.Warn("Failed to marshal response", "error", err)
-	// 	http.Error(w, "", http.StatusBadRequest)
-	// 	return
-	// }
-	//
-	// w.Header().Set("Content-Type", "application/json")
-	// if _, err := w.Write(jsonResp); err != nil {
-	// 	slog.Warn("Failed to write response", "error", err)
-	// 	http.Error(w, "", http.StatusBadRequest)
-	// }
+	lastSet, err := s.service.GetMaxWeightRepsByExerciseTypeId(r.Context(), exerciseTypeId, userId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "", http.StatusNotFound)
+			return
+		}
+
+		slog.Warn("Failed to get last set", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	resp := map[string]interface{}{"weight": lastSet.Weight, "reps": lastSet.Reps}
+	jsonResp, err := json.Marshal(resp)
+	if err != nil {
+		slog.Warn("Failed to marshal response", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(jsonResp); err != nil {
+		slog.Warn("Failed to write response", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+	}
 }
 
 func (s *handler) getAllWorkoutTypesHandler(w http.ResponseWriter, r *http.Request) {
