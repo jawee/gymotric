@@ -120,7 +120,10 @@ func (q *Queries) GetExerciseTypeById(ctx context.Context, arg GetExerciseTypeBy
 const getLastWeightRepsByExerciseTypeId = `-- name: GetLastWeightRepsByExerciseTypeId :one
 SELECT s.repetitions, s.weight FROM exercises e
 JOIN sets s ON s.exercise_id = e.id
-WHERE exercise_type_id = ?1 AND s.user_id = ?2
+JOIN workouts w ON e.workout_id = w.id
+WHERE exercise_type_id = ?1 
+AND s.user_id = ?2
+AND w.completed_on IS NOT NULL
 ORDER BY s.id desc LIMIT 1
 `
 
