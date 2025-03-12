@@ -162,7 +162,7 @@ const EditableExercise = (props: EditableExerciseProps) => {
         </ul>
         <p className="font-bold">Add set</p>
         <form onSubmit={addSet} className="flex w-full max-w-sm items-center space-x-2">
-          <Input id="weight" type="text" pattern="^\d+([.,]0|[.,]5)?$" />
+          <Input id="weight" inputMode="decimal" type="text" pattern="^\d+([.,]0|[.,]5)?$" />
           <span className="mr-1">kg for</span>
           <Input id="reps" inputMode="numeric" type="number" />
           <span className="mr-1">reps</span>
