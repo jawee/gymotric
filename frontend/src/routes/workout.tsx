@@ -87,7 +87,7 @@ const EditableExercise = (props: EditableExerciseProps) => {
   };
 
   const fetchLastWeightAndReps = async () => {
-    const res = await ApiService.fetchLastWeightAndReps(ex.exercise_type_id); 
+    const res = await ApiService.fetchLastWeightAndReps(ex.exercise_type_id);
 
     if (res.status === 200) {
       const resObj = await res.json();
@@ -344,6 +344,11 @@ const WorkoutComponent = () => {
 
 
   const finishWorkout = async () => {
+    const confirmRes = confirm("Are you sure you want to finish this workout?");
+    if (!confirmRes) {
+      return;
+    }
+
     const res = await ApiService.finishWorkout(workout.id);
 
     if (res.status !== 204) {
