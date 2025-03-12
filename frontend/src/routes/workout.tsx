@@ -106,6 +106,10 @@ const EditableExercise = (props: EditableExerciseProps) => {
   }, [ex]);
 
   const deleteSet = async (setId: string) => {
+    const confirmRes = confirm("Are you sure you want to delete this set?");
+    if (!confirmRes) {
+      return;
+    }
     const res = await ApiService.deleteSet(ex.workout_id, ex.id, setId);
 
     if (res.status !== 204) {
@@ -137,9 +141,18 @@ const EditableExercise = (props: EditableExerciseProps) => {
     setSets([...sets, { id: obj.id, weight: weight, repetitions: reps, exercise_id: ex.id }]);
   };
 
+  const deleteExercise = async () => {
+    const res = confirm("Are you sure you want to delete this exercise?");
+    if (!res) {
+      return;
+    }
+
+    await props.deleteExerciseFunc(ex.id);
+  };
+
   return (
     <div className="border-2 border-black m-2 p-2">
-      <li key={ex.id}>{ex.name} <Button onClick={async () => { await props.deleteExerciseFunc(ex.id) }}>Delete exercise</Button>
+      <li key={ex.id}>{ex.name} <Button onClick={deleteExercise}>Delete exercise</Button>
         <ul>
           {sets.map((set, i) => {
             return (
@@ -207,6 +220,11 @@ const WorkoutComponent = () => {
 
   const deleteWorkout = async () => {
     if (workout === null) {
+      return;
+    }
+
+    const confirmRes = confirm("Are you sure you want to delete this workout?");
+    if (!confirmRes) {
       return;
     }
 
