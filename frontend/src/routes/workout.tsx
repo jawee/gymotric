@@ -87,7 +87,7 @@ const EditableExercise = (props: EditableExerciseProps) => {
   };
 
   const fetchLastWeightAndReps = async () => {
-    const res = await ApiService.fetchLastWeightAndReps(ex.exercise_type_id);
+    const res = await ApiService.fetchLastWeightAndReps(ex.exercise_type_id); 
 
     if (res.status === 200) {
       const resObj = await res.json();
@@ -118,12 +118,13 @@ const EditableExercise = (props: EditableExerciseProps) => {
 
   const addSet = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    debugger;
     const target = event.target as typeof event.target & {
-      weight: { value: number };
+      weight: { value: string };
       reps: { value: number };
     };
 
-    const weight = +target.weight.value;
+    const weight = +target.weight.value.replace(",", ".");
     const reps = +target.reps.value;
 
     const res = await ApiService.createSet(ex.workout_id, ex.id, reps, weight);
@@ -149,7 +150,7 @@ const EditableExercise = (props: EditableExerciseProps) => {
         </ul>
         <p className="font-bold">Add set</p>
         <form onSubmit={addSet} className="flex w-full max-w-sm items-center space-x-2">
-          <Input id="weight" inputMode="decimal" lang="sv" step=".5" type="number" />
+          <Input id="weight" type="text" pattern="^\d+([.,]0|[.,]5)?$" />
           <span className="mr-1">kg for</span>
           <Input id="reps" inputMode="numeric" type="number" />
           <span className="mr-1">reps</span>
