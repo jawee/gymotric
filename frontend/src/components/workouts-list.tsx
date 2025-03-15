@@ -3,12 +3,6 @@ import { useEffect, useId, useState } from "react";
 import { useNavigate } from "react-router";
 import { Workout } from "../models/workout";
 import ApiService from "../services/api-service";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableRow,
-} from "@/components/ui/table"
 import WtDialog from "./wt-dialog";
 
 const WorkoutsList = () => {
@@ -46,44 +40,29 @@ const WorkoutsList = () => {
 
 
   return (
-    <>
-      <Table>
-        <TableBody>
-          {workouts.map(workout => {
-            return (
-              <TableRow key={workout.id} onClick={() => navigate("/app/workouts/" + workout.id)}>
-                <TableCell className="font-medium">
-                  {workout.name}
-                </TableCell>
-                <TableCell>
-                  {new Date(workout.created_on).toDateString()}
-                </TableCell>
-                <TableCell>
-                  {(workout.completed_on === null ? "In progress" : new Date(workout.completed_on).toDateString())}
-                </TableCell>
-              </TableRow>
-            )
-          })}
-        </TableBody>
-      </Table>
+    <div className="flex flex-col gap-4">
+      {workouts.map(workout => {
+        return (
+          <WorkoutListItem key={workout.id} workout={workout} />
+        )
+      })}
       <WtDialog openButtonTitle="Create workout" form={<Input id={nameId} value={name} onChange={e => setName(e.target.value)} type="text" placeholder="Name of workout" />} onSubmitButtonClick={createWorkout} onSubmitButtonTitle="Create workout" title="Create workout" />
-      {/* <Dialog> */}
-      {/*   <DialogTrigger className={buttonVariants({ variant: "default" })}>Create workout</DialogTrigger> */}
-      {/*   <DialogContent> */}
-      {/*     <DialogHeader> */}
-      {/*       <DialogTitle>Create workout</DialogTitle> */}
-      {/*       <DialogDescription> */}
-      {/*       </DialogDescription> */}
-      {/*     </DialogHeader> */}
-      {/*     <Input id={nameId} value={name} onChange={e => setName(e.target.value)} type="text" placeholder="Name of workout" /> */}
-      {/*     <DialogFooter> */}
-      {/*       <DialogClose className={cn(buttonVariants({ variant: "default" }), "bg-red-500", "hover:bg-red-700")}>Cancel</DialogClose> */}
-      {/*       <DialogClose asChild><Button onClick={() => createWorkout()}>Create workout</Button></DialogClose> */}
-      {/*     </DialogFooter> */}
-      {/*   </DialogContent> */}
-      {/* </Dialog> */}
-    </>
+    </div>
   );
 }
 
+type WorkoutListItemProps = {
+  workout: Workout
+}
+
+const WorkoutListItem = ({ workout }: WorkoutListItemProps) => {
+  const navigate = useNavigate();
+  return (
+    <div onClick={() => navigate("/app/workouts/" + workout.id)} className="cursor-pointer p-4 border border-gray-200">
+      <h1 className="font-medium">{workout.name}</h1>
+      <p>Date: {new Date(workout.created_on).toLocaleString()}</p>
+      <p>{(workout.completed_on === null ? "In progress" : "Completed on:" + new Date(workout.completed_on).toLocaleString())}</p>
+    </div>
+  );
+};
 export default WorkoutsList;

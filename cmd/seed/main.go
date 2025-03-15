@@ -45,6 +45,7 @@ func main() {
 	repo.CreateExerciseTypeAndReturnId(ctx, repository.CreateExerciseTypeAndReturnIdParams{ ID: getUuidString(), Name: "Squats", UserID: userId})
 
 	createWorkout(false, 0, exerciseType, repo, ctx, userId)
+	createWorkout(true, 1, exerciseType, repo, ctx, userId)
 	createWorkout(true, 2, exerciseType, repo, ctx, userId)
 
 	fmt.Printf("Done\n")
@@ -55,7 +56,7 @@ func createWorkout(completed bool, daysAgo int, exerciseType repository.CreateEx
 		ID:        getUuidString(),
 		Name:      "back",
 		CreatedOn: time.Now().UTC().AddDate(0, 0, -daysAgo).Format(time.RFC3339),
-		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
+		UpdatedOn: time.Now().UTC().AddDate(0, 0, -daysAgo).Add(time.Hour).Format(time.RFC3339),
 		UserID:    userId,
 	}
 
@@ -91,7 +92,7 @@ func createWorkout(completed bool, daysAgo int, exerciseType repository.CreateEx
 
 	if completed {
 		setCompleted := repository.CompleteWorkoutByIdParams {
-			CompletedOn: time.Now().UTC().Format(time.RFC3339),
+			CompletedOn: time.Now().UTC().AddDate(0, 0, -daysAgo).Add(time.Duration(time.Hour)).Format(time.RFC3339),
 			ID: workout.ID,
 			UserID: userId,
 		}
