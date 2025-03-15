@@ -106,6 +106,10 @@ const EditableExercise = (props: EditableExerciseProps) => {
   }, [ex]);
 
   const deleteSet = async (setId: string) => {
+    const confirmRes = confirm("Are you sure you want to delete this set?");
+    if (!confirmRes) {
+      return;
+    }
     const res = await ApiService.deleteSet(ex.workout_id, ex.id, setId);
 
     if (res.status !== 204) {
@@ -119,11 +123,11 @@ const EditableExercise = (props: EditableExerciseProps) => {
   const addSet = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const target = event.target as typeof event.target & {
-      weight: { value: number };
+      weight: { value: string };
       reps: { value: number };
     };
 
-    const weight = +target.weight.value;
+    const weight = +target.weight.value.replace(",", ".");
     const reps = +target.reps.value;
 
     const res = await ApiService.createSet(ex.workout_id, ex.id, reps, weight);
@@ -137,9 +141,18 @@ const EditableExercise = (props: EditableExerciseProps) => {
     setSets([...sets, { id: obj.id, weight: weight, repetitions: reps, exercise_id: ex.id }]);
   };
 
+  const deleteExercise = async () => {
+    const res = confirm("Are you sure you want to delete this exercise?");
+    if (!res) {
+      return;
+    }
+
+    await props.deleteExerciseFunc(ex.id);
+  };
+
   return (
     <div className="border-2 border-black m-2 p-2">
-      <li key={ex.id}>{ex.name} <Button onClick={async () => { await props.deleteExerciseFunc(ex.id) }}>Delete exercise</Button>
+      <li key={ex.id}>{ex.name} <Button onClick={deleteExercise}>Delete exercise</Button>
         <ul>
           {sets.map((set, i) => {
             return (
@@ -149,7 +162,7 @@ const EditableExercise = (props: EditableExerciseProps) => {
         </ul>
         <p className="font-bold">Add set</p>
         <form onSubmit={addSet} className="flex w-full max-w-sm items-center space-x-2">
-          <Input id="weight" inputMode="decimal" lang="sv" step=".5" type="number" />
+          <Input id="weight" inputMode="decimal" type="text" pattern="^\d+([.,]0|[.,]5)?$" />
           <span className="mr-1">kg for</span>
           <Input id="reps" inputMode="numeric" type="number" />
           <span className="mr-1">reps</span>
@@ -207,6 +220,11 @@ const WorkoutComponent = () => {
 
   const deleteWorkout = async () => {
     if (workout === null) {
+      return;
+    }
+
+    const confirmRes = confirm("Are you sure you want to delete this workout?");
+    if (!confirmRes) {
       return;
     }
 
@@ -326,6 +344,11 @@ const WorkoutComponent = () => {
 
 
   const finishWorkout = async () => {
+    const confirmRes = confirm("Are you sure you want to finish this workout?");
+    if (!confirmRes) {
+      return;
+    }
+
     const res = await ApiService.finishWorkout(workout.id);
 
     if (res.status !== 204) {
