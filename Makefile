@@ -72,6 +72,13 @@ db-reset:
 db-create-migration:
 	goose create a sql
 
+test-coverage:
+	rm -r testresults || true
+	mkdir testresults
+	go test -coverprofile ./testresults/cover.out -o ./testresults ./...
+	go tool cover -html=./testresults/cover.out -o ./testresults/cover.html
+	echo "Coverage report is saved in testresults/cover.html"
+
 # Live Reload
 watch:
 	@if command -v air > /dev/null; then \
