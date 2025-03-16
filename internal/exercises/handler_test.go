@@ -140,7 +140,7 @@ func TestCreateExerciseHandler(t *testing.T) {
 
 	serviceMock := serviceMock{}
 	serviceMock.On("CreateAndReturnId", ctx, mock.MatchedBy(func (input createExerciseRequest) bool {
-			return true
+			return input.ExerciseTypeID == exerciseTypeId
 		}),  workoutId, userId).
 		Return("abc", nil).
 		Once()
@@ -161,6 +161,52 @@ func TestCreateExerciseHandler(t *testing.T) {
 	}
 
 	expected := `{"id":"abc"}`
+	if rr.Body.String() != expected {
+		t.Errorf("handler returned unexpected body: got %v want %v",
+			rr.Body.String(), expected)
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
+func TestDeleteExerciseByIdHandler(t *testing.T) {
+	userId := "userId"
+	workoutId := "workoutId"
+	exerciseId := "exerciseId"
+
+	req, err := http.NewRequest("DELETE", "/workouts/"+workoutId+"/exercises"+exerciseId, nil)
+	req.SetPathValue("id", workoutId)
+	req.SetPathValue("exerciseId", exerciseId)
+
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, "sub", userId)
+	req = req.WithContext(ctx)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("DeleteById", ctx, exerciseId, userId).
+		Return(nil).
+		Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.deleteExerciseByIdHandler)
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusNoContent {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	if ctype := rr.Header().Get("Content-Type"); ctype != "application/json" {
+		t.Errorf("content type header does not match: got %v want %v",
+			ctype, "application/json")
+	}
+
+	expected := ``
 	if rr.Body.String() != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v",
 			rr.Body.String(), expected)
