@@ -13,5 +13,4 @@ RUN CGO_ENABLED=1 GOOS=linux go build -o main cmd/goose/main.go
 FROM alpine:latest AS prod
 WORKDIR /app
 COPY --from=build /app/main /app/main
-EXPOSE ${PORT}
 CMD ["./main"]
