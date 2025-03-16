@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { Workout } from "../models/workout";
 import ApiService from "../services/api-service";
 import WtDialog from "./wt-dialog";
+import { Exercise } from "../models/exercise";
 
 const WorkoutsList = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -56,12 +57,34 @@ type WorkoutListItemProps = {
 }
 
 const WorkoutListItem = ({ workout }: WorkoutListItemProps) => {
+  const [exercises, setExercises] = useState<Exercise[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchExercises = async () => {
+      const res = await ApiService.fetchExercises(workout.id);
+
+      if (res.status === 200) {
+        const resObj = await res.json();
+        setExercises(resObj.exercises);
+      }
+    };
+
+    fetchExercises();
+  }, [exercises]);
+
   return (
     <div onClick={() => navigate("/app/workouts/" + workout.id)} className="cursor-pointer p-4 border border-gray-200">
-      <h1 className="font-medium">{workout.name}</h1>
-      <p>Date: {new Date(workout.created_on).toLocaleString()}</p>
-      <p>{(workout.completed_on === null ? "In progress" : "Completed on:" + new Date(workout.completed_on).toLocaleString())}</p>
+      <h1 className="font-medium text-xl">{workout.name}{(workout.completed_on === null) ? <span className="text-sm"> In progress</span> : ""}</h1>
+            <p>Date: {new Date(workout.created_on).toLocaleString()}</p>
+      <p className="font-medium">Exercises:</p>
+      <ul>
+        {exercises.map(exercise => {
+          return (
+            <li key={exercise.id}>{exercise.name}</li>
+          )
+        })}
+      </ul>
     </div>
   );
 };
