@@ -10,7 +10,7 @@ COPY . .
 
 RUN CGO_ENABLED=1 GOOS=linux go build -o main cmd/api/main.go
 
-FROM alpine:latest AS prod
+FROM alpine:latest AS backend
 WORKDIR /app
 COPY --from=build /app/main /app/main
 EXPOSE ${PORT}

@@ -60,8 +60,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          dockerfile: Dockerfile
-          target: prod
+          file: Dockerfile
+          target: backend
           push: true
           tags: |
             ghcr.io/jawee/gymotric-be:latest
@@ -71,7 +71,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          dockerfile: Dockerfile
+          file: Dockerfile
           target: frontend
           push: true
           tags: |
@@ -82,7 +82,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          dockerfile: Dockerfile.goose
+          file: Dockerfile.goose
+          target: migrations
           push: true
           tags: |
             ghcr.io/jawee/gymotric-migrations:latest
