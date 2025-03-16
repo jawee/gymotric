@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -20,14 +21,17 @@ func (s *serviceMock) GetAll(context context.Context, userId string) ([]Exercise
 	args := s.Called(context, userId)
 	return args.Get(0).([]Exercise), args.Error(1)
 }
+
 func (s *serviceMock) GetByWorkoutId(context context.Context, workoutId string, userId string) ([]Exercise, error) {
 	args := s.Called(context, workoutId, userId)
 	return args.Get(0).([]Exercise), args.Error(1)
 }
+
 func (s *serviceMock) DeleteById(context context.Context, id string, userId string) error {
 	args := s.Called(context, id, userId)
 	return args.Error(0)
 }
+
 func (s *serviceMock) CreateAndReturnId(context context.Context, exercise createExerciseRequest, workoutId string, userId string) (string, error) {
 	args := s.Called(context, exercise, workoutId, userId)
 	return args.String(0), args.Error(1)
@@ -139,9 +143,9 @@ func TestCreateExerciseHandler(t *testing.T) {
 	}
 
 	serviceMock := serviceMock{}
-	serviceMock.On("CreateAndReturnId", ctx, mock.MatchedBy(func (input createExerciseRequest) bool {
-			return input.ExerciseTypeID == exerciseTypeId
-		}),  workoutId, userId).
+	serviceMock.On("CreateAndReturnId", ctx, mock.MatchedBy(func(input createExerciseRequest) bool {
+		return input.ExerciseTypeID == exerciseTypeId
+	}), workoutId, userId).
 		Return("abc", nil).
 		Once()
 
@@ -209,6 +213,47 @@ func TestDeleteExerciseByIdHandler(t *testing.T) {
 	expected := ``
 	if rr.Body.String() != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v",
+			rr.Body.String(), expected)
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
+func TestDeleteExerciseByIdHandlerFailsBadRequest(t *testing.T) {
+	userId := "userId"
+	workoutId := "workoutId"
+	exerciseId := "exerciseId"
+
+	req, err := http.NewRequest("DELETE", "/workouts/"+workoutId+"/exercises"+exerciseId, nil)
+	req.SetPathValue("id", workoutId)
+	req.SetPathValue("exerciseId", exerciseId)
+
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, "sub", userId)
+	req = req.WithContext(ctx)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("DeleteById", ctx, exerciseId, userId).
+		Return(fmt.Errorf("Error")).
+		Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.deleteExerciseByIdHandler)
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	expected := "Failed to delete exercise\n"
+	if rr.Body.String() != expected {
+		t.Errorf("handler returned unexpected body: got '%v' want '%v'",
 			rr.Body.String(), expected)
 	}
 
