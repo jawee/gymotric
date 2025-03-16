@@ -173,6 +173,93 @@ func TestCreateExerciseHandler(t *testing.T) {
 	serviceMock.AssertExpectations(t)
 }
 
+func TestCreateExerciseHandlerBadRequest(t *testing.T) {
+	userId := "userId"
+	workoutId := "workoutId"
+	exerciseTypeId := "exerciseTypeId"
+
+	reqBodyObj := createExerciseRequest{
+		ExerciseTypeID: exerciseTypeId,
+	}
+
+	reqBody, err := json.Marshal(reqBodyObj)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req, err := http.NewRequest("POST", "/workouts/"+workoutId+"/exercises", bytes.NewBuffer(reqBody))
+	req.SetPathValue("id", workoutId)
+
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, "sub", userId)
+	req = req.WithContext(ctx)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("CreateAndReturnId", ctx, mock.MatchedBy(func(input createExerciseRequest) bool {
+		return input.ExerciseTypeID == exerciseTypeId
+	}), workoutId, userId).
+		Return("", fmt.Errorf("Some error occurred")).
+		Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.createExerciseHandler)
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	expected := "Failed to create exercise\n"
+	if rr.Body.String() != expected {
+		t.Errorf("handler returned unexpected body: got '%v' want '%v'",
+			rr.Body.String(), expected)
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
+func TestCreateExerciseHandlerInvalidBodyBadRequest(t *testing.T) {
+	userId := "userId"
+	workoutId := "workoutId"
+
+	req, err := http.NewRequest("POST", "/workouts/"+workoutId+"/exercises", bytes.NewBuffer([]byte("")))
+	req.SetPathValue("id", workoutId)
+
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, "sub", userId)
+	req = req.WithContext(ctx)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.createExerciseHandler)
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	expected := "Invalid request body\n"
+	if rr.Body.String() != expected {
+		t.Errorf("handler returned unexpected body: got '%v' want '%v'",
+			rr.Body.String(), expected)
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
 func TestDeleteExerciseByIdHandler(t *testing.T) {
 	userId := "userId"
 	workoutId := "workoutId"
