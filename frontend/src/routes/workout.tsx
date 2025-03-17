@@ -1,5 +1,5 @@
 import { Input } from "@/components/ui/input";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useState } from "react";
 import { Workout } from "../models/workout";
 import { Exercise } from "../models/exercise";
 import { Set } from "../models/set";
@@ -9,24 +9,8 @@ import ApiService from "../services/api-service";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button"
 
-import { Check, ChevronsUpDown } from "lucide-react"
-
 import { cn } from "@/lib/utils"
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 import React from "react";
-import { Label } from "@/components/ui/label";
 import WtDialog from "../components/wt-dialog";
 
 type ExerciseProps = {
@@ -180,8 +164,6 @@ const WorkoutComponent = () => {
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([]);
-  //form
-  const [exerciseName, setExerciseName] = useState<string>("");
 
   const id = params.id;
 
@@ -267,9 +249,6 @@ const WorkoutComponent = () => {
     setExercises(l => l.filter(item => item.id !== exerciseId));
   };
 
-  const exerciseNameId = useId();
-  const existingExerciseTypeSelectName = "exerciseTypeSelect";
-
   const [value, setValue] = useState("");
 
   if (workout === null) {
@@ -298,50 +277,54 @@ const WorkoutComponent = () => {
 
   const addExercise = async () => {
     if (value !== "" && value !== null) {
-      const exerciseType = exerciseTypes.filter(et => et.id == value)[0];
+      const exerciseTypeMatch = exerciseTypes.filter(et => et.name == value);
 
-      const res = await ApiService.createExercise(workout.id, exerciseType.id);
+      if (exerciseTypeMatch.length === 1) {
+        const exerciseType = exerciseTypeMatch[0];
+        const res = await ApiService.createExercise(workout.id, exerciseType.id);
+
+        if (res.status !== 201) {
+          console.log("Error");
+          return
+        }
+
+        setValue("");
+        const obj = await res.json();
+
+        setExercises([...exercises, { id: obj.id, exercise_type_id: exerciseType.id, workout_id: workout.id, name: exerciseType.name }]);
+        return;
+      }
+
+      if (value === "") {
+        return;
+      }
+
+      const exerciseTypeRes = await ApiService.createExerciseType(value);
+
+      if (exerciseTypeRes.status !== 201) {
+        console.log("Error");
+        return;
+      }
+
+      let obj = await exerciseTypeRes.json();
+      setExerciseTypes([...exerciseTypes, { id: obj.id, name: value }]);
+
+      const res = await ApiService.createExercise(workout.id, obj.id);
 
       if (res.status !== 201) {
         console.log("Error");
         return
       }
 
+      obj = await res.json();
+
+      setExercises([...exercises, { id: obj.id, exercise_type_id: obj.id, workout_id: workout.id, name: value}]);
+
       setValue("");
-      const obj = await res.json();
 
-      setExercises([...exercises, { id: obj.id, exercise_type_id: exerciseType.id, workout_id: workout.id, name: exerciseType.name }]);
       return;
     }
-
-    if (exerciseName === "") {
-      return;
-    }
-
-    const exerciseTypeRes = await ApiService.createExerciseType(exerciseName);
-
-    if (exerciseTypeRes.status !== 201) {
-      console.log("Error");
-      return;
-    }
-
-    let obj = await exerciseTypeRes.json();
-    setExerciseTypes([...exerciseTypes, { id: obj.id, name: exerciseName }]);
-
-    const res = await ApiService.createExercise(workout.id, obj.id);
-
-    if (res.status !== 201) {
-      console.log("Error");
-      return
-    }
-
-    obj = await res.json();
-
-    setExercises([...exercises, { id: obj.id, exercise_type_id: obj.id, workout_id: workout.id, name: exerciseName }]);
-
-    setExerciseName("");
-  };
-
+  }
 
   const finishWorkout = async () => {
     const confirmRes = confirm("Are you sure you want to finish this workout?");
@@ -373,10 +356,7 @@ const WorkoutComponent = () => {
       </ul>
       <WtDialog openButtonTitle="Add Exercise" form={
         <>
-          <Label htmlFor={existingExerciseTypeSelectName}>Select existing:</Label>
-          <ComboboxDemo setValue={setValue} options={exerciseTypes.map(e => { return { label: e.name, value: e.id }; })} />
-          <Label htmlFor="exerciseName">or add new:</Label>
-          <Input name="exerciseName" id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
+          <Autocomplete value={value} setValue={setValue} suggestions={exerciseTypes.map(et => et.name)} />
         </>
       } onSubmitButtonClick={addExercise} onSubmitButtonTitle="Add exercise" title="Add Exercise" />
       <div>
@@ -386,51 +366,53 @@ const WorkoutComponent = () => {
   );
 };
 
-type comboBoxDemoProps = {
-  options: { label: string, value: string }[]
-  setValue: (value: string) => void
+type AutoCompleteProps = {
+  value: string;
+  setValue: React.Dispatch<React.SetStateAction<string>>;
+  suggestions: string[];
 };
-const ComboboxDemo = ({ options, setValue }: comboBoxDemoProps) => {
-  const [open, setOpen] = useState(false)
-  const [value, internalSetValue] = useState("")
+
+const Autocomplete = ({ value, setValue, suggestions }: AutoCompleteProps) => {
+  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
+
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    let filteredSuggestions: string[] = [];
+
+    if (value.length > 0) {
+      const regex = new RegExp(`^${value}`, "i");
+      filteredSuggestions = suggestions.sort().filter(v => regex.test(v));
+    }
+
+    setFilteredSuggestions(filteredSuggestions);
+    setShowSuggestions(true);
+    setValue(value);
+  };
+
+  const onClick = (e: React.MouseEvent<HTMLLIElement>) => {
+    setValue(e.currentTarget.innerText);
+    setFilteredSuggestions([]);
+    setShowSuggestions(false);
+  };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className={buttonVariants({ variant: "default" }) + " w-[200px] justify-between"}>
-        {value ? options.find((option) => option.value === value)?.label : "Select exercise..."}
-        <ChevronsUpDown className="opacity-50" />
-      </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0">
-        <Command>
-          <CommandInput placeholder="Search option..." />
-          <CommandList>
-            <CommandEmpty>No option found.</CommandEmpty>
-            <CommandGroup>
-              {options.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  value={option.value}
-                  onSelect={(currentValue) => {
-                    setValue(currentValue === value ? "" : currentValue)
-                    internalSetValue(currentValue === value ? "" : currentValue)
-                    setOpen(false)
-                  }}
-                >
-                  {option.label}
-                  <Check
-                    className={cn(
-                      "ml-auto",
-                      value === option.value ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  )
-}
+    <div className="relative">
+      <input type="text" value={value} onChange={onChange} className={cn(
+        "w-full border-2 border-black rounded-md px-3 py-1 text-base outline-none",
+      )} />
+      {showSuggestions && value.length > 0 && (
+        <ul className="absolute w-full z-10 bg-white border-2 border-black">
+          {filteredSuggestions.map((suggestion, i) => {
+            return (
+              <li key={i} onClick={onClick}>{suggestion}</li>
+            );
+          })}
+        </ul>
+      )}
+
+    </div>
+  );
+};
 
 export default WorkoutComponent;
