@@ -46,6 +46,11 @@ const ExerciseTypes = () => {
   };
 
   const deleteExerciseType = async (id: string) => {
+    const confirm = window.confirm("Are you sure you want to delete this exercise?");
+    if (!confirm) {
+      return;
+    }
+
     const res = await ApiService.deleteExerciseType(id);
 
     if (res.status !== 204) {
