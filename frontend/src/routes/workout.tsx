@@ -43,16 +43,42 @@ const ExerciseComponent = (props: ExerciseProps) => {
   }, [ex]);
 
   return (
-    <li key={ex.id}>{ex.name}
-      <ul className="border-2 border-black m-2 p-2">
-        {sets.map((set, i) => {
-          return (
-            <li key={ex.id + " " + i}>{set.weight}kg for {set.repetitions} reps</li>
-          );
-        })}
-      </ul>
-    </li>
+    <div className="border-2 border-black p-2 mt-2 mb-2">
+      <p className="text-xl">{ex.name}</p>
+      <Table className="mb-2">
+        <TableHeader>
+          <TableRow>
+            <TableHead className="text-primary">Weight</TableHead>
+            <TableHead className="text-primary">Reps</TableHead>
+            <TableHead></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sets.map((set, i) => {
+            return (
+              <TableRow key={ex.id + "" + i}>
+                <TableCell>{set.weight}kg</TableCell>
+                <TableCell>{set.repetitions}</TableCell>
+                <TableCell className="text-right">
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
   );
+  // return (
+  //   <li key={ex.id}>{ex.name}
+  //     <ul className="border-2 border-black m-2 p-2">
+  //       {sets.map((set, i) => {
+  //         return (
+  //           <li key={ex.id + " " + i}>{set.weight}kg for {set.repetitions} reps</li>
+  //         );
+  //       })}
+  //     </ul>
+  //   </li>
+  // );
 };
 
 const EditableExercise = (props: EditableExerciseProps) => {
