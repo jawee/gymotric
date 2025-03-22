@@ -7,8 +7,8 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/mattn/go-sqlite3 v1.14.24
-	github.com/pressly/goose/v3 v3.24.0
-	golang.org/x/crypto v0.32.0
+	github.com/pressly/goose/v3 v3.24.1
+	golang.org/x/crypto v0.36.0
 )
 
 require (
@@ -16,7 +16,7 @@ require (
 	github.com/sethvargo/go-retry v0.3.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
+	golang.org/x/sync v0.12.0 // indirect
 )
 
 require (
