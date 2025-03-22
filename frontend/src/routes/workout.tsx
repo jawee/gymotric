@@ -12,6 +12,7 @@ import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import React from "react";
 import WtDialog from "../components/wt-dialog";
+import { Check, Plus, Trash2 } from "lucide-react";
 
 type ExerciseProps = {
   exercise: Exercise,
@@ -136,11 +137,37 @@ const EditableExercise = (props: EditableExerciseProps) => {
 
   return (
     <div className="border-2 border-black m-2 p-2">
-      <li key={ex.id}>{ex.name} <Button onClick={deleteExercise}>Delete exercise</Button>
+      <li key={ex.id}>
+        {ex.name}
+        <Button
+          onClick={deleteExercise}
+          className={
+            cn(buttonVariants({ variant: "default" }),
+              "bg-red-500",
+              "hover:bg-red-700",
+              "ml-1",
+            )
+          }>
+          <Trash2 />
+          Delete exercise
+        </Button>
         <ul>
           {sets.map((set, i) => {
             return (
-              <li key={ex.id + " " + i}>{set.weight}kg for {set.repetitions} reps <Button onClick={() => deleteSet(set.id)}>Delete set</Button></li>
+              <li key={ex.id + " " + i} className="mt-2">
+                {set.weight}kg for {set.repetitions} reps
+                <Button
+                  onClick={() => deleteSet(set.id)}
+                  className={
+                    cn(buttonVariants({ variant: "default" }),
+                      "bg-red-500",
+                      "hover:bg-red-700",
+                      "ml-1",
+                    )
+                  }>
+                  <Trash2 />
+                </Button>
+              </li>
             );
           })}
         </ul>
@@ -150,7 +177,7 @@ const EditableExercise = (props: EditableExerciseProps) => {
           <span className="mr-1">kg for</span>
           <Input id="reps" inputMode="numeric" type="number" />
           <span className="mr-1">reps</span>
-          <Button className="" type="submit">Add</Button>
+          <Button className="" type="submit"><Plus />Add</Button>
         </form>
         <p className="font-bold">Last set: {lastWeight}kg for {lastReps}reps</p>
         <p className="font-bold">Max set: {maxWeight}kg for {maxReps}reps</p>
@@ -270,7 +297,19 @@ const WorkoutComponent = () => {
             );
           })}
         </ul>
-        <Button onClick={deleteWorkout} className={cn(buttonVariants({ variant: "default" }), "bg-red-500", "hover:bg-red-700")}>Delete workout</Button>
+        <div className="mt-2">
+          <Button
+            onClick={deleteWorkout}
+            className={
+              cn(buttonVariants({ variant: "default" }),
+                "bg-red-500",
+                "hover:bg-red-700"
+              )
+            }>
+            <Trash2 />
+            Delete workout
+          </Button>
+        </div>
       </>
     );
   }
@@ -347,7 +386,7 @@ const WorkoutComponent = () => {
     <>
       <h1 className="text-2xl">Workout {workout.name}</h1>
       <h2 className="text-l font-bold">{new Date(workout.created_on).toDateString()}</h2>
-      <Button onClick={finishWorkout}>Finish workout</Button>
+      <Button onClick={finishWorkout}><Check />Finish workout</Button>
       <h3 className="text-2xl mt-3">Exercises</h3>
       <ul>
         {exercises.map(e => {
@@ -359,8 +398,18 @@ const WorkoutComponent = () => {
           <Autocomplete value={value} setValue={setValue} suggestions={exerciseTypes.map(et => et.name)} />
         </>
       } onSubmitButtonClick={addExercise} onSubmitButtonTitle="Add exercise" title="Add Exercise" />
-      <div>
-        <Button onClick={deleteWorkout} className={cn(buttonVariants({ variant: "default" }), "bg-red-500", "hover:bg-red-700")}>Delete workout</Button>
+      <div className="mt-2">
+        <Button
+          onClick={deleteWorkout}
+          className={
+            cn(buttonVariants({ variant: "default" }),
+              "bg-red-500",
+              "hover:bg-red-700"
+            )
+          }>
+          <Trash2 />
+          Delete workout
+        </Button>
       </div>
     </>
   );

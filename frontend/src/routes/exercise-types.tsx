@@ -2,7 +2,9 @@ import { Input } from "@/components/ui/input";
 import { useEffect, useId, useState } from "react";
 import { ExerciseType } from "../models/exercise-type";
 import ApiService from "../services/api-service";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const ExerciseTypes = () => {
   const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([]);
@@ -65,15 +67,28 @@ const ExerciseTypes = () => {
   return (
     <>
       <h1 className="text-xl">Exercises</h1>
-      <ul>
-        {exerciseTypes.map((et) => {
-          return (<li className="m-2" key={et.id}>{et.name} <Button onClick={() => deleteExerciseType(et.id)}>Delete exercise</Button></li>);
-        })}
-      </ul>
       <form onSubmit={addExercise}>
         Add new: <Input id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
         <Button type="submit">Add exercise</Button>
       </form>
+      <ul>
+        {exerciseTypes.map((et) => {
+          return (
+            <li className="m-2" key={et.id}>
+              {et.name}
+              <Button className={
+                cn(
+                  buttonVariants({ variant: "default" }),
+                  "ml-1",
+                  "bg-red-500",
+                  "hover:bg-red-700"
+                )
+              } onClick={() => deleteExerciseType(et.id)}>
+                <Trash2 />
+              </Button>
+            </li>);
+        })}
+      </ul>
     </>
   );
 };
