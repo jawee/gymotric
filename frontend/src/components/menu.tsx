@@ -7,7 +7,7 @@ import { Dumbbell } from "lucide-react";
 
 const Menu = () => {
   return (
-    <div className="pb-2 mb-5">
+    <div className="pb-2 mb-2">
       <NavigationMenu>
         <div className="flex h-10 w-10 items-center justify-center rounded-md text-primary m-1 ml-0 border-2 border-primary">
           <Dumbbell className="size-6" />

@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils"
 import React from "react";
 import WtDialog from "../components/wt-dialog";
 import { Check, Plus, Trash2 } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type ExerciseProps = {
   exercise: Exercise,
@@ -138,47 +139,61 @@ const EditableExercise = (props: EditableExerciseProps) => {
   return (
     <div className="border-2 border-black p-2 mt-2 mb-2">
       <li key={ex.id}>
-        {ex.name}
-        <Button
-          onClick={deleteExercise}
-          className={
-            cn(buttonVariants({ variant: "default" }),
-              "bg-red-500",
-              "hover:bg-red-700",
-              "ml-1",
-            )
-          }>
-          <Trash2 />
-          Delete exercise
-        </Button>
-        <ul>
-          {sets.map((set, i) => {
-            return (
-              <li key={ex.id + " " + i} className="mt-2">
-                {set.weight}kg for {set.repetitions} reps
-                <Button
-                  onClick={() => deleteSet(set.id)}
-                  className={
-                    cn(buttonVariants({ variant: "default" }),
-                      "bg-red-500",
-                      "hover:bg-red-700",
-                      "ml-1",
-                    )
-                  }>
-                  <Trash2 />
-                </Button>
-              </li>
-            );
-          })}
-        </ul>
-        <p className="font-bold">Add set</p>
-        <form onSubmit={addSet} className="flex w-full max-w-sm items-center space-x-2">
-          <Input id="weight" inputMode="decimal" type="text" pattern="^\d+([.,]0|[.,]5)?$" />
-          <span className="mr-1">kg for</span>
-          <Input id="reps" inputMode="numeric" type="number" />
-          <span className="mr-1">reps</span>
-          <Button className="" type="submit"><Plus />Add</Button>
-        </form>
+        <p className="text-xl">{ex.name}
+          <Button
+            onClick={deleteExercise}
+            className={
+              cn(buttonVariants({ variant: "default" }),
+                "bg-red-500",
+                "hover:bg-red-700",
+                "ml-1",
+              )
+            }>
+            <Trash2 />
+          </Button>
+        </p>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-primary">Weight</TableHead>
+              <TableHead className="text-primary">Reps</TableHead>
+              <TableHead></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sets.map((set, i) => {
+              return (
+                <TableRow key={ex.id + "" + i}>
+                  <TableCell>{set.weight}kg</TableCell>
+                  <TableCell>{set.repetitions}</TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      onClick={() => deleteSet(set.id)}
+                      className={
+                        cn(buttonVariants({ variant: "default" }),
+                          "bg-red-500",
+                          "hover:bg-red-700",
+                          "ml-1",
+                        )
+                      }>
+                      <Trash2 />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+        <p className="mt-2">Add set</p>
+        <div className="w-full">
+          <form onSubmit={addSet} className="flex w-full max-w-md items-center space-x-2">
+            <Input className="" id="weight" inputMode="decimal" type="text" pattern="^\d+([.,]0|[.,]5)?$" />
+            <span className="flex-none mr-1">kg for</span>
+            <Input className="" id="reps" inputMode="numeric" type="number" />
+            <span className="mr-1">reps</span>
+            <Button className="" type="submit"><Plus />Add</Button>
+          </form>
+        </div>
         <p className="font-bold">Last set: {lastWeight}kg for {lastReps}reps</p>
         <p className="font-bold">Max set: {maxWeight}kg for {maxReps}reps</p>
       </li >
@@ -386,7 +401,7 @@ const WorkoutComponent = () => {
     <>
       <h1 className="text-2xl">Workout {workout.name}</h1>
       <h2 className="text-l font-bold">{new Date(workout.created_on).toDateString()}</h2>
-      <Button onClick={finishWorkout}><Check />Finish workout</Button>
+      <div className="mt-2"><Button onClick={finishWorkout}><Check />Finish workout</Button></div>
       <h3 className="text-2xl mt-3">Exercises</h3>
       <ul>
         {exercises.map(e => {
