@@ -14,6 +14,7 @@ import React from "react";
 import WtDialog from "../components/wt-dialog";
 import { Check, Plus, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import Loading from "../components/loading";
 
 type ExerciseProps = {
   exercise: Exercise,
@@ -203,6 +204,7 @@ const EditableExercise = (props: EditableExerciseProps) => {
 
 const WorkoutComponent = () => {
   const params = useParams();
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([]);
@@ -232,6 +234,7 @@ const WorkoutComponent = () => {
     if (res.status === 200) {
       const resObj = await res.json();
       setWorkout(resObj.workout);
+      setIsLoading(false);
       return
     }
 
@@ -293,9 +296,9 @@ const WorkoutComponent = () => {
 
   const [value, setValue] = useState("");
 
-  if (workout === null) {
+  if (workout === null || isLoading) {
     return (
-      <p>Loading</p>
+      <Loading />
     );
   }
 

@@ -5,8 +5,10 @@ import { Workout } from "../models/workout";
 import ApiService from "../services/api-service";
 import WtDialog from "./wt-dialog";
 import { Exercise } from "../models/exercise";
+import Loading from "./loading";
 
 const WorkoutsList = () => {
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [name, setName] = useState<string>("");
   const nameId = useId()
@@ -19,6 +21,7 @@ const WorkoutsList = () => {
 
       if (res.status === 200) {
         const resObj = await res.json();
+        setIsLoading(false);
         setWorkouts(resObj.workouts);
       }
     };
@@ -38,6 +41,10 @@ const WorkoutsList = () => {
 
     navigate("/app/workouts/" + response.id);
   };
+
+  if (isLoading) {
+    return <Loading />
+  }
 
 
   return (

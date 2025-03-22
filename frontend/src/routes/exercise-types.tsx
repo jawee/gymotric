@@ -13,20 +13,24 @@ import {
   TableRow
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import Loading from "@/components/loading";
 
 const ExerciseTypes = () => {
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([]);
+  const exerciseNameId = useId();
+  const [exerciseName, setExerciseName] = useState<string>("");
 
   const fetchExerciseTypes = async () => {
     const res = await ApiService.fetchExerciseTypes();
     if (res.status === 200) {
       const resObj = await res.json();
+      setIsLoading(false);
       setExerciseTypes(resObj.exercise_types);
     }
   };
 
   useEffect(() => {
-
     fetchExerciseTypes();
   }, []);
 
@@ -70,8 +74,10 @@ const ExerciseTypes = () => {
     setExerciseTypes(l => l.filter(item => item.id !== id));
   };
 
-  const exerciseNameId = useId();
-  const [exerciseName, setExerciseName] = useState<string>("");
+  if (isLoading) {
+    return <Loading />
+  }
+
   return (
     <>
       <h1 className="text-xl">Exercises</h1>
