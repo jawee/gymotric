@@ -74,17 +74,22 @@ const WorkoutListItem = ({ workout }: WorkoutListItemProps) => {
   }, []);
 
   return (
-    <div onClick={() => navigate("/app/workouts/" + workout.id)} className="cursor-pointer p-4 border border-gray-200">
-      <h1 className="font-medium text-xl">{workout.name}{(workout.completed_on === null) ? <span className="text-sm"> In progress</span> : ""}</h1>
-            <p>Date: {new Date(workout.created_on).toLocaleString()}</p>
-      <p className="font-medium">Exercises:</p>
-      <ul>
-        {exercises.map(exercise => {
-          return (
-            <li key={exercise.id}>{exercise.name}</li>
-          )
-        })}
-      </ul>
+    <div onClick={() => navigate("/app/workouts/" + workout.id)} className="cursor-pointer p-4 border border-gray-200
+      flex flex-col md:flex-row gap-4">
+      <div className="flex-1">
+        <h3 className="font-medium text-xl">{workout.name}{(workout.completed_on === null) ? <span className="text-sm text-green-500"> In progress</span> : ""}</h3>
+        <p>{new Date(workout.created_on).toLocaleString()}</p>
+      </div>
+      <div className="flex-1 hidden md:block">
+        <p className="font-medium">Exercises:</p>
+        <ul>
+          {exercises.map(exercise => {
+            return (
+              <li key={exercise.id}>{exercise.name}</li>
+            )
+          })}
+        </ul>
+      </div>
     </div>
   );
 };
