@@ -92,7 +92,7 @@ const ExerciseTypes = () => {
             return (
               <TableRow key={et.id}>
                 <TableCell>{et.name}</TableCell>
-                <TableCell>
+                <TableCell className="text-right">
                   <Button className={
                     cn(
                       buttonVariants({ variant: "default" }),
