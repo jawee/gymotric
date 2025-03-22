@@ -136,7 +136,7 @@ const EditableExercise = (props: EditableExerciseProps) => {
   };
 
   return (
-    <div className="border-2 border-black m-2 p-2">
+    <div className="border-2 border-black p-2 mt-2 mb-2">
       <li key={ex.id}>
         {ex.name}
         <Button
