@@ -3,7 +3,15 @@ import { useEffect, useId, useState } from "react";
 import { ExerciseType } from "../models/exercise-type";
 import ApiService from "../services/api-service";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
 const ExerciseTypes = () => {
@@ -68,27 +76,39 @@ const ExerciseTypes = () => {
     <>
       <h1 className="text-xl">Exercises</h1>
       <form onSubmit={addExercise}>
-        Add new: <Input id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
-        <Button type="submit">Add exercise</Button>
+        Add new:
+        <Input id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
+        <Button className="mt-2 mb-2" type="submit"><Plus />Add</Button>
       </form>
-      <ul>
-        {exerciseTypes.map((et) => {
-          return (
-            <li className="m-2" key={et.id}>
-              {et.name}
-              <Button className={
-                cn(
-                  buttonVariants({ variant: "default" }),
-                  "ml-1",
-                  "bg-red-500",
-                  "hover:bg-red-700"
-                )
-              } onClick={() => deleteExerciseType(et.id)}>
-                <Trash2 />
-              </Button>
-            </li>);
-        })}
-      </ul>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Exercise</TableHead>
+            <TableHead></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {exerciseTypes.map((et) => {
+            return (
+              <TableRow key={et.id}>
+                <TableCell>{et.name}</TableCell>
+                <TableCell>
+                  <Button className={
+                    cn(
+                      buttonVariants({ variant: "default" }),
+                      "ml-1",
+                      "bg-red-500",
+                      "hover:bg-red-700"
+                    )
+                  } onClick={() => deleteExerciseType(et.id)}>
+                    <Trash2 />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
     </>
   );
 };
