@@ -318,7 +318,7 @@ const WorkoutComponent = () => {
 
       obj = await res.json();
 
-      setExercises([...exercises, { id: obj.id, exercise_type_id: obj.id, workout_id: workout.id, name: value}]);
+      setExercises([...exercises, { id: obj.id, exercise_type_id: obj.id, workout_id: workout.id, name: value }]);
 
       setValue("");
 
@@ -381,7 +381,7 @@ const Autocomplete = ({ value, setValue, suggestions }: AutoCompleteProps) => {
     let filteredSuggestions: string[] = [];
 
     if (value.length > 0) {
-      const regex = new RegExp(`^${value}`, "i");
+      const regex = new RegExp(`${value}`, "i");
       filteredSuggestions = suggestions.sort().filter(v => regex.test(v));
     }
 
@@ -405,14 +405,19 @@ const Autocomplete = ({ value, setValue, suggestions }: AutoCompleteProps) => {
         <ul className="absolute w-full z-10 bg-white border-2 border-black">
           {filteredSuggestions.map((suggestion, i) => {
             return (
-              <li key={i} onClick={onClick}>{suggestion}</li>
+              <Suggestion key={i} suggestion={suggestion} onClick={onClick} />
             );
           })}
         </ul>
       )}
-
     </div>
   );
+};
+
+const Suggestion = ({ suggestion, onClick }: { suggestion: string, onClick: (e: React.MouseEvent<HTMLLIElement>) => void }) => {
+  return (
+    <li onClick={onClick} className="p-2 cursor-pointer">{suggestion}</li>
+  )
 };
 
 export default WorkoutComponent;
