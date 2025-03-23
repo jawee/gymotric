@@ -78,7 +78,7 @@ const WorkoutListItem = ({ workout }: WorkoutListItemProps) => {
     };
 
     fetchExercises();
-  }, []);
+  }, [workout.id]);
 
   return (
     <div onClick={() => navigate("/app/workouts/" + workout.id)} className="cursor-pointer p-4 border border-gray-200

@@ -78,30 +78,30 @@ const EditableExercise = (props: EditableExerciseProps) => {
   const [maxWeight, setMaxWeight] = useState<number | null>(null);
   const [maxReps, setMaxReps] = useState<number | null>(null);
 
-  const fetchMaxWeightAndReps = async () => {
-    const res = await ApiService.fetchMaxWeightAndReps(ex.exercise_type_id);
-
-    if (res.status === 200) {
-      const resObj = await res.json();
-      setMaxWeight(resObj.weight);
-      setMaxReps(resObj.reps);
-    }
-  };
-
-  const fetchLastWeightAndReps = async () => {
-    const res = await ApiService.fetchLastWeightAndReps(ex.exercise_type_id);
-
-    if (res.status === 200) {
-      const resObj = await res.json();
-      setLastWeight(resObj.weight);
-      setLastReps(resObj.reps);
-    }
-  };
-
   useEffect(() => {
+    const fetchMaxWeightAndReps = async () => {
+      const res = await ApiService.fetchMaxWeightAndReps(ex.exercise_type_id);
+
+      if (res.status === 200) {
+        const resObj = await res.json();
+        setMaxWeight(resObj.weight);
+        setMaxReps(resObj.reps);
+      }
+    };
+
+    const fetchLastWeightAndReps = async () => {
+      const res = await ApiService.fetchLastWeightAndReps(ex.exercise_type_id);
+
+      if (res.status === 200) {
+        const resObj = await res.json();
+        setLastWeight(resObj.weight);
+        setLastReps(resObj.reps);
+      }
+    };
+
     fetchMaxWeightAndReps();
     fetchLastWeightAndReps();
-  }, []);
+  }, [ex]);
 
   useEffect(() => {
     fetchSets(ex.workout_id, ex.id, setSets);
@@ -242,25 +242,25 @@ const WorkoutComponent = () => {
     fetchExerciseTypes();
   }, [workout]);
 
-  const fetchWorkout = async () => {
-    if (id === undefined) {
-      return;
-    }
-
-    const res = await ApiService.fetchWorkout(id);
-    if (res.status === 200) {
-      const resObj = await res.json();
-      setWorkout(resObj.workout);
-      setIsLoading(false);
-      return
-    }
-
-    navigate("/app/workouts", { state: { error: "Workout not found" } });
-  };
 
   useEffect(() => {
+    const fetchWorkout = async () => {
+      if (id === undefined) {
+        return;
+      }
+
+      const res = await ApiService.fetchWorkout(id);
+      if (res.status === 200) {
+        const resObj = await res.json();
+        setWorkout(resObj.workout);
+        setIsLoading(false);
+        return
+      }
+
+      navigate("/app/workouts", { state: { error: "Workout not found" } });
+    };
     fetchWorkout();
-  }, [location]);
+  }, [location, id, navigate]);
 
   const deleteWorkout = async () => {
     if (workout === null) {
@@ -281,21 +281,21 @@ const WorkoutComponent = () => {
     navigate("/app/workouts");
   };
 
-  const fetchExercises = async () => {
-    if (id === undefined) {
-      return;
-    }
-
-    const res = await ApiService.fetchExercises(id);
-    if (res.status === 200) {
-      const resObj = await res.json();
-      setExercises(resObj.exercises);
-    }
-  };
 
   useEffect(() => {
+    const fetchExercises = async () => {
+      if (id === undefined) {
+        return;
+      }
+
+      const res = await ApiService.fetchExercises(id);
+      if (res.status === 200) {
+        const resObj = await res.json();
+        setExercises(resObj.exercises);
+      }
+    };
     fetchExercises();
-  }, [workout]);
+  }, [workout, id]);
 
   const cloneWorkout = async () => {
     if (id === undefined) {
@@ -429,7 +429,7 @@ const WorkoutComponent = () => {
       return;
     }
 
-    navigate("/app");
+    navigate("/app/workouts");
   };
 
 
