@@ -20,7 +20,7 @@ type Service interface {
 }
 
 type workoutsService struct {
-	repo WorkoutsRepository
+	repo         WorkoutsRepository
 	exerciseRepo exercises.ExerciseRepository
 }
 
@@ -41,10 +41,19 @@ func (w *workoutsService) CloneByIdAndReturnId(context context.Context, workoutI
 	exercises, err := w.exerciseRepo.GetByWorkoutId(context, repository.GetExercisesByWorkoutIdParams{UserID: userId, WorkoutID: workoutId})
 
 	for _, exercise := range exercises {
-		_, err := w.exerciseRepo.CreateAndReturnId(context, repository.CreateExerciseAndReturnIdParams{
-			WorkoutID: cloneId,
-			Name:      exercise.Name,
+		uuid, err := uuid.NewV7()
+		if err != nil {
+			return "", err
+		}
+
+		_, err = w.exerciseRepo.CreateAndReturnId(context, repository.CreateExerciseAndReturnIdParams{
+			ID:             uuid.String(),
+			WorkoutID:      cloneId,
+			Name:           exercise.Name,
 			ExerciseTypeID: exercise.ExerciseTypeID,
+			CreatedOn: time.Now().UTC().Format(time.RFC3339),
+			UserID: userId,
+			UpdatedOn: time.Now().UTC().Format(time.RFC3339),
 		})
 
 		if err != nil {
