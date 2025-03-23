@@ -118,6 +118,18 @@ const deleteWorkout = async (workoutId: string, isRetry: boolean = false) => {
   return res;
 };
 
+const cloneWorkout = async (workoutId: string, isRetry: boolean = false) => {
+  const res = await fetch("/api/workouts/" + workoutId + "/clone", {
+    method: "POST",
+    credentials: "include",
+  });
+  const shouldRetry = await checkIfUnauthorized(res, isRetry);
+  if (shouldRetry && !isRetry) {
+    return await cloneWorkout(workoutId, true);
+  }
+  return res;
+};
+
 const fetchSets = async (workoutId: string, exerciseId: string, isRetry: boolean = false) => {
   const res = await fetch("/api/workouts/" + workoutId + "/exercises/" + exerciseId + "/sets", {
     credentials: "include",
@@ -269,6 +281,7 @@ const ApiService = {
   createWorkout,
   finishWorkout,
   deleteWorkout,
+  cloneWorkout,
   fetchSets,
   deleteSet,
   createSet,

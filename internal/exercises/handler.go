@@ -13,7 +13,7 @@ type handler struct {
 
 func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper func(next http.Handler) http.Handler) {
 	handler := handler{
-		service: NewService(exerciseRepository{s.GetRepository()}),
+		service: NewService(NewExerciseRepository(s.GetRepository())),
 	}
 
 	mux.Handle("GET /workouts/{id}/exercises", authenticationWrapper(http.HandlerFunc(handler.getExercisesByWorkoutIdHandler)))
@@ -34,7 +34,7 @@ func (s *handler) getExercisesByWorkoutIdHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	resp := map[string]interface{}{"exercises": exercises}
+	resp := map[string]any{"exercises": exercises}
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
 		slog.Error("Failed to marshal response", "error", err)
@@ -72,7 +72,7 @@ func (s *handler) createExerciseHandler(w http.ResponseWriter, r *http.Request) 
 
 	w.WriteHeader(http.StatusCreated)
 
-	resp := map[string]interface{}{"id": id}
+	resp := map[string]any{"id": id}
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
 		slog.Error("Failed to marshal response", "error", err)

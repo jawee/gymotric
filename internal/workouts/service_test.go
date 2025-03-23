@@ -52,7 +52,7 @@ package workouts
  		{ID: "a", Name: "A", CreatedOn: time.Now().UTC().Format(time.RFC3339), CompletedOn: time.Now().UTC().Format(time.RFC3339), UpdatedOn: time.Now().UTC().Format(time.RFC3339)},
  	}, nil).Once()
 
- 	service := NewService(&repoMock)
+ 	service := NewService(&repoMock, nil)
 
  	result, err := service.GetAll(ctx, userId)
 
@@ -86,7 +86,7 @@ func TestGetById(t *testing.T) {
 		UpdatedOn:   time.Now().UTC().Format(time.RFC3339),
 	}, nil).Once()
 
-	service := NewService(&repoMock)
+	service := NewService(&repoMock, nil)
 
 	result, err := service.GetById(ctx, workoutId, userId)
 	assert.Nil(t, err)
@@ -108,7 +108,7 @@ func TestCreateAndReturnId(t *testing.T) {
 		return input.Name == "A" && input.ID != "" && input.CreatedOn != "" && input.UpdatedOn != "" && input.UserID == userId
 	})).Return(workoutId, nil).Once()
 
-	service := NewService(&repoMock)
+	service := NewService(&repoMock, nil)
 
 	result, err := service.CreateAndReturnId(ctx, request, userId)
 
@@ -127,7 +127,7 @@ func TestCompleteById(t *testing.T) {
 		return input.ID == workoutId && input.UserID == userId && input.CompletedOn != ""
 	})).Return(int64(1), nil).Once()
 
-	service := NewService(&repoMock)
+	service := NewService(&repoMock, nil)
 
 	err := service.CompleteById(ctx, workoutId, userId)
 
@@ -145,7 +145,7 @@ func TestDeleteById(t *testing.T) {
 		return input.ID == workoutId && input.UserID == userId
 	})).Return(nil).Once()
 
-	service := NewService(&repoMock)
+	service := NewService(&repoMock, nil)
 	err := service.DeleteById(ctx, workoutId, userId)
 
 	assert.Nil(t, err)

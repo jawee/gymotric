@@ -4,7 +4,7 @@ import { Workout } from "../models/workout";
 import { Exercise } from "../models/exercise";
 import { Set } from "../models/set";
 import { ExerciseType } from "../models/exercise-type";
-import { useNavigate, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 import ApiService from "../services/api-service";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button"
@@ -12,7 +12,7 @@ import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import React from "react";
 import WtDialog from "../components/wt-dialog";
-import { Check, Plus, Trash2 } from "lucide-react";
+import { Check, Copy, Plus, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Loading from "../components/loading";
 
@@ -68,17 +68,6 @@ const ExerciseComponent = (props: ExerciseProps) => {
       </Table>
     </div>
   );
-  // return (
-  //   <li key={ex.id}>{ex.name}
-  //     <ul className="border-2 border-black m-2 p-2">
-  //       {sets.map((set, i) => {
-  //         return (
-  //           <li key={ex.id + " " + i}>{set.weight}kg for {set.repetitions} reps</li>
-  //         );
-  //       })}
-  //     </ul>
-  //   </li>
-  // );
 };
 
 const EditableExercise = (props: EditableExerciseProps) => {
@@ -89,30 +78,30 @@ const EditableExercise = (props: EditableExerciseProps) => {
   const [maxWeight, setMaxWeight] = useState<number | null>(null);
   const [maxReps, setMaxReps] = useState<number | null>(null);
 
-  const fetchMaxWeightAndReps = async () => {
-    const res = await ApiService.fetchMaxWeightAndReps(ex.exercise_type_id);
-
-    if (res.status === 200) {
-      const resObj = await res.json();
-      setMaxWeight(resObj.weight);
-      setMaxReps(resObj.reps);
-    }
-  };
-
-  const fetchLastWeightAndReps = async () => {
-    const res = await ApiService.fetchLastWeightAndReps(ex.exercise_type_id);
-
-    if (res.status === 200) {
-      const resObj = await res.json();
-      setLastWeight(resObj.weight);
-      setLastReps(resObj.reps);
-    }
-  };
-
   useEffect(() => {
+    const fetchMaxWeightAndReps = async () => {
+      const res = await ApiService.fetchMaxWeightAndReps(ex.exercise_type_id);
+
+      if (res.status === 200) {
+        const resObj = await res.json();
+        setMaxWeight(resObj.weight);
+        setMaxReps(resObj.reps);
+      }
+    };
+
+    const fetchLastWeightAndReps = async () => {
+      const res = await ApiService.fetchLastWeightAndReps(ex.exercise_type_id);
+
+      if (res.status === 200) {
+        const resObj = await res.json();
+        setLastWeight(resObj.weight);
+        setLastReps(resObj.reps);
+      }
+    };
+
     fetchMaxWeightAndReps();
     fetchLastWeightAndReps();
-  }, []);
+  }, [ex]);
 
   useEffect(() => {
     fetchSets(ex.workout_id, ex.id, setSets);
@@ -235,6 +224,8 @@ const WorkoutComponent = () => {
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([]);
 
+  const location = useLocation();
+
   const id = params.id;
 
   const navigate = useNavigate();
@@ -249,27 +240,27 @@ const WorkoutComponent = () => {
     };
 
     fetchExerciseTypes();
-  }, []);
+  }, [workout]);
 
-  const fetchWorkout = async () => {
-    if (id === undefined) {
-      return;
-    }
-
-    const res = await ApiService.fetchWorkout(id);
-    if (res.status === 200) {
-      const resObj = await res.json();
-      setWorkout(resObj.workout);
-      setIsLoading(false);
-      return
-    }
-
-    navigate("/app/workouts", { state: { error: "Workout not found" } });
-  };
 
   useEffect(() => {
+    const fetchWorkout = async () => {
+      if (id === undefined) {
+        return;
+      }
+
+      const res = await ApiService.fetchWorkout(id);
+      if (res.status === 200) {
+        const resObj = await res.json();
+        setWorkout(resObj.workout);
+        setIsLoading(false);
+        return
+      }
+
+      navigate("/app/workouts", { state: { error: "Workout not found" } });
+    };
     fetchWorkout();
-  }, []);
+  }, [location, id, navigate]);
 
   const deleteWorkout = async () => {
     if (workout === null) {
@@ -290,21 +281,36 @@ const WorkoutComponent = () => {
     navigate("/app/workouts");
   };
 
-  const fetchExercises = async () => {
+
+  useEffect(() => {
+    const fetchExercises = async () => {
+      if (id === undefined) {
+        return;
+      }
+
+      const res = await ApiService.fetchExercises(id);
+      if (res.status === 200) {
+        const resObj = await res.json();
+        setExercises(resObj.exercises);
+      }
+    };
+    fetchExercises();
+  }, [workout, id]);
+
+  const cloneWorkout = async () => {
     if (id === undefined) {
       return;
     }
 
-    const res = await ApiService.fetchExercises(id);
-    if (res.status === 200) {
-      const resObj = await res.json();
-      setExercises(resObj.exercises);
+    const res = await ApiService.cloneWorkout(id);
+    if (res.status !== 201) {
+      console.log("Error", res.status, res.statusText);
+      return;
     }
-  };
 
-  useEffect(() => {
-    fetchExercises();
-  }, []);
+    const obj = await res.json();
+    navigate("/app/workouts/" + obj.id);
+  };
 
   const deleteExercise = async (exerciseId: string) => {
     if (id === undefined) {
@@ -333,6 +339,7 @@ const WorkoutComponent = () => {
       <>
         <h1 className="text-2xl">Workout {workout.name}</h1>
         <h2 className="text-l font-bold">{new Date(workout.created_on).toDateString()}</h2>
+        <Button onClick={cloneWorkout}><Copy />Clone</Button>
         <h3 className="text-2xl mt-3">Exercises</h3>
         <ul>
           {exercises.map(e => {
@@ -422,7 +429,7 @@ const WorkoutComponent = () => {
       return;
     }
 
-    await fetchWorkout();
+    navigate("/app/workouts");
   };
 
 
