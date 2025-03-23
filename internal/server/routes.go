@@ -9,6 +9,7 @@ import (
 	"weight-tracker/internal/exercises"
 	"weight-tracker/internal/exercisetypes"
 	"weight-tracker/internal/sets"
+	"weight-tracker/internal/statistics"
 	"weight-tracker/internal/users"
 	"weight-tracker/internal/utils"
 	"weight-tracker/internal/workouts"
@@ -32,6 +33,8 @@ func (s *Server) RegisterRoutes() http.Handler {
 	sets.AddEndpoints(mux, s.db, s.AuthenticatedMiddleware)
 
 	exercises.AddEndpoints(mux, s.db, s.AuthenticatedMiddleware)
+
+	statistics.AddEndpoints(mux, s.db, s.AuthenticatedMiddleware)
 
 	return s.corsMiddleware(s.loggingMiddleware(mux))
 }

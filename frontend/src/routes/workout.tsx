@@ -1,5 +1,5 @@
 import { Input } from "@/components/ui/input";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useState } from "react";
 import { Workout } from "../models/workout";
 import { Exercise } from "../models/exercise";
 import { Set } from "../models/set";
@@ -9,25 +9,12 @@ import ApiService from "../services/api-service";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button"
 
-import { Check, ChevronsUpDown } from "lucide-react"
-
 import { cn } from "@/lib/utils"
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 import React from "react";
-import { Label } from "@/components/ui/label";
 import WtDialog from "../components/wt-dialog";
+import { Check, Plus, Trash2 } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import Loading from "../components/loading";
 
 type ExerciseProps = {
   exercise: Exercise,
@@ -56,16 +43,42 @@ const ExerciseComponent = (props: ExerciseProps) => {
   }, [ex]);
 
   return (
-    <li key={ex.id}>{ex.name}
-      <ul className="border-2 border-black m-2 p-2">
-        {sets.map((set, i) => {
-          return (
-            <li key={ex.id + " " + i}>{set.weight}kg for {set.repetitions} reps</li>
-          );
-        })}
-      </ul>
-    </li>
+    <div className="border-2 border-black p-2 mt-2 mb-2">
+      <p className="text-xl">{ex.name}</p>
+      <Table className="mb-2">
+        <TableHeader>
+          <TableRow>
+            <TableHead className="text-primary">Weight</TableHead>
+            <TableHead className="text-primary">Reps</TableHead>
+            <TableHead></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sets.map((set, i) => {
+            return (
+              <TableRow key={ex.id + "" + i}>
+                <TableCell>{set.weight}kg</TableCell>
+                <TableCell>{set.repetitions}</TableCell>
+                <TableCell className="text-right">
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
   );
+  // return (
+  //   <li key={ex.id}>{ex.name}
+  //     <ul className="border-2 border-black m-2 p-2">
+  //       {sets.map((set, i) => {
+  //         return (
+  //           <li key={ex.id + " " + i}>{set.weight}kg for {set.repetitions} reps</li>
+  //         );
+  //       })}
+  //     </ul>
+  //   </li>
+  // );
 };
 
 const EditableExercise = (props: EditableExerciseProps) => {
@@ -151,23 +164,63 @@ const EditableExercise = (props: EditableExerciseProps) => {
   };
 
   return (
-    <div className="border-2 border-black m-2 p-2">
-      <li key={ex.id}>{ex.name} <Button onClick={deleteExercise}>Delete exercise</Button>
-        <ul>
-          {sets.map((set, i) => {
-            return (
-              <li key={ex.id + " " + i}>{set.weight}kg for {set.repetitions} reps <Button onClick={() => deleteSet(set.id)}>Delete set</Button></li>
-            );
-          })}
-        </ul>
-        <p className="font-bold">Add set</p>
-        <form onSubmit={addSet} className="flex w-full max-w-sm items-center space-x-2">
-          <Input id="weight" inputMode="decimal" type="text" pattern="^\d+([.,]0|[.,]5)?$" />
-          <span className="mr-1">kg for</span>
-          <Input id="reps" inputMode="numeric" type="number" />
-          <span className="mr-1">reps</span>
-          <Button className="" type="submit">Add</Button>
-        </form>
+    <div className="border-2 border-black p-2 mt-2 mb-2">
+      <li key={ex.id}>
+        <p className="text-xl">{ex.name}
+          <Button
+            onClick={deleteExercise}
+            className={
+              cn(buttonVariants({ variant: "default" }),
+                "bg-red-500",
+                "hover:bg-red-700",
+                "ml-1",
+              )
+            }>
+            <Trash2 />
+          </Button>
+        </p>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-primary">Weight</TableHead>
+              <TableHead className="text-primary">Reps</TableHead>
+              <TableHead></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sets.map((set, i) => {
+              return (
+                <TableRow key={ex.id + "" + i}>
+                  <TableCell>{set.weight}kg</TableCell>
+                  <TableCell>{set.repetitions}</TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      onClick={() => deleteSet(set.id)}
+                      className={
+                        cn(buttonVariants({ variant: "default" }),
+                          "bg-red-500",
+                          "hover:bg-red-700",
+                          "ml-1",
+                        )
+                      }>
+                      <Trash2 />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+        <p className="mt-2">Add set</p>
+        <div className="w-full">
+          <form onSubmit={addSet} className="flex w-full max-w-md items-center space-x-2">
+            <Input className="" id="weight" inputMode="decimal" type="text" pattern="^\d+([.,]0|[.,]5)?$" />
+            <span className="flex-none mr-1">kg for</span>
+            <Input className="" id="reps" inputMode="numeric" type="number" />
+            <span className="mr-1">reps</span>
+            <Button className="" type="submit"><Plus />Add</Button>
+          </form>
+        </div>
         <p className="font-bold">Last set: {lastWeight}kg for {lastReps}reps</p>
         <p className="font-bold">Max set: {maxWeight}kg for {maxReps}reps</p>
       </li >
@@ -177,11 +230,10 @@ const EditableExercise = (props: EditableExerciseProps) => {
 
 const WorkoutComponent = () => {
   const params = useParams();
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([]);
-  //form
-  const [exerciseName, setExerciseName] = useState<string>("");
 
   const id = params.id;
 
@@ -208,6 +260,7 @@ const WorkoutComponent = () => {
     if (res.status === 200) {
       const resObj = await res.json();
       setWorkout(resObj.workout);
+      setIsLoading(false);
       return
     }
 
@@ -267,14 +320,11 @@ const WorkoutComponent = () => {
     setExercises(l => l.filter(item => item.id !== exerciseId));
   };
 
-  const exerciseNameId = useId();
-  const existingExerciseTypeSelectName = "exerciseTypeSelect";
-
   const [value, setValue] = useState("");
 
-  if (workout === null) {
+  if (workout === null || isLoading) {
     return (
-      <p>Loading</p>
+      <Loading />
     );
   }
 
@@ -291,57 +341,73 @@ const WorkoutComponent = () => {
             );
           })}
         </ul>
-        <Button onClick={deleteWorkout} className={cn(buttonVariants({ variant: "default" }), "bg-red-500", "hover:bg-red-700")}>Delete workout</Button>
+        <div className="mt-2">
+          <Button
+            onClick={deleteWorkout}
+            className={
+              cn(buttonVariants({ variant: "default" }),
+                "bg-red-500",
+                "hover:bg-red-700"
+              )
+            }>
+            <Trash2 />
+            Delete workout
+          </Button>
+        </div>
       </>
     );
   }
 
   const addExercise = async () => {
     if (value !== "" && value !== null) {
-      const exerciseType = exerciseTypes.filter(et => et.id == value)[0];
+      const exerciseTypeMatch = exerciseTypes.filter(et => et.name == value);
 
-      const res = await ApiService.createExercise(workout.id, exerciseType.id);
+      if (exerciseTypeMatch.length === 1) {
+        const exerciseType = exerciseTypeMatch[0];
+        const res = await ApiService.createExercise(workout.id, exerciseType.id);
+
+        if (res.status !== 201) {
+          console.log("Error");
+          return
+        }
+
+        setValue("");
+        const obj = await res.json();
+
+        setExercises([...exercises, { id: obj.id, exercise_type_id: exerciseType.id, workout_id: workout.id, name: exerciseType.name }]);
+        return;
+      }
+
+      if (value === "") {
+        return;
+      }
+
+      const exerciseTypeRes = await ApiService.createExerciseType(value);
+
+      if (exerciseTypeRes.status !== 201) {
+        console.log("Error");
+        return;
+      }
+
+      let obj = await exerciseTypeRes.json();
+      setExerciseTypes([...exerciseTypes, { id: obj.id, name: value }]);
+
+      const res = await ApiService.createExercise(workout.id, obj.id);
 
       if (res.status !== 201) {
         console.log("Error");
         return
       }
 
+      obj = await res.json();
+
+      setExercises([...exercises, { id: obj.id, exercise_type_id: obj.id, workout_id: workout.id, name: value }]);
+
       setValue("");
-      const obj = await res.json();
 
-      setExercises([...exercises, { id: obj.id, exercise_type_id: exerciseType.id, workout_id: workout.id, name: exerciseType.name }]);
       return;
     }
-
-    if (exerciseName === "") {
-      return;
-    }
-
-    const exerciseTypeRes = await ApiService.createExerciseType(exerciseName);
-
-    if (exerciseTypeRes.status !== 201) {
-      console.log("Error");
-      return;
-    }
-
-    let obj = await exerciseTypeRes.json();
-    setExerciseTypes([...exerciseTypes, { id: obj.id, name: exerciseName }]);
-
-    const res = await ApiService.createExercise(workout.id, obj.id);
-
-    if (res.status !== 201) {
-      console.log("Error");
-      return
-    }
-
-    obj = await res.json();
-
-    setExercises([...exercises, { id: obj.id, exercise_type_id: obj.id, workout_id: workout.id, name: exerciseName }]);
-
-    setExerciseName("");
-  };
-
+  }
 
   const finishWorkout = async () => {
     const confirmRes = confirm("Are you sure you want to finish this workout?");
@@ -364,7 +430,7 @@ const WorkoutComponent = () => {
     <>
       <h1 className="text-2xl">Workout {workout.name}</h1>
       <h2 className="text-l font-bold">{new Date(workout.created_on).toDateString()}</h2>
-      <Button onClick={finishWorkout}>Finish workout</Button>
+      <div className="mt-2"><Button onClick={finishWorkout}><Check />Finish workout</Button></div>
       <h3 className="text-2xl mt-3">Exercises</h3>
       <ul>
         {exercises.map(e => {
@@ -373,64 +439,78 @@ const WorkoutComponent = () => {
       </ul>
       <WtDialog openButtonTitle="Add Exercise" form={
         <>
-          <Label htmlFor={existingExerciseTypeSelectName}>Select existing:</Label>
-          <ComboboxDemo setValue={setValue} options={exerciseTypes.map(e => { return { label: e.name, value: e.id }; })} />
-          <Label htmlFor="exerciseName">or add new:</Label>
-          <Input name="exerciseName" id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
+          <Autocomplete value={value} setValue={setValue} suggestions={exerciseTypes.map(et => et.name)} />
         </>
       } onSubmitButtonClick={addExercise} onSubmitButtonTitle="Add exercise" title="Add Exercise" />
-      <div>
-        <Button onClick={deleteWorkout} className={cn(buttonVariants({ variant: "default" }), "bg-red-500", "hover:bg-red-700")}>Delete workout</Button>
+      <div className="mt-2">
+        <Button
+          onClick={deleteWorkout}
+          className={
+            cn(buttonVariants({ variant: "default" }),
+              "bg-red-500",
+              "hover:bg-red-700"
+            )
+          }>
+          <Trash2 />
+          Delete workout
+        </Button>
       </div>
     </>
   );
 };
 
-type comboBoxDemoProps = {
-  options: { label: string, value: string }[]
-  setValue: (value: string) => void
+type AutoCompleteProps = {
+  value: string;
+  setValue: React.Dispatch<React.SetStateAction<string>>;
+  suggestions: string[];
 };
-const ComboboxDemo = ({ options, setValue }: comboBoxDemoProps) => {
-  const [open, setOpen] = useState(false)
-  const [value, internalSetValue] = useState("")
+
+const Autocomplete = ({ value, setValue, suggestions }: AutoCompleteProps) => {
+  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
+
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    let filteredSuggestions: string[] = [];
+
+    if (value.length > 0) {
+      const regex = new RegExp(`${value}`, "i");
+      filteredSuggestions = suggestions.sort().filter(v => regex.test(v));
+    }
+
+    setFilteredSuggestions(filteredSuggestions);
+    setShowSuggestions(true);
+    setValue(value);
+  };
+
+  const onClick = (e: React.MouseEvent<HTMLLIElement>) => {
+    setValue(e.currentTarget.innerText);
+    setFilteredSuggestions([]);
+    setShowSuggestions(false);
+  };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className={buttonVariants({ variant: "default" }) + " w-[200px] justify-between"}>
-        {value ? options.find((option) => option.value === value)?.label : "Select exercise..."}
-        <ChevronsUpDown className="opacity-50" />
-      </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0">
-        <Command>
-          <CommandInput placeholder="Search option..." />
-          <CommandList>
-            <CommandEmpty>No option found.</CommandEmpty>
-            <CommandGroup>
-              {options.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  value={option.value}
-                  onSelect={(currentValue) => {
-                    setValue(currentValue === value ? "" : currentValue)
-                    internalSetValue(currentValue === value ? "" : currentValue)
-                    setOpen(false)
-                  }}
-                >
-                  {option.label}
-                  <Check
-                    className={cn(
-                      "ml-auto",
-                      value === option.value ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+    <div className="relative">
+      <input type="text" value={value} onChange={onChange} className={cn(
+        "w-full border-2 border-black rounded-md px-3 py-1 text-base outline-none",
+      )} />
+      {showSuggestions && value.length > 0 && (
+        <ul className="absolute w-full z-10 bg-white border-2 border-black">
+          {filteredSuggestions.map((suggestion, i) => {
+            return (
+              <Suggestion key={i} suggestion={suggestion} onClick={onClick} />
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+};
+
+const Suggestion = ({ suggestion, onClick }: { suggestion: string, onClick: (e: React.MouseEvent<HTMLLIElement>) => void }) => {
+  return (
+    <li onClick={onClick} className="p-2 cursor-pointer">{suggestion}</li>
   )
-}
+};
 
 export default WorkoutComponent;

@@ -10,7 +10,7 @@ const Workouts = () => {
     const state = location.state as WorkoutsState | null;
     return (
         <>
-            <h1>Workouts</h1>
+            <h1 className="text-xl">Workouts</h1>
             {state?.error && <p>{state?.error}</p>}
             <WorkoutsList />
         </>

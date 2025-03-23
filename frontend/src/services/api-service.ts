@@ -44,6 +44,19 @@ const refreshToken = async () => {
   return res;
 };
 
+const fetchStatistics = async (isRetry: boolean = false) => {
+  const res = await fetch("/api/statistics", {
+    credentials: "include",
+  });
+
+  const shouldRetry = await checkIfUnauthorized(res, isRetry);
+  if (shouldRetry && !isRetry) {
+    return await fetchStatistics(true);
+  }
+
+  return res;
+};
+
 const fetchWorkouts = async (isRetry: boolean = false) => {
   const res = await fetch("/api/workouts", {
     credentials: "include",
@@ -250,6 +263,7 @@ const ApiService = {
   login,
   logout,
   refreshToken,
+  fetchStatistics,
   fetchWorkouts,
   fetchWorkout,
   createWorkout,
