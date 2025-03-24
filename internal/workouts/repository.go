@@ -12,6 +12,7 @@ type Workout struct {
 	CompletedOn interface{} `json:"completed_on"`
 	CreatedOn   string      `json:"created_on"`
 	UpdatedOn   string      `json:"updated_on"`
+	Note        string      `json:"note"`
 }
 
 type WorkoutsRepository interface {
@@ -37,7 +38,6 @@ func (w *workoutsRepository) DeleteById(ctx context.Context, arg repository.Dele
 	}
 	return nil
 }
-
 
 func (w *workoutsRepository) CompleteById(ctx context.Context, arg repository.CompleteWorkoutByIdParams) (int64, error) {
 	return w.repo.CompleteWorkoutById(ctx, arg)

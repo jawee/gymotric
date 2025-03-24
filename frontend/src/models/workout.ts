@@ -4,4 +4,5 @@ export type Workout = {
   created_on: Date
   updated_on: Date
   completed_on: Date | null
+  note: string
 };
