@@ -366,7 +366,7 @@ const WorkoutComponent = () => {
           </Button>
         </div>
         <h3>Note</h3>
-        <Textarea className="border-2" value={workout.note} />
+        <Textarea className="border-2" value={workout.note} disabled />
       </>
     );
   }

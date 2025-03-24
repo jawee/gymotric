@@ -33,6 +33,7 @@ type Querier interface {
 	GetSetsByExerciseId(ctx context.Context, arg GetSetsByExerciseIdParams) ([]Set, error)
 	GetStatisticsSinceDate(ctx context.Context, arg GetStatisticsSinceDateParams) (int64, error)
 	GetWorkoutById(ctx context.Context, arg GetWorkoutByIdParams) (Workout, error)
+	UpdateWorkoutById(ctx context.Context, arg UpdateWorkoutByIdParams) (int64, error)
 }
 
 var _ Querier = (*Queries)(nil)
