@@ -80,7 +80,7 @@ func (q *Queries) DeleteWorkoutById(ctx context.Context, arg DeleteWorkoutByIdPa
 }
 
 const getAllWorkouts = `-- name: GetAllWorkouts :many
-SELECT id, name, completed_on, created_on, updated_on, user_id FROM workouts 
+SELECT id, name, completed_on, created_on, updated_on, user_id, note FROM workouts 
 WHERE user_id = ?1
 ORDER by id asc
 `
@@ -101,6 +101,7 @@ func (q *Queries) GetAllWorkouts(ctx context.Context, userID string) ([]Workout,
 			&i.CreatedOn,
 			&i.UpdatedOn,
 			&i.UserID,
+			&i.Note,
 		); err != nil {
 			return nil, err
 		}
@@ -116,7 +117,7 @@ func (q *Queries) GetAllWorkouts(ctx context.Context, userID string) ([]Workout,
 }
 
 const getWorkoutById = `-- name: GetWorkoutById :one
-SELECT id, name, completed_on, created_on, updated_on, user_id FROM workouts 
+SELECT id, name, completed_on, created_on, updated_on, user_id, note FROM workouts 
 WHERE id = ?1
 AND user_id = ?2
 `
@@ -136,6 +137,7 @@ func (q *Queries) GetWorkoutById(ctx context.Context, arg GetWorkoutByIdParams) 
 		&i.CreatedOn,
 		&i.UpdatedOn,
 		&i.UserID,
+		&i.Note,
 	)
 	return i, err
 }
