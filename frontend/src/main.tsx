@@ -9,6 +9,7 @@ import Workout from './routes/workout';
 import ExerciseTypes from './routes/exercise-types';
 import Logout from './routes/logout';
 import './index.css';
+import Profile from './routes/profile';
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
         <BrowserRouter>
@@ -19,6 +20,7 @@ createRoot(document.getElementById('root')!).render(
                     <Route index element={<Home />} />
                     <Route path="workouts/:id" element={<Workout />} />
                     <Route path="exercise-types" element={<ExerciseTypes />} />
+                    <Route path="profile" element={<Profile />} />
                     <Route path="*" element={<Home />} />
                     <Route path="logout" element={<Logout />} />
                 </Route>

@@ -54,14 +54,7 @@ func (s *handler) meHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := map[string]interface{}{
-		"id":        user.ID,
-		"username":  user.Username,
-		"createdOn": user.CreatedOn,
-		"updatedOn": user.UpdatedOn,
-	}
-
-	jsonResp, err := json.Marshal(resp)
+	jsonResp, err := json.Marshal(user)
 	if err != nil {
 		slog.Error("Failed to marshal response", "error", err)
 		http.Error(w, "", http.StatusBadRequest)

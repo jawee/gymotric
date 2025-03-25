@@ -14,7 +14,7 @@ const Menu = () => {
         </div>
         <NavigationMenuLink className="border-r-2 rounded-none p-2 grow border-primary" asChild><Link to="/app">Home</Link></NavigationMenuLink>
         <NavigationMenuLink className="border-r-2 rounded-none p-2 grow border-primary" asChild><Link to="/app/exercise-types">Exercises</Link></NavigationMenuLink>
-        <NavigationMenuLink className="rounded-none p-2 grow" asChild><Link to="/app/logout">Log Out</Link></NavigationMenuLink>
+        <NavigationMenuLink className="rounded-none p-2 grow" asChild><Link to="/app/profile">Profile</Link></NavigationMenuLink>
       </NavigationMenu>
     </div>
   );
