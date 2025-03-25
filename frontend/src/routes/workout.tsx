@@ -261,7 +261,7 @@ const WorkoutComponent = () => {
         return
       }
 
-      navigate("/app/workouts", { state: { error: "Workout not found" } });
+      navigate("/app", { state: { error: "Workout not found" } });
     };
     fetchWorkout();
   }, [location, id, navigate]);
@@ -282,7 +282,7 @@ const WorkoutComponent = () => {
       return;
     }
 
-    navigate("/app/workouts");
+    navigate("/app");
   };
 
 
@@ -435,7 +435,7 @@ const WorkoutComponent = () => {
       return;
     }
 
-    navigate("/app/workouts");
+    navigate("/app");
   };
 
   const updateNote = async () => {
