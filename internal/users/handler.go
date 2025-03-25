@@ -33,15 +33,39 @@ func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper 
 	handler := handler{
 		service: NewService(&usersRepository{s.GetRepository()}),
 	}
-	// mux.Handle("GET /workouts/{id}/exercises/{exerciseId}/sets", authenticationWrapper(http.HandlerFunc(handler.getSetsByExerciseIdHandler)))
-	// mux.Handle("POST /workouts/{id}/exercises/{exerciseId}/sets", authenticationWrapper(http.HandlerFunc(handler.createSetHandler)))
-	// mux.Handle("DELETE /workouts/{id}/exercises/{exerciseId}/sets/{setId}", authenticationWrapper(http.HandlerFunc(handler.deleteSetByIdHandler)))
 
 	mux.Handle("POST /users", http.HandlerFunc(handler.createUserHandler))
+ 
 	mux.Handle("POST /auth/login", http.HandlerFunc(handler.loginHandler))
 	mux.Handle("POST /auth/token", http.HandlerFunc(handler.refreshHandler))
 
+	mux.Handle("GET /me", authenticationWrapper(http.HandlerFunc(handler.meHandler)))
+
 	mux.Handle("POST /logout", authenticationWrapper(http.HandlerFunc(handler.logoutHandler)))
+}
+
+func (s *handler) meHandler(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("sub").(string)
+
+	user, err := s.service.GetByUserId(r.Context(), userId)
+	if err != nil {
+		slog.Error("Failed to get user", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	jsonResp, err := json.Marshal(user)
+	if err != nil {
+		slog.Error("Failed to marshal response", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(jsonResp); err != nil {
+		slog.Warn("Failed to write response", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+	}
 }
 
 func (s *handler) logoutHandler(w http.ResponseWriter, r *http.Request) {

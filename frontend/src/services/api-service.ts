@@ -285,6 +285,17 @@ const fetchLastWeightAndReps = async (exercise_type_id: string, isRetry: boolean
   return res;
 };
 
+const fetchMe = async (isRetry: boolean = false) => {
+  const res = await fetch("/api/me", {
+    credentials: "include",
+  });
+  const shouldRetry = await checkIfUnauthorized(res, isRetry);
+  if (shouldRetry && !isRetry) {
+    return await fetchMe(true);
+  }
+  return res;
+}
+
 const ApiService = {
   login,
   logout,
@@ -307,7 +318,8 @@ const ApiService = {
   createExercise,
   deleteExercise,
   fetchMaxWeightAndReps,
-  fetchLastWeightAndReps
+  fetchLastWeightAndReps,
+  fetchMe,
 };
 
 export default ApiService;

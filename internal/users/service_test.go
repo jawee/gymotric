@@ -27,6 +27,11 @@ func (r *repoMock) GetByUsername(ctx context.Context, arg string) (User, error) 
 	return args.Get(0).(User), args.Error(1)
 }
 
+func (r *repoMock) GetByUserId(ctx context.Context, arg string) (User, error) {
+	args := r.Called(ctx, arg)
+	return args.Get(0).(User), args.Error(1)
+}
+
 func TestCreateAndReturnId(t *testing.T) {
 	ctx := context.Background()
 
