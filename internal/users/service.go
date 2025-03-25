@@ -16,20 +16,41 @@ import (
 )
 
 type loginResponse struct {
-	Token string
+	Token  string
 	UserId string
+}
+
+type getMeResponse struct {
+	ID        string `json:"id"`
+	Username  string `json:"username"`
+	CreatedOn string `json:"created_on"`
+	UpdatedOn string `json:"updated_on"`
 }
 
 type Service interface {
 	CreateAndReturnId(ctx context.Context, arg createUserAndReturnIdRequest) (string, error)
 	Login(ctx context.Context, arg loginRequest) (loginResponse, error)
 	CreateToken(userId string) (string, error)
+	GetByUserId(ctx context.Context, userId string) (getMeResponse, error)
 }
 
 type usersService struct {
 	repo UsersRepository
 }
 
+func (u *usersService) GetByUserId(ctx context.Context, userId string) (getMeResponse, error) {
+	user, err := u.repo.GetByUserId(ctx, userId)
+	if err != nil {
+		return getMeResponse{}, err
+	}
+
+	return getMeResponse{
+		ID:        user.ID,
+		Username:  user.Username,
+		CreatedOn: user.CreatedOn,
+		UpdatedOn: user.UpdatedOn,
+	}, nil
+}
 func (u *usersService) CreateToken(userId string) (string, error) {
 	signingKey := os.Getenv(utils.EnvJwtSignKey)
 	tokenExpiration, err := strconv.Atoi(os.Getenv(utils.EnvJwtExpireMinutes))
@@ -103,7 +124,7 @@ func (u *usersService) Login(ctx context.Context, arg loginRequest) (loginRespon
 		return loginResponse{}, err
 	}
 
-	return loginResponse { Token: signedToken, UserId: user.ID }, nil
+	return loginResponse{Token: signedToken, UserId: user.ID}, nil
 }
 
 func NewService(repo UsersRepository) Service {

@@ -39,6 +39,24 @@ func (q *Queries) CreateUserAndReturnId(ctx context.Context, arg CreateUserAndRe
 	return id, err
 }
 
+const getByUserId = `-- name: GetByUserId :one
+SELECT id, username, password, created_on, updated_on FROM users 
+WHERE id = ?1
+`
+
+func (q *Queries) GetByUserId(ctx context.Context, id string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getByUserId, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Password,
+		&i.CreatedOn,
+		&i.UpdatedOn,
+	)
+	return i, err
+}
+
 const getByUsername = `-- name: GetByUsername :one
 SELECT id, username, password, created_on, updated_on FROM users 
 WHERE username = ?1
@@ -55,4 +73,30 @@ func (q *Queries) GetByUsername(ctx context.Context, username string) (User, err
 		&i.UpdatedOn,
 	)
 	return i, err
+}
+
+const updateUser = `-- name: UpdateUser :execrows
+UPDATE users
+SET username = ?1, password = ?2, updated_on = ?3
+WHERE id = ?4
+`
+
+type UpdateUserParams struct {
+	Username  string `json:"username"`
+	Password  string `json:"password"`
+	UpdatedOn string `json:"updated_on"`
+	ID        string `json:"id"`
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, updateUser,
+		arg.Username,
+		arg.Password,
+		arg.UpdatedOn,
+		arg.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
