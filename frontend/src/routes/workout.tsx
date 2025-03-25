@@ -15,6 +15,7 @@ import WtDialog from "../components/wt-dialog";
 import { Check, Copy, Plus, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Loading from "../components/loading";
+import { Textarea } from "@/components/ui/textarea";
 
 type ExerciseProps = {
   exercise: Exercise,
@@ -224,6 +225,8 @@ const WorkoutComponent = () => {
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([]);
 
+  const [note, setNote] = useState<string>("");
+
   const location = useLocation();
 
   const id = params.id;
@@ -254,6 +257,7 @@ const WorkoutComponent = () => {
         const resObj = await res.json();
         setWorkout(resObj.workout);
         setIsLoading(false);
+        setNote(resObj.workout.note);
         return
       }
 
@@ -361,6 +365,8 @@ const WorkoutComponent = () => {
             Delete workout
           </Button>
         </div>
+        <h3>Note</h3>
+        <Textarea className="border-2" value={workout.note} disabled />
       </>
     );
   }
@@ -432,6 +438,13 @@ const WorkoutComponent = () => {
     navigate("/app/workouts");
   };
 
+  const updateNote = async () => {
+    const res = await ApiService.updateWorkout(workout.id, note);
+    if (res.status !== 204) {
+      console.log("Error", res.status, res.statusText);
+      return;
+    }
+  };
 
   return (
     <>
@@ -462,6 +475,8 @@ const WorkoutComponent = () => {
           Delete workout
         </Button>
       </div>
+      <h3>Note</h3>
+      <Textarea className="border-2" value={note} onChange={(e) => setNote(e.currentTarget.value)} onBlur={() => updateNote()} />
     </>
   );
 };

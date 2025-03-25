@@ -130,6 +130,20 @@ const cloneWorkout = async (workoutId: string, isRetry: boolean = false) => {
   return res;
 };
 
+const updateWorkout = async (workoutId: string, note: string, isRetry: boolean = false) => {
+  const res = await fetch("/api/workouts/" + workoutId, {
+    method: "PUT",
+    credentials: "include",
+    body: JSON.stringify({ note: note })
+  });
+
+  const shouldRetry = await checkIfUnauthorized(res, isRetry);
+  if (shouldRetry && !isRetry) {
+    return await updateWorkout(workoutId, note, true);
+  }
+  return res;
+};
+
 const fetchSets = async (workoutId: string, exerciseId: string, isRetry: boolean = false) => {
   const res = await fetch("/api/workouts/" + workoutId + "/exercises/" + exerciseId + "/sets", {
     credentials: "include",
@@ -282,6 +296,7 @@ const ApiService = {
   finishWorkout,
   deleteWorkout,
   cloneWorkout,
+  updateWorkout,
   fetchSets,
   deleteSet,
   createSet,

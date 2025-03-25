@@ -11,19 +11,25 @@ import (
 
 const completeWorkoutById = `-- name: CompleteWorkoutById :execrows
 UPDATE workouts 
-SET completed_on = ?1 
-WHERE id = ?2
-AND user_id = ?3
+SET completed_on = ?1, updated_on = ?2
+WHERE id = ?3
+AND user_id = ?4
 `
 
 type CompleteWorkoutByIdParams struct {
 	CompletedOn interface{} `json:"completed_on"`
+	UpdatedOn   string      `json:"updated_on"`
 	ID          string      `json:"id"`
 	UserID      string      `json:"user_id"`
 }
 
 func (q *Queries) CompleteWorkoutById(ctx context.Context, arg CompleteWorkoutByIdParams) (int64, error) {
-	result, err := q.db.ExecContext(ctx, completeWorkoutById, arg.CompletedOn, arg.ID, arg.UserID)
+	result, err := q.db.ExecContext(ctx, completeWorkoutById,
+		arg.CompletedOn,
+		arg.UpdatedOn,
+		arg.ID,
+		arg.UserID,
+	)
 	if err != nil {
 		return 0, err
 	}
@@ -80,7 +86,7 @@ func (q *Queries) DeleteWorkoutById(ctx context.Context, arg DeleteWorkoutByIdPa
 }
 
 const getAllWorkouts = `-- name: GetAllWorkouts :many
-SELECT id, name, completed_on, created_on, updated_on, user_id FROM workouts 
+SELECT id, name, completed_on, created_on, updated_on, user_id, note FROM workouts 
 WHERE user_id = ?1
 ORDER by id asc
 `
@@ -101,6 +107,7 @@ func (q *Queries) GetAllWorkouts(ctx context.Context, userID string) ([]Workout,
 			&i.CreatedOn,
 			&i.UpdatedOn,
 			&i.UserID,
+			&i.Note,
 		); err != nil {
 			return nil, err
 		}
@@ -116,7 +123,7 @@ func (q *Queries) GetAllWorkouts(ctx context.Context, userID string) ([]Workout,
 }
 
 const getWorkoutById = `-- name: GetWorkoutById :one
-SELECT id, name, completed_on, created_on, updated_on, user_id FROM workouts 
+SELECT id, name, completed_on, created_on, updated_on, user_id, note FROM workouts 
 WHERE id = ?1
 AND user_id = ?2
 `
@@ -136,6 +143,34 @@ func (q *Queries) GetWorkoutById(ctx context.Context, arg GetWorkoutByIdParams) 
 		&i.CreatedOn,
 		&i.UpdatedOn,
 		&i.UserID,
+		&i.Note,
 	)
 	return i, err
+}
+
+const updateWorkoutById = `-- name: UpdateWorkoutById :execrows
+UPDATE workouts
+SET note = ?1, updated_on = ?2
+WHERE id = ?3
+AND user_id = ?4
+`
+
+type UpdateWorkoutByIdParams struct {
+	Note      interface{} `json:"note"`
+	UpdatedOn string      `json:"updated_on"`
+	ID        string      `json:"id"`
+	UserID    string      `json:"user_id"`
+}
+
+func (q *Queries) UpdateWorkoutById(ctx context.Context, arg UpdateWorkoutByIdParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, updateWorkoutById,
+		arg.Note,
+		arg.UpdatedOn,
+		arg.ID,
+		arg.UserID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }

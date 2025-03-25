@@ -18,11 +18,17 @@ RETURNING id;
 
 -- name: CompleteWorkoutById :execrows
 UPDATE workouts 
-SET completed_on = sqlc.arg(completed_on) 
+SET completed_on = sqlc.arg(completed_on), updated_on = sqlc.arg(updated_on)
 WHERE id = sqlc.arg(id)
 AND user_id = sqlc.arg(user_id);
 
 -- name: DeleteWorkoutById :execrows
 DELETE FROM workouts
+WHERE id = sqlc.arg(id)
+AND user_id = sqlc.arg(user_id);
+
+-- name: UpdateWorkoutById :execrows
+UPDATE workouts
+SET note = sqlc.arg(note), updated_on = sqlc.arg(updated_on)
 WHERE id = sqlc.arg(id)
 AND user_id = sqlc.arg(user_id);
