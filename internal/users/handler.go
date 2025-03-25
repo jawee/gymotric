@@ -33,11 +33,9 @@ func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper 
 	handler := handler{
 		service: NewService(&usersRepository{s.GetRepository()}),
 	}
-	// mux.Handle("GET /workouts/{id}/exercises/{exerciseId}/sets", authenticationWrapper(http.HandlerFunc(handler.getSetsByExerciseIdHandler)))
-	// mux.Handle("POST /workouts/{id}/exercises/{exerciseId}/sets", authenticationWrapper(http.HandlerFunc(handler.createSetHandler)))
-	// mux.Handle("DELETE /workouts/{id}/exercises/{exerciseId}/sets/{setId}", authenticationWrapper(http.HandlerFunc(handler.deleteSetByIdHandler)))
 
 	mux.Handle("POST /users", http.HandlerFunc(handler.createUserHandler))
+
 	mux.Handle("POST /auth/login", http.HandlerFunc(handler.loginHandler))
 	mux.Handle("POST /auth/token", http.HandlerFunc(handler.refreshHandler))
 
