@@ -1,6 +1,7 @@
 package users
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log/slog"
@@ -144,8 +145,16 @@ func getSubjectFromCookie(cookieName string, signingKey string, r *http.Request)
 func (s *handler) createTokenResponse(w http.ResponseWriter, sub string) error {
 	tokenExpiration, err := strconv.Atoi(os.Getenv(utils.EnvJwtExpireMinutes))
 
+
 	if err != nil {
 		slog.Error("Failed to convert JWT_EXPIRE_MINUTES to int", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return err
+	}
+
+	_, err = s.service.GetByUserId(context.Background(), sub)
+	if err != nil {
+		slog.Error("Failed to get user", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return err
 	}
