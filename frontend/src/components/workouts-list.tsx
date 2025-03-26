@@ -6,6 +6,7 @@ import ApiService from "../services/api-service";
 import WtDialog from "./wt-dialog";
 import { Exercise } from "../models/exercise";
 import Loading from "./loading";
+import { Dumbbell } from "lucide-react";
 
 const WorkoutsList = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -54,7 +55,7 @@ const WorkoutsList = () => {
           <WorkoutListItem key={workout.id} workout={workout} />
         )
       })}
-      <WtDialog openButtonTitle="Create workout" form={<Input id={nameId} value={name} onChange={e => setName(e.target.value)} type="text" placeholder="Name of workout" />} onSubmitButtonClick={createWorkout} onSubmitButtonTitle="Create workout" title="Create workout" />
+      <WtDialog openButtonTitle={<><Dumbbell /> Create workout</>} form={<Input id={nameId} value={name} onChange={e => setName(e.target.value)} type="text" placeholder="Name of workout" />} onSubmitButtonClick={createWorkout} onSubmitButtonTitle="Create workout" title="Create workout" />
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type WtDialogProps = {
-  openButtonTitle: string;
+  openButtonTitle: React.ReactNode;
   form: React.ReactNode;
   onSubmitButtonClick: () => void;
   onSubmitButtonTitle: string;

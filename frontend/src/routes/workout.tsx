@@ -457,7 +457,7 @@ const WorkoutComponent = () => {
           return (<EditableExercise key={e.id} exercise={e} deleteExerciseFunc={deleteExercise} />);
         })}
       </ul>
-      <WtDialog openButtonTitle="Add Exercise" form={
+      <WtDialog openButtonTitle={<><Plus /> Add Exercise</>} form={
         <>
           <Autocomplete value={value} setValue={setValue} suggestions={exerciseTypes.map(et => et.name)} />
         </>
