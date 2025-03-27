@@ -32,10 +32,38 @@ type Service interface {
 	Login(ctx context.Context, arg loginRequest) (loginResponse, error)
 	CreateToken(userId string) (string, error)
 	GetByUserId(ctx context.Context, userId string) (getMeResponse, error)
+	ChangePassword(context context.Context, request changePasswordRequest, userId string) error
 }
 
 type usersService struct {
 	repo UsersRepository
+}
+
+func (s *usersService) ChangePassword(context context.Context, request changePasswordRequest, userId string) error {
+	user, err := s.repo.GetByUserId(context, userId)
+	if err != nil {
+		return err
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.OldPassword))
+	if err != nil {
+		return err
+	}
+
+	newPasswordBytes, err := bcrypt.GenerateFromPassword([]byte(request.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	err = s.repo.UpdateUser(context, repository.UpdateUserParams{
+		ID:        userId,
+		Password:  string(newPasswordBytes),
+		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (u *usersService) GetByUserId(ctx context.Context, userId string) (getMeResponse, error) {
@@ -51,6 +79,7 @@ func (u *usersService) GetByUserId(ctx context.Context, userId string) (getMeRes
 		UpdatedOn: user.UpdatedOn,
 	}, nil
 }
+
 func (u *usersService) CreateToken(userId string) (string, error) {
 	signingKey := os.Getenv(utils.EnvJwtSignKey)
 	tokenExpiration, err := strconv.Atoi(os.Getenv(utils.EnvJwtExpireMinutes))
