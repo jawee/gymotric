@@ -71,6 +71,12 @@ func (s *handler) changePasswordHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	cookie := createCookie(utils.AccessTokenCookieName, "", time.Now().Add(time.Second))
+	refresh_cookie := createCookie(utils.RefreshTokenCookieName, "", time.Now().Add(time.Second))
+
+	http.SetCookie(w, &cookie)
+	http.SetCookie(w, &refresh_cookie)
+
 	w.WriteHeader(http.StatusNoContent)
 }
 

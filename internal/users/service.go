@@ -50,11 +50,14 @@ func (s *usersService) ChangePassword(context context.Context, request changePas
 	}
 
 	newPasswordBytes, err := bcrypt.GenerateFromPassword([]byte(request.NewPassword), bcrypt.DefaultCost)
+
 	if err != nil {
 		return err
 	}
+
 	err = s.repo.UpdateUser(context, repository.UpdateUserParams{
-		ID:        userId,
+		ID:        user.ID,
+		Username:  user.Username,
 		Password:  string(newPasswordBytes),
 		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
 	})

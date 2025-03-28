@@ -56,7 +56,8 @@ const Profile = () => {
     const response = await ApiService.changePassword(oldPassword, newPassword);
     if (response.status === 204) {
       setDialogOpen(false);
-      toast("Password changed");
+      toast("Password changed. You will need to log in again");
+      navigate("/login", { state: { message: "Password changed. You need to log in again" } });
       return;
     }
     setChangePasswordError("Error changing password");
