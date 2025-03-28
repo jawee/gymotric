@@ -294,7 +294,21 @@ const fetchMe = async (isRetry: boolean = false) => {
     return await fetchMe(true);
   }
   return res;
-}
+};
+
+const changePassword = async (oldPassword: string, newPassword: string, isRetry: boolean = false) => {
+  const res = await fetch("/api/me/password", {
+    method: "PUT",
+    credentials: "include",
+    body: JSON.stringify({ oldPassword: oldPassword, newPassword: newPassword })
+  });
+
+  const shouldRetry = await checkIfUnauthorized(res, isRetry);
+  if (shouldRetry && !isRetry) {
+    return await changePassword(oldPassword, newPassword, true);
+  }
+  return res;
+};
 
 const ApiService = {
   login,
@@ -320,6 +334,7 @@ const ApiService = {
   fetchMaxWeightAndReps,
   fetchLastWeightAndReps,
   fetchMe,
+  changePassword,
 };
 
 export default ApiService;

@@ -26,6 +26,11 @@ type loginRequest struct {
 	Password string
 }
 
+type changePasswordRequest struct {
+	OldPassword string
+	NewPassword string
+}
+
 type handler struct {
 	service Service
 }
@@ -41,8 +46,38 @@ func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper 
 	mux.Handle("POST /auth/token", http.HandlerFunc(handler.refreshHandler))
 
 	mux.Handle("GET /me", authenticationWrapper(http.HandlerFunc(handler.meHandler)))
+	mux.Handle("PUT /me/password", authenticationWrapper(http.HandlerFunc(handler.changePasswordHandler)))
 
 	mux.Handle("POST /logout", authenticationWrapper(http.HandlerFunc(handler.logoutHandler)))
+}
+
+func (s *handler) changePasswordHandler(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("sub").(string)
+
+	decoder := json.NewDecoder(r.Body)
+	var request changePasswordRequest
+	err := decoder.Decode(&request)
+
+	if err != nil {
+		slog.Error("Failed to decode request body", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	err = s.service.ChangePassword(r.Context(), request, userId)
+	if err != nil {
+		slog.Error("Failed to change password", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	cookie := createCookie(utils.AccessTokenCookieName, "", time.Now().Add(time.Second))
+	refresh_cookie := createCookie(utils.RefreshTokenCookieName, "", time.Now().Add(time.Second))
+
+	http.SetCookie(w, &cookie)
+	http.SetCookie(w, &refresh_cookie)
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *handler) meHandler(w http.ResponseWriter, r *http.Request) {

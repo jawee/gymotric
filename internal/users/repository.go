@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"fmt"
 	"weight-tracker/internal/repository"
 )
 
@@ -17,10 +18,24 @@ type UsersRepository interface {
 	GetByUsername(ctx context.Context, arg string) (User, error)
 	CreateAndReturnId(ctx context.Context, arg repository.CreateUserAndReturnIdParams) (string, error)
 	GetByUserId(ctx context.Context, userId string) (User, error)
+	UpdateUser(ctx context.Context, arg repository.UpdateUserParams) error
 }
 
 type usersRepository struct {
 	repo repository.Querier
+}
+
+func (u *usersRepository) UpdateUser(ctx context.Context, arg repository.UpdateUserParams) error {
+	rows, err := u.repo.UpdateUser(ctx, arg)
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("user not found")
+	}
+
+	return nil
 }
 
 func (u *usersRepository) GetByUserId(ctx context.Context, userId string) (User, error) {

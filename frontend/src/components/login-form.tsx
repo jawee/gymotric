@@ -11,7 +11,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import ApiService from "@/services/api-service"
 
-const LoginForm = () => {
+type loginFormProps = {
+  message?: string;
+};
+const LoginForm = ({ message }: loginFormProps) => {
   const login = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const target = event.target as typeof event.target & {
@@ -34,6 +37,7 @@ const LoginForm = () => {
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Welcome back</CardTitle>
           <CardDescription>
+            {message && message}
           </CardDescription>
         </CardHeader>
         <CardContent>

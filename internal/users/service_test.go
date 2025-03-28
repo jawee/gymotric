@@ -17,6 +17,11 @@ type repoMock struct {
 	mock.Mock
 }
 
+func (u *repoMock) UpdateUser(ctx context.Context, arg repository.UpdateUserParams) error {
+	args := u.Called(ctx, arg)
+	return args.Error(0)
+}
+
 func (r *repoMock) CreateAndReturnId(ctx context.Context, arg repository.CreateUserAndReturnIdParams) (string, error) {
 	args := r.Called(ctx, arg)
 	return args.String(0), args.Error(1)

@@ -2,10 +2,11 @@ import LoginForm from "@/components/login-form";
 import ApiService from "../services/api-service";
 import { Dumbbell } from "lucide-react";
 import { useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   useEffect(() => {
     const refreshToken = async () => {
       const res = await ApiService.refreshToken();
@@ -26,7 +27,7 @@ const Login = () => {
           </div>
           Gymotric
         </a>
-        <LoginForm />
+        <LoginForm message={location.state?.message} />
       </div>
     </div>
   )
