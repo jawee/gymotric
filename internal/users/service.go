@@ -24,6 +24,7 @@ type loginResponse struct {
 type getMeResponse struct {
 	ID        string `json:"id"`
 	Username  string `json:"username"`
+	Email     any    `json:"email"`
 	CreatedOn string `json:"created_on"`
 	UpdatedOn string `json:"updated_on"`
 }
@@ -64,7 +65,6 @@ func (s *usersService) ConfirmEmail(ctx context.Context, userId string, email st
 		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
 	})
 
-	 
 	if err != nil {
 		return err
 	}
@@ -112,6 +112,7 @@ func (u *usersService) GetByUserId(ctx context.Context, userId string) (getMeRes
 	return getMeResponse{
 		ID:        user.ID,
 		Username:  user.Username,
+		Email:     user.Email,
 		CreatedOn: user.CreatedOn,
 		UpdatedOn: user.UpdatedOn,
 	}, nil

@@ -83,6 +83,7 @@ func newUser(v repository.User) User {
 	user := User{
 		ID:        v.ID,
 		Username:  v.Username,
+		Email:     v.Email,
 		Password:  v.Password,
 		CreatedOn: v.CreatedOn,
 		UpdatedOn: v.UpdatedOn,
