@@ -52,7 +52,6 @@ func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper 
 
 	mux.Handle("GET /me", authenticationWrapper(http.HandlerFunc(handler.meHandler)))
 	mux.Handle("PUT /me/password", authenticationWrapper(http.HandlerFunc(handler.changePasswordHandler)))
-
 	mux.Handle("PUT /me/email", authenticationWrapper(http.HandlerFunc(handler.changeEmailHandler)))
 
 	mux.Handle("POST /confirm-email", http.HandlerFunc(handler.confirmEmailHandler))
@@ -131,8 +130,12 @@ func (s *handler) changeEmailHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//TODO check if email is already in use
-
-	token, err := s.service.CreateConfirmationToken(userId, request.Email)
+	token, err := s.service.CreateConfirmationToken(r.Context(), userId, request.Email) 
+	if err != nil {
+		slog.Error("Failed to create confirmation token", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
 
 	baseUrl := os.Getenv("BASE_URL")
 

@@ -34,7 +34,7 @@ type Service interface {
 	CreateToken(userId string) (string, error)
 	GetByUserId(ctx context.Context, userId string) (getMeResponse, error)
 	ChangePassword(ctx context.Context, request changePasswordRequest, userId string) error
-	CreateConfirmationToken(userId string, email string) (string, error)
+	CreateConfirmationToken(ctx context.Context, userId string, email string) (string, error)
 	ConfirmEmail(ctx context.Context, userId string, email string) error
 }
 
@@ -145,7 +145,15 @@ func (e emailConfirmationCustomClaims) GetEmail() (string, error) {
 	return e.Email, nil
 }
 
-func (u *usersService) CreateConfirmationToken(userId string, email string) (string, error) {
+func (u *usersService) CreateConfirmationToken(ctx context.Context, userId string, email string) (string, error) {
+	emailExists, err := u.repo.EmailExists(ctx, email)
+	if err != nil {
+		return "", err
+	}
+	if emailExists {
+		return "", fmt.Errorf("email already exists")
+	}
+
 	signingKey := os.Getenv(utils.EnvJwtSignKey)
 
 	mySigningKey := []byte(signingKey)
