@@ -11,7 +11,7 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
-func SendEmail() error {
+func SendEmail(html string) error {
 	SGKEY := os.Getenv("SENDGRID_KEY")
 	client := &http.Client{}
 	emailRequestBodyObj := &sendGridRequest{
@@ -19,8 +19,8 @@ func SendEmail() error {
 			{
 				To: []from{
 					{
-						// Email: "jawee.dev@gmail.com",
-						Email: "ld-ee3ef3a3af@dmarctester.com",
+						Email: "jawee.dev@gmail.com",
+						// Email: "ld-ee3ef3a3af@dmarctester.com",
 					},
 				},
 			},
@@ -31,8 +31,8 @@ func SendEmail() error {
 		Subject: "Test",
 		Content: []content{
 			{
-				Type:  "text/plain",
-				Value: "Test",
+				Type:  "text/html",
+				Value: html,
 			},
 		},
 	}
