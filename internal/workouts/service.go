@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 	"time"
+	"weight-tracker/internal/exercises"
 	"weight-tracker/internal/repository"
 
 	"github.com/google/uuid"
@@ -15,10 +16,69 @@ type Service interface {
 	CreateAndReturnId(context context.Context, t createWorkoutRequest, userId string) (string, error)
 	CompleteById(context context.Context, workoutId string, userId string) error
 	DeleteById(context context.Context, workoutId string, userId string) error
+	CloneByIdAndReturnId(context context.Context, workoutId string, userId string) (string, error)
+	UpdateWorkoutById(context context.Context, workoutId string, t updateWorkoutRequest, userId string) error
 }
 
 type workoutsService struct {
-	repo WorkoutsRepository
+	repo         WorkoutsRepository
+	exerciseRepo exercises.ExerciseRepository
+}
+
+func (w *workoutsService) UpdateWorkoutById(context context.Context, workoutId string, t updateWorkoutRequest, userId string) error {
+	_, err := w.GetById(context, workoutId, userId)
+	if err != nil {
+		return err
+	}
+
+	arg := repository.UpdateWorkoutByIdParams{
+		Note:      t.Note,
+		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
+		ID:        workoutId,
+		UserID:    userId,
+	}
+
+	return w.repo.UpdateById(context, arg)
+}
+
+func (w *workoutsService) CloneByIdAndReturnId(context context.Context, workoutId string, userId string) (string, error) {
+	workout, err := w.GetById(context, workoutId, userId)
+	if err != nil {
+		return "", err
+	}
+
+	cloneId, err := w.CreateAndReturnId(context, createWorkoutRequest{
+		Name: workout.Name,
+	}, userId)
+
+	if err != nil {
+		return "", err
+	}
+
+	exercises, err := w.exerciseRepo.GetByWorkoutId(context, repository.GetExercisesByWorkoutIdParams{UserID: userId, WorkoutID: workoutId})
+
+	for _, exercise := range exercises {
+		uuid, err := uuid.NewV7()
+		if err != nil {
+			return "", err
+		}
+
+		_, err = w.exerciseRepo.CreateAndReturnId(context, repository.CreateExerciseAndReturnIdParams{
+			ID:             uuid.String(),
+			WorkoutID:      cloneId,
+			Name:           exercise.Name,
+			ExerciseTypeID: exercise.ExerciseTypeID,
+			CreatedOn:      time.Now().UTC().Format(time.RFC3339),
+			UserID:         userId,
+			UpdatedOn:      time.Now().UTC().Format(time.RFC3339),
+		})
+
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return cloneId, nil
 }
 
 func (w *workoutsService) DeleteById(context context.Context, workoutId string, userId string) error {
@@ -94,6 +154,6 @@ func (w *workoutsService) GetById(context context.Context, id string, userId str
 	return workout, err
 }
 
-func NewService(repo WorkoutsRepository) Service {
-	return &workoutsService{repo}
+func NewService(repo WorkoutsRepository, exerciseRepo exercises.ExerciseRepository) Service {
+	return &workoutsService{repo, exerciseRepo}
 }

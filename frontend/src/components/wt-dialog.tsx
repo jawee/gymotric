@@ -3,16 +3,17 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type WtDialogProps = {
-  openButtonTitle: string;
+  openButtonTitle: React.ReactNode;
   form: React.ReactNode;
   onSubmitButtonClick: () => void;
   onSubmitButtonTitle: string;
   title: string;
   description?: string;
+  dialogProps?: React.ComponentProps<typeof Dialog>;
 };
-const WtDialog = ({ openButtonTitle, form, title, description, onSubmitButtonTitle, onSubmitButtonClick }: WtDialogProps) => {
+const WtDialog = ({ openButtonTitle, form, title, description, onSubmitButtonTitle, onSubmitButtonClick, dialogProps }: WtDialogProps) => {
   return (
-    <Dialog>
+    <Dialog {...dialogProps}>
       <DialogTrigger className={buttonVariants({ variant: "default" })}>{openButtonTitle}</DialogTrigger>
       <DialogContent>
         <DialogHeader>

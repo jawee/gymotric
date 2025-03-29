@@ -49,4 +49,5 @@ type Workout struct {
 	CreatedOn   string      `json:"created_on"`
 	UpdatedOn   string      `json:"updated_on"`
 	UserID      string      `json:"user_id"`
+	Note        interface{} `json:"note"`
 }

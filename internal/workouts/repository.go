@@ -2,6 +2,7 @@ package workouts
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"weight-tracker/internal/repository"
 )
@@ -12,6 +13,7 @@ type Workout struct {
 	CompletedOn interface{} `json:"completed_on"`
 	CreatedOn   string      `json:"created_on"`
 	UpdatedOn   string      `json:"updated_on"`
+	Note        string      `json:"note"`
 }
 
 type WorkoutsRepository interface {
@@ -20,10 +22,23 @@ type WorkoutsRepository interface {
 	GetAll(ctx context.Context, userId string) ([]Workout, error)
 	GetById(ctx context.Context, arg repository.GetWorkoutByIdParams) (Workout, error)
 	DeleteById(ctx context.Context, arg repository.DeleteWorkoutByIdParams) error
+	UpdateById(context context.Context, arg repository.UpdateWorkoutByIdParams) error
 }
 
 type workoutsRepository struct {
 	repo repository.Querier
+}
+
+func (w *workoutsRepository) UpdateById(ctx context.Context, arg repository.UpdateWorkoutByIdParams) error {
+	rows, err := w.repo.UpdateWorkoutById(ctx, arg)
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("workout not found")
+	}
+	return nil
 }
 
 func (w *workoutsRepository) DeleteById(ctx context.Context, arg repository.DeleteWorkoutByIdParams) error {
@@ -37,7 +52,6 @@ func (w *workoutsRepository) DeleteById(ctx context.Context, arg repository.Dele
 	}
 	return nil
 }
-
 
 func (w *workoutsRepository) CompleteById(ctx context.Context, arg repository.CompleteWorkoutByIdParams) (int64, error) {
 	return w.repo.CompleteWorkoutById(ctx, arg)
@@ -69,6 +83,11 @@ func newWorkout(v repository.Workout) Workout {
 		CreatedOn:   v.CreatedOn,
 		UpdatedOn:   v.UpdatedOn,
 	}
+
+	if v.Note != nil {
+		workout.Note = v.Note.(string)
+	}
+
 	return workout
 }
 

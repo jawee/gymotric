@@ -2,21 +2,35 @@ import { Input } from "@/components/ui/input";
 import { useEffect, useId, useState } from "react";
 import { ExerciseType } from "../models/exercise-type";
 import ApiService from "../services/api-service";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Plus, Trash2 } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
+import Loading from "@/components/loading";
 
 const ExerciseTypes = () => {
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([]);
+  const exerciseNameId = useId();
+  const [exerciseName, setExerciseName] = useState<string>("");
 
   const fetchExerciseTypes = async () => {
     const res = await ApiService.fetchExerciseTypes();
     if (res.status === 200) {
       const resObj = await res.json();
+      setIsLoading(false);
       setExerciseTypes(resObj.exercise_types);
     }
   };
 
   useEffect(() => {
-
     fetchExerciseTypes();
   }, []);
 
@@ -46,6 +60,11 @@ const ExerciseTypes = () => {
   };
 
   const deleteExerciseType = async (id: string) => {
+    const confirm = window.confirm("Are you sure you want to delete this exercise?");
+    if (!confirm) {
+      return;
+    }
+
     const res = await ApiService.deleteExerciseType(id);
 
     if (res.status !== 204) {
@@ -55,20 +74,47 @@ const ExerciseTypes = () => {
     setExerciseTypes(l => l.filter(item => item.id !== id));
   };
 
-  const exerciseNameId = useId();
-  const [exerciseName, setExerciseName] = useState<string>("");
+  if (isLoading) {
+    return <Loading />
+  }
+
   return (
     <>
       <h1 className="text-xl">Exercises</h1>
-      <ul>
-        {exerciseTypes.map((et) => {
-          return (<li className="m-2" key={et.id}>{et.name} <Button onClick={() => deleteExerciseType(et.id)}>Delete exercise</Button></li>);
-        })}
-      </ul>
       <form onSubmit={addExercise}>
-        Add new: <Input id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
-        <Button type="submit">Add exercise</Button>
+        Add new:
+        <Input id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
+        <Button className="mt-2 mb-2" type="submit"><Plus />Add</Button>
       </form>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Exercise</TableHead>
+            <TableHead></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {exerciseTypes.map((et) => {
+            return (
+              <TableRow key={et.id}>
+                <TableCell>{et.name}</TableCell>
+                <TableCell className="text-right">
+                  <Button className={
+                    cn(
+                      buttonVariants({ variant: "default" }),
+                      "ml-1",
+                      "bg-red-500",
+                      "hover:bg-red-700"
+                    )
+                  } onClick={() => deleteExerciseType(et.id)}>
+                    <Trash2 />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
     </>
   );
 };

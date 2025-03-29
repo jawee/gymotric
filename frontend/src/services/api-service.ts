@@ -44,6 +44,19 @@ const refreshToken = async () => {
   return res;
 };
 
+const fetchStatistics = async (isRetry: boolean = false) => {
+  const res = await fetch("/api/statistics", {
+    credentials: "include",
+  });
+
+  const shouldRetry = await checkIfUnauthorized(res, isRetry);
+  if (shouldRetry && !isRetry) {
+    return await fetchStatistics(true);
+  }
+
+  return res;
+};
+
 const fetchWorkouts = async (isRetry: boolean = false) => {
   const res = await fetch("/api/workouts", {
     credentials: "include",
@@ -101,6 +114,32 @@ const deleteWorkout = async (workoutId: string, isRetry: boolean = false) => {
   const shouldRetry = await checkIfUnauthorized(res, isRetry);
   if (shouldRetry && !isRetry) {
     return await deleteWorkout(workoutId, true);
+  }
+  return res;
+};
+
+const cloneWorkout = async (workoutId: string, isRetry: boolean = false) => {
+  const res = await fetch("/api/workouts/" + workoutId + "/clone", {
+    method: "POST",
+    credentials: "include",
+  });
+  const shouldRetry = await checkIfUnauthorized(res, isRetry);
+  if (shouldRetry && !isRetry) {
+    return await cloneWorkout(workoutId, true);
+  }
+  return res;
+};
+
+const updateWorkout = async (workoutId: string, note: string, isRetry: boolean = false) => {
+  const res = await fetch("/api/workouts/" + workoutId, {
+    method: "PUT",
+    credentials: "include",
+    body: JSON.stringify({ note: note })
+  });
+
+  const shouldRetry = await checkIfUnauthorized(res, isRetry);
+  if (shouldRetry && !isRetry) {
+    return await updateWorkout(workoutId, note, true);
   }
   return res;
 };
@@ -246,15 +285,43 @@ const fetchLastWeightAndReps = async (exercise_type_id: string, isRetry: boolean
   return res;
 };
 
+const fetchMe = async (isRetry: boolean = false) => {
+  const res = await fetch("/api/me", {
+    credentials: "include",
+  });
+  const shouldRetry = await checkIfUnauthorized(res, isRetry);
+  if (shouldRetry && !isRetry) {
+    return await fetchMe(true);
+  }
+  return res;
+};
+
+const changePassword = async (oldPassword: string, newPassword: string, isRetry: boolean = false) => {
+  const res = await fetch("/api/me/password", {
+    method: "PUT",
+    credentials: "include",
+    body: JSON.stringify({ oldPassword: oldPassword, newPassword: newPassword })
+  });
+
+  const shouldRetry = await checkIfUnauthorized(res, isRetry);
+  if (shouldRetry && !isRetry) {
+    return await changePassword(oldPassword, newPassword, true);
+  }
+  return res;
+};
+
 const ApiService = {
   login,
   logout,
   refreshToken,
+  fetchStatistics,
   fetchWorkouts,
   fetchWorkout,
   createWorkout,
   finishWorkout,
   deleteWorkout,
+  cloneWorkout,
+  updateWorkout,
   fetchSets,
   deleteSet,
   createSet,
@@ -265,7 +332,9 @@ const ApiService = {
   createExercise,
   deleteExercise,
   fetchMaxWeightAndReps,
-  fetchLastWeightAndReps
+  fetchLastWeightAndReps,
+  fetchMe,
+  changePassword,
 };
 
 export default ApiService;

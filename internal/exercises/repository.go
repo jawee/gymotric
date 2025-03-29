@@ -22,6 +22,10 @@ type ExerciseRepository interface {
 	GetExerciseTypeById(context context.Context, arg repository.GetExerciseTypeByIdParams) (*exercisetypes.ExerciseType, error)
 }
 
+func NewExerciseRepository(repo repository.Querier) ExerciseRepository {
+	return exerciseRepository{repo: repo}
+}
+
 type exerciseRepository struct {
 	repo repository.Querier
 }

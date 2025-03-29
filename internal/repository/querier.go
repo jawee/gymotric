@@ -23,6 +23,7 @@ type Querier interface {
 	GetAllExercises(ctx context.Context, userID string) ([]Exercise, error)
 	GetAllSets(ctx context.Context, userID string) ([]Set, error)
 	GetAllWorkouts(ctx context.Context, userID string) ([]Workout, error)
+	GetByUserId(ctx context.Context, id string) (User, error)
 	GetByUsername(ctx context.Context, username string) (User, error)
 	GetExerciseById(ctx context.Context, arg GetExerciseByIdParams) (Exercise, error)
 	GetExerciseTypeById(ctx context.Context, arg GetExerciseTypeByIdParams) (ExerciseType, error)
@@ -31,7 +32,10 @@ type Querier interface {
 	GetMaxWeightRepsByExerciseTypeId(ctx context.Context, arg GetMaxWeightRepsByExerciseTypeIdParams) (GetMaxWeightRepsByExerciseTypeIdRow, error)
 	GetSetById(ctx context.Context, arg GetSetByIdParams) (Set, error)
 	GetSetsByExerciseId(ctx context.Context, arg GetSetsByExerciseIdParams) ([]Set, error)
+	GetStatisticsSinceDate(ctx context.Context, arg GetStatisticsSinceDateParams) (int64, error)
 	GetWorkoutById(ctx context.Context, arg GetWorkoutByIdParams) (Workout, error)
+	UpdateUser(ctx context.Context, arg UpdateUserParams) (int64, error)
+	UpdateWorkoutById(ctx context.Context, arg UpdateWorkoutByIdParams) (int64, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -17,12 +17,22 @@ type repoMock struct {
 	mock.Mock
 }
 
+func (u *repoMock) UpdateUser(ctx context.Context, arg repository.UpdateUserParams) error {
+	args := u.Called(ctx, arg)
+	return args.Error(0)
+}
+
 func (r *repoMock) CreateAndReturnId(ctx context.Context, arg repository.CreateUserAndReturnIdParams) (string, error) {
 	args := r.Called(ctx, arg)
 	return args.String(0), args.Error(1)
 }
 
 func (r *repoMock) GetByUsername(ctx context.Context, arg string) (User, error) {
+	args := r.Called(ctx, arg)
+	return args.Get(0).(User), args.Error(1)
+}
+
+func (r *repoMock) GetByUserId(ctx context.Context, arg string) (User, error) {
 	args := r.Called(ctx, arg)
 	return args.Get(0).(User), args.Error(1)
 }
