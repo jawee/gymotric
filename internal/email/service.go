@@ -87,6 +87,7 @@ func sendEmail(html string, recipient string, subject string, data any) error {
 			},
 		},
 		From: from{
+			Name: "Gymotric",
 			Email: "noreply@gymotric.anol.se",
 		},
 		Subject: subject,
@@ -136,6 +137,7 @@ type content struct {
 }
 
 type from struct {
+	Name  string `json:"name"`
 	Email string `json:"email"`
 }
 
