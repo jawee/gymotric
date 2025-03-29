@@ -10,11 +10,13 @@ import ExerciseTypes from './routes/exercise-types';
 import Logout from './routes/logout';
 import './index.css';
 import Profile from './routes/profile';
+import ConfirmEmail from './routes/confirm-email';
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
         <BrowserRouter>
             <Routes>
                 <Route path="/" element={<Landing />} />
+                <Route path="/confirm-email" element={<ConfirmEmail />} /> 
                 <Route path="/login" element={<Login />} />
                 <Route path="/app" element={<Default />}>
                     <Route index element={<Home />} />

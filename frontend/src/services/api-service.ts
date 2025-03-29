@@ -310,6 +310,14 @@ const changePassword = async (oldPassword: string, newPassword: string, isRetry:
   return res;
 };
 
+const confirmEmail = async (token: string) => {
+  const res = await fetch("/api/confirm-email?token=" + token, {
+    method: "POST",
+  });
+
+  return res;
+};
+
 const ApiService = {
   login,
   logout,
@@ -335,6 +343,7 @@ const ApiService = {
   fetchLastWeightAndReps,
   fetchMe,
   changePassword,
+  confirmEmail,
 };
 
 export default ApiService;

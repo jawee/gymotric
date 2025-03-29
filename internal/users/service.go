@@ -33,6 +33,7 @@ type Service interface {
 	CreateToken(userId string) (string, error)
 	GetByUserId(ctx context.Context, userId string) (getMeResponse, error)
 	ChangePassword(context context.Context, request changePasswordRequest, userId string) error
+	CreateConfirmationToken(userId string, email string) (string, error)
 }
 
 type usersService struct {
@@ -102,7 +103,32 @@ func (u *usersService) CreateToken(userId string) (string, error) {
 	return token.SignedString(mySigningKey)
 }
 
-// CreateUserAndReturnId implements Service.
+type emailConfirmationCustomClaims struct {
+	Email string `json:"email"`
+	jwt.RegisteredClaims
+}
+
+func (e emailConfirmationCustomClaims) GetEmail() (string, error) {
+	return e.Email, nil
+}
+
+func (u *usersService) CreateConfirmationToken(userId string, email string) (string, error) {
+	signingKey := os.Getenv(utils.EnvJwtSignKey)
+
+	mySigningKey := []byte(signingKey)
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, emailConfirmationCustomClaims{
+		email,
+		jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Minute * time.Duration(utils.EmailConfirmationTokenExpireMinutes))),
+			Issuer:    "weight-tracker",
+			Subject:   userId,
+			Audience:  []string{"weight-tracker"},
+		}})
+
+	return token.SignedString(mySigningKey)
+}
+
 func (u *usersService) CreateAndReturnId(ctx context.Context, arg createUserAndReturnIdRequest) (string, error) {
 	uuid, err := uuid.NewV7()
 	if err != nil {

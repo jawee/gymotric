@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"weight-tracker/internal/utils"
 
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -23,7 +24,7 @@ type ResetPasswordEmailData struct {
 }
 
 type SendEmailConfirmationData struct {
-	Email string
+	Name string
 	Link  string
 }
 
@@ -60,7 +61,7 @@ func SendEmailConfirmation(recipient string, data SendEmailConfirmationData) err
 }
 
 func sendEmail(html string, recipient string, subject string, data any) error {
-	SGKEY := os.Getenv("SENDGRID_KEY")
+	SGKEY := os.Getenv(utils.EnvSendGridApiKey)
 
 	tmpl, err := template.New("email").Parse(string(html))
 	if err != nil {
