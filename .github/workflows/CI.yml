@@ -28,6 +28,13 @@ jobs:
           fetch-depth: 0
         uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 'latest'
+
+      - run: npm i -g mjml
+      - run: mjml internal/email/emails/*.mjml -o internal/email/emails/
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
