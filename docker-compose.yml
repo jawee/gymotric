@@ -14,7 +14,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: prod
+      target: backend
     restart: unless-stopped
     # ports:
     #   - ${PORT}:${PORT}

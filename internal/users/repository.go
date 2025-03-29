@@ -7,11 +7,12 @@ import (
 )
 
 type User struct {
-	ID        string `json:"id"`
-	Username  string `json:"username"`
-	Password  string `json:"password"`
-	CreatedOn string `json:"created_on"`
-	UpdatedOn string `json:"updated_on"`
+	ID        string      `json:"id"`
+	Username  string      `json:"username"`
+	Password  string      `json:"password"`
+	CreatedOn string      `json:"created_on"`
+	UpdatedOn string      `json:"updated_on"`
+	Email     interface{} `json:"email"`
 }
 
 type UsersRepository interface {
@@ -19,10 +20,20 @@ type UsersRepository interface {
 	CreateAndReturnId(ctx context.Context, arg repository.CreateUserAndReturnIdParams) (string, error)
 	GetByUserId(ctx context.Context, userId string) (User, error)
 	UpdateUser(ctx context.Context, arg repository.UpdateUserParams) error
+	EmailExists(ctx context.Context, email string) (bool, error)
 }
 
 type usersRepository struct {
 	repo repository.Querier
+}
+
+func (u *usersRepository) EmailExists(ctx context.Context, email string) (bool, error) {
+	exists, err := u.repo.EmailExists(ctx, email)
+	if err != nil {
+		return false, err
+	}
+
+	return exists > 0, nil
 }
 
 func (u *usersRepository) UpdateUser(ctx context.Context, arg repository.UpdateUserParams) error {
@@ -72,6 +83,7 @@ func newUser(v repository.User) User {
 	user := User{
 		ID:        v.ID,
 		Username:  v.Username,
+		Email:     v.Email,
 		Password:  v.Password,
 		CreatedOn: v.CreatedOn,
 		UpdatedOn: v.UpdatedOn,

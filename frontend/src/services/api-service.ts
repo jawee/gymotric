@@ -310,6 +310,28 @@ const changePassword = async (oldPassword: string, newPassword: string, isRetry:
   return res;
 };
 
+const registerEmail = async (email: string, isRetry: boolean = false) => {
+  const res = await fetch("/api/me/email", {
+    method: "PUT",
+    credentials: "include",
+    body: JSON.stringify({ email: email })
+  });
+
+  const shouldRetry = await checkIfUnauthorized(res, isRetry);
+  if (shouldRetry && !isRetry) {
+    return await registerEmail(email, true);
+  }
+  return res;
+};
+
+const confirmEmail = async (token: string) => {
+  const res = await fetch("/api/confirm-email?token=" + token, {
+    method: "POST",
+  });
+
+  return res;
+};
+
 const ApiService = {
   login,
   logout,
@@ -335,6 +357,8 @@ const ApiService = {
   fetchLastWeightAndReps,
   fetchMe,
   changePassword,
+  registerEmail,
+  confirmEmail,
 };
 
 export default ApiService;

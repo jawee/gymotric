@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 	"weight-tracker/internal/database"
+	"weight-tracker/internal/email"
 	"weight-tracker/internal/utils"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -31,6 +32,10 @@ type changePasswordRequest struct {
 	NewPassword string
 }
 
+type changeEmailRequest struct {
+	Email string
+}
+
 type handler struct {
 	service Service
 }
@@ -41,14 +46,111 @@ func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper 
 	}
 
 	mux.Handle("POST /users", http.HandlerFunc(handler.createUserHandler))
- 
+
 	mux.Handle("POST /auth/login", http.HandlerFunc(handler.loginHandler))
 	mux.Handle("POST /auth/token", http.HandlerFunc(handler.refreshHandler))
 
 	mux.Handle("GET /me", authenticationWrapper(http.HandlerFunc(handler.meHandler)))
 	mux.Handle("PUT /me/password", authenticationWrapper(http.HandlerFunc(handler.changePasswordHandler)))
+	mux.Handle("PUT /me/email", authenticationWrapper(http.HandlerFunc(handler.changeEmailHandler)))
+
+	mux.Handle("POST /confirm-email", http.HandlerFunc(handler.confirmEmailHandler))
 
 	mux.Handle("POST /logout", authenticationWrapper(http.HandlerFunc(handler.logoutHandler)))
+}
+
+func (s *handler) confirmEmailHandler(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("Confirm email handler")
+	tokenString := r.URL.Query().Get("token")
+
+	if tokenString == "" {
+		slog.Error("No token found")
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	token, err := jwt.ParseWithClaims(tokenString, &emailConfirmationCustomClaims{},func(token *jwt.Token) (interface{}, error) {
+		signingKey := os.Getenv(utils.EnvJwtSignKey)
+		return []byte(signingKey), nil
+	})
+
+	if err != nil {
+		slog.Error("Failed to parse token", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	slog.Debug("Parsed token")
+	if claims, ok := token.Claims.(*emailConfirmationCustomClaims); ok {
+		sub, err := claims.GetSubject()
+
+		if err != nil {
+			slog.Error("GetSubject", "error", err)
+			http.Error(w, "", http.StatusBadRequest)
+			return
+		}
+
+		email, err := claims.GetEmail()
+		if err != nil {
+			slog.Error("GetEmail", "error", err)
+			http.Error(w, "", http.StatusBadRequest)
+			return
+		}
+
+		slog.Debug("Success", "sub", sub, "email", email)
+		err = s.service.ConfirmEmail(r.Context(), sub, email)
+		if err != nil {
+			slog.Error("Failed to confirm email", "error", err)
+			http.Error(w, "", http.StatusBadRequest)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	w.WriteHeader(http.StatusBadRequest)
+}
+
+func (s *handler) changeEmailHandler(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("sub").(string)
+	decoder := json.NewDecoder(r.Body)
+	var request changeEmailRequest
+	err := decoder.Decode(&request)
+	if err != nil {
+		slog.Error("Failed to decode request body", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	user, err := s.service.GetByUserId(r.Context(), userId)
+	if err != nil {
+		slog.Error("Failed to get user", "error", err, "userId", userId)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	//TODO check if email is already in use
+	token, err := s.service.CreateConfirmationToken(r.Context(), userId, request.Email) 
+	if err != nil {
+		slog.Error("Failed to create confirmation token", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	baseUrl := os.Getenv("BASE_URL")
+
+	err = email.SendEmailConfirmation(request.Email, email.SendEmailConfirmationData{
+		Name: user.Username,
+		Link: baseUrl + "/confirm-email?token=" + token,
+	})
+
+	if err != nil {
+		slog.Error("Failed to send email", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *handler) changePasswordHandler(w http.ResponseWriter, r *http.Request) {
@@ -66,7 +168,7 @@ func (s *handler) changePasswordHandler(w http.ResponseWriter, r *http.Request) 
 
 	err = s.service.ChangePassword(r.Context(), request, userId)
 	if err != nil {
-		slog.Error("Failed to change password", "error", err)
+		slog.Error("Failed to change password", "error", err) 
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
@@ -179,7 +281,6 @@ func getSubjectFromCookie(cookieName string, signingKey string, r *http.Request)
 
 func (s *handler) createTokenResponse(w http.ResponseWriter, sub string) error {
 	tokenExpiration, err := strconv.Atoi(os.Getenv(utils.EnvJwtExpireMinutes))
-
 
 	if err != nil {
 		slog.Error("Failed to convert JWT_EXPIRE_MINUTES to int", "error", err)

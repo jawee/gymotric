@@ -6,7 +6,7 @@ import { useNavigate } from "react-router";
 import StatisticsComponent from "@/components/statistics";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { LogOut, RectangleEllipsis } from "lucide-react";
+import { LogOut, Mail, RectangleEllipsis } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -14,10 +14,12 @@ import { Toaster } from "@/components/ui/sonner";
 
 const Profile = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [email, setEmail] = useState<string>("");
   const [oldPassword, setOldPassword] = useState<string>("");
   const [newPassword, setNewPassword] = useState<string>("");
   const [confirmNewPassword, setConfirmNewPassword] = useState<string>("");
   const [changePasswordError, setChangePasswordError] = useState<string | null>(null);
+  const [registerEmailError, setRegisterEmailError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -36,6 +38,23 @@ const Profile = () => {
 
   }, []);
 
+
+  const registerEmail = async () => {
+    if (email === "") {
+      setRegisterEmailError("Email is required");
+      return;
+    }
+
+    const response = await ApiService.registerEmail(email); 
+    if (response.status === 204) {
+      setEmailDialogOpen(false);
+      toast("Email registered. A confirmation email has been sent");
+      return;
+    }
+
+    setRegisterEmailError("Error registering email");
+  };
+
   const changePassword = async () => {
     if (oldPassword === "" || newPassword === "" || confirmNewPassword === "") {
       setChangePasswordError("All fields are required");
@@ -51,11 +70,10 @@ const Profile = () => {
       setChangePasswordError("Passwords do not match");
       return;
     }
-    console.log(oldPassword, newPassword, confirmNewPassword);
 
     const response = await ApiService.changePassword(oldPassword, newPassword);
     if (response.status === 204) {
-      setDialogOpen(false);
+      setPasswordDialogOpen(false);
       toast("Password changed. You will need to log in again");
       navigate("/login", { state: { message: "Password changed. You need to log in again" } });
       return;
@@ -63,7 +81,8 @@ const Profile = () => {
     setChangePasswordError("Error changing password");
   };
 
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
 
   if (user === null) {
     return <Loading />;
@@ -72,10 +91,11 @@ const Profile = () => {
     <>
       <h1 className="text-2xl">Profile for {user.username}</h1>
       <p>Member since: {new Date(user.created_on).toDateString()}</p>
+      <p>Registered email: {user.email}</p>
       <h2 className="text-xl mb-2">Statistics</h2>
       <StatisticsComponent />
       <div className="mt-2">
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
           <DialogTrigger className={buttonVariants({ variant: "default" })}><><RectangleEllipsis /> Change password</></DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -97,6 +117,26 @@ const Profile = () => {
         </Dialog>
       </div>
       <div className="mt-2">
+        <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+          <DialogTrigger className={buttonVariants({ variant: "default" })}><><Mail /> {user.email === null ? "Register email" : "Change email"}</></DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{user.email === null ? "Register email" : "Change email"}</DialogTitle>
+              <DialogDescription>
+              </DialogDescription>
+            </DialogHeader>
+            <>
+              <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" />
+              {registerEmailError !== null ? <p className="text-red-500">{registerEmailError}</p> : null}
+            </>
+            <DialogFooter>
+              <DialogClose className={cn(buttonVariants({ variant: "default" }), "bg-red-500", "hover:bg-red-700")}>Cancel</DialogClose>
+              <Button onClick={registerEmail}>Submit</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <div className="mt-2">
         <Button
           onClick={() => { navigate("/app/logout"); }}
           className={
@@ -113,7 +153,7 @@ const Profile = () => {
     </>
   );
 };
- 
+
 
 export default Profile;
 

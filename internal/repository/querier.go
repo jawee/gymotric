@@ -19,6 +19,7 @@ type Querier interface {
 	DeleteExerciseTypeById(ctx context.Context, arg DeleteExerciseTypeByIdParams) (int64, error)
 	DeleteSetById(ctx context.Context, arg DeleteSetByIdParams) (int64, error)
 	DeleteWorkoutById(ctx context.Context, arg DeleteWorkoutByIdParams) (int64, error)
+	EmailExists(ctx context.Context, email interface{}) (int64, error)
 	GetAllExerciseTypes(ctx context.Context, userID string) ([]ExerciseType, error)
 	GetAllExercises(ctx context.Context, userID string) ([]Exercise, error)
 	GetAllSets(ctx context.Context, userID string) ([]Set, error)

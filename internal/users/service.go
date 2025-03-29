@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"strconv"
@@ -23,6 +24,7 @@ type loginResponse struct {
 type getMeResponse struct {
 	ID        string `json:"id"`
 	Username  string `json:"username"`
+	Email     any    `json:"email"`
 	CreatedOn string `json:"created_on"`
 	UpdatedOn string `json:"updated_on"`
 }
@@ -32,15 +34,46 @@ type Service interface {
 	Login(ctx context.Context, arg loginRequest) (loginResponse, error)
 	CreateToken(userId string) (string, error)
 	GetByUserId(ctx context.Context, userId string) (getMeResponse, error)
-	ChangePassword(context context.Context, request changePasswordRequest, userId string) error
+	ChangePassword(ctx context.Context, request changePasswordRequest, userId string) error
+	CreateConfirmationToken(ctx context.Context, userId string, email string) (string, error)
+	ConfirmEmail(ctx context.Context, userId string, email string) error
 }
 
 type usersService struct {
 	repo UsersRepository
 }
 
-func (s *usersService) ChangePassword(context context.Context, request changePasswordRequest, userId string) error {
-	user, err := s.repo.GetByUserId(context, userId)
+func (s *usersService) ConfirmEmail(ctx context.Context, userId string, email string) error {
+	user, err := s.repo.GetByUserId(ctx, userId)
+	if err != nil {
+		return err
+	}
+
+	emailExists, err := s.repo.EmailExists(ctx, email)
+	if err != nil {
+		return err
+	}
+	if emailExists {
+		return fmt.Errorf("email already exists")
+	}
+
+	err = s.repo.UpdateUser(ctx, repository.UpdateUserParams{
+		ID:        user.ID,
+		Username:  user.Username,
+		Email:     email,
+		Password:  user.Password,
+		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *usersService) ChangePassword(ctx context.Context, request changePasswordRequest, userId string) error {
+	user, err := s.repo.GetByUserId(ctx, userId)
 	if err != nil {
 		return err
 	}
@@ -55,9 +88,10 @@ func (s *usersService) ChangePassword(context context.Context, request changePas
 		return err
 	}
 
-	err = s.repo.UpdateUser(context, repository.UpdateUserParams{
+	err = s.repo.UpdateUser(ctx, repository.UpdateUserParams{
 		ID:        user.ID,
 		Username:  user.Username,
+		Email:     user.Email,
 		Password:  string(newPasswordBytes),
 		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
 	})
@@ -78,6 +112,7 @@ func (u *usersService) GetByUserId(ctx context.Context, userId string) (getMeRes
 	return getMeResponse{
 		ID:        user.ID,
 		Username:  user.Username,
+		Email:     user.Email,
 		CreatedOn: user.CreatedOn,
 		UpdatedOn: user.UpdatedOn,
 	}, nil
@@ -102,7 +137,40 @@ func (u *usersService) CreateToken(userId string) (string, error) {
 	return token.SignedString(mySigningKey)
 }
 
-// CreateUserAndReturnId implements Service.
+type emailConfirmationCustomClaims struct {
+	Email string `json:"email"`
+	jwt.RegisteredClaims
+}
+
+func (e emailConfirmationCustomClaims) GetEmail() (string, error) {
+	return e.Email, nil
+}
+
+func (u *usersService) CreateConfirmationToken(ctx context.Context, userId string, email string) (string, error) {
+	emailExists, err := u.repo.EmailExists(ctx, email)
+	if err != nil {
+		return "", err
+	}
+	if emailExists {
+		return "", fmt.Errorf("email already exists")
+	}
+
+	signingKey := os.Getenv(utils.EnvJwtSignKey)
+
+	mySigningKey := []byte(signingKey)
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, emailConfirmationCustomClaims{
+		email,
+		jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Minute * time.Duration(utils.EmailConfirmationTokenExpireMinutes))),
+			Issuer:    "weight-tracker",
+			Subject:   userId,
+			Audience:  []string{"weight-tracker"},
+		}})
+
+	return token.SignedString(mySigningKey)
+}
+
 func (u *usersService) CreateAndReturnId(ctx context.Context, arg createUserAndReturnIdRequest) (string, error) {
 	uuid, err := uuid.NewV7()
 	if err != nil {

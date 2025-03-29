@@ -39,8 +39,20 @@ func (q *Queries) CreateUserAndReturnId(ctx context.Context, arg CreateUserAndRe
 	return id, err
 }
 
+const emailExists = `-- name: EmailExists :one
+SELECT count(*) from Users
+WHERE email = ?1
+`
+
+func (q *Queries) EmailExists(ctx context.Context, email interface{}) (int64, error) {
+	row := q.db.QueryRowContext(ctx, emailExists, email)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const getByUserId = `-- name: GetByUserId :one
-SELECT id, username, password, created_on, updated_on FROM users 
+SELECT id, username, password, created_on, updated_on, email FROM users 
 WHERE id = ?1
 `
 
@@ -53,12 +65,13 @@ func (q *Queries) GetByUserId(ctx context.Context, id string) (User, error) {
 		&i.Password,
 		&i.CreatedOn,
 		&i.UpdatedOn,
+		&i.Email,
 	)
 	return i, err
 }
 
 const getByUsername = `-- name: GetByUsername :one
-SELECT id, username, password, created_on, updated_on FROM users 
+SELECT id, username, password, created_on, updated_on, email FROM users 
 WHERE username = ?1
 `
 
@@ -71,21 +84,23 @@ func (q *Queries) GetByUsername(ctx context.Context, username string) (User, err
 		&i.Password,
 		&i.CreatedOn,
 		&i.UpdatedOn,
+		&i.Email,
 	)
 	return i, err
 }
 
 const updateUser = `-- name: UpdateUser :execrows
 UPDATE users
-SET username = ?1, password = ?2, updated_on = ?3
-WHERE id = ?4
+SET username = ?1, password = ?2, updated_on = ?3, email = ?4
+WHERE id = ?5
 `
 
 type UpdateUserParams struct {
-	Username  string `json:"username"`
-	Password  string `json:"password"`
-	UpdatedOn string `json:"updated_on"`
-	ID        string `json:"id"`
+	Username  string      `json:"username"`
+	Password  string      `json:"password"`
+	UpdatedOn string      `json:"updated_on"`
+	Email     interface{} `json:"email"`
+	ID        string      `json:"id"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (int64, error) {
@@ -93,6 +108,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (int64, 
 		arg.Username,
 		arg.Password,
 		arg.UpdatedOn,
+		arg.Email,
 		arg.ID,
 	)
 	if err != nil {
