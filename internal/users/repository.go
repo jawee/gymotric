@@ -7,11 +7,12 @@ import (
 )
 
 type User struct {
-	ID        string `json:"id"`
-	Username  string `json:"username"`
-	Password  string `json:"password"`
-	CreatedOn string `json:"created_on"`
-	UpdatedOn string `json:"updated_on"`
+	ID        string      `json:"id"`
+	Username  string      `json:"username"`
+	Password  string      `json:"password"`
+	CreatedOn string      `json:"created_on"`
+	UpdatedOn string      `json:"updated_on"`
+	Email     interface{} `json:"email"`
 }
 
 type UsersRepository interface {

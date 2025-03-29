@@ -32,16 +32,26 @@ type Service interface {
 	Login(ctx context.Context, arg loginRequest) (loginResponse, error)
 	CreateToken(userId string) (string, error)
 	GetByUserId(ctx context.Context, userId string) (getMeResponse, error)
-	ChangePassword(context context.Context, request changePasswordRequest, userId string) error
+	ChangePassword(ctx context.Context, request changePasswordRequest, userId string) error
 	CreateConfirmationToken(userId string, email string) (string, error)
+	ConfirmEmail(ctx context.Context, userId string, email string) error
 }
 
 type usersService struct {
 	repo UsersRepository
 }
 
-func (s *usersService) ChangePassword(context context.Context, request changePasswordRequest, userId string) error {
-	user, err := s.repo.GetByUserId(context, userId)
+func (s *usersService) ConfirmEmail(ctx context.Context, userId string, email string) error {
+	_, err := s.repo.GetByUserId(ctx, userId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *usersService) ChangePassword(ctx context.Context, request changePasswordRequest, userId string) error {
+	user, err := s.repo.GetByUserId(ctx, userId) 
 	if err != nil {
 		return err
 	}
@@ -56,9 +66,10 @@ func (s *usersService) ChangePassword(context context.Context, request changePas
 		return err
 	}
 
-	err = s.repo.UpdateUser(context, repository.UpdateUserParams{
+	err = s.repo.UpdateUser(ctx, repository.UpdateUserParams{
 		ID:        user.ID,
 		Username:  user.Username,
+		Email:     user.Email,
 		Password:  string(newPasswordBytes),
 		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
 	})

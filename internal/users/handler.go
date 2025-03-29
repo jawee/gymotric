@@ -99,6 +99,13 @@ func (s *handler) confirmEmailHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		slog.Debug("Success", "sub", sub, "email", email)
+		err = s.service.ConfirmEmail(r.Context(), sub, email)
+		if err != nil {
+			slog.Error("Failed to confirm email", "error", err)
+			http.Error(w, "", http.StatusBadRequest)
+			return
+		}
+
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
