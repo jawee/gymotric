@@ -17,24 +17,55 @@ import (
 //go:embed emails/*.html
 var embedEmails embed.FS
 
-func SendEmail() error {
-	SGKEY := os.Getenv("SENDGRID_KEY")
+type ResetPasswordEmailData struct {
+	Name      string
+	ResetLink string
+}
 
+type SendEmailConfirmationData struct {
+	Email string
+	Link  string
+}
+
+func SendPasswordReset(recipient string, data ResetPasswordEmailData) error {
 	html, err := embedEmails.ReadFile("emails/reset-password.html")
 	if err != nil {
 		slog.Error("Failed to read HTML file", "error", err)
 		return err
 	}
 
-	tmpl, err := template.New("reset-password").Parse(string(html))
+	err = sendEmail(string(html), recipient, "Password Reset", data)
 	if err != nil {
-		slog.Error("Failed to parse HTML template", "error", err)
+		slog.Error("Failed to send email", "error", err)
 		return err
 	}
 
-	data := ResetPasswordEmailData{
-		Name:      "John Doe",
-		ResetLink: "https://gymotric.com/reset-password?token=abcd1234",
+	return nil
+}
+
+func SendEmailConfirmation(recipient string, data SendEmailConfirmationData) error {
+	html, err := embedEmails.ReadFile("emails/confirm-email.html")
+	if err != nil {
+		slog.Error("Failed to read HTML file", "error", err)
+		return err
+	}
+
+	err = sendEmail(string(html), recipient, "Email Confirmation", data)
+	if err != nil {
+		slog.Error("Failed to send email", "error", err)
+		return err
+	}
+
+	return nil
+}
+
+func sendEmail(html string, recipient string, subject string, data any) error {
+	SGKEY := os.Getenv("SENDGRID_KEY")
+
+	tmpl, err := template.New("email").Parse(string(html))
+	if err != nil {
+		slog.Error("Failed to parse HTML template", "error", err)
+		return err
 	}
 
 	var emailContent bytes.Buffer
@@ -49,8 +80,7 @@ func SendEmail() error {
 			{
 				To: []from{
 					{
-						Email: "jawee.dev@gmail.com",
-						// Email: "ld-ee3ef3a3af@dmarctester.com",
+						Email: recipient,
 					},
 				},
 			},
@@ -58,7 +88,7 @@ func SendEmail() error {
 		From: from{
 			Email: "noreply@gymotric.anol.se",
 		},
-		Subject: "Test",
+		Subject: subject,
 		Content: []content{
 			{
 				Type:  "text/html",
@@ -73,7 +103,7 @@ func SendEmail() error {
 	}
 
 	req, err := http.NewRequest("POST", "https://api.sendgrid.com/v3/mail/send", bytes.NewBuffer(emailRequestBody))
-	req.Header.Set("Authorization", "Bearer " + SGKEY)
+	req.Header.Set("Authorization", "Bearer "+SGKEY)
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.Do(req)
@@ -110,9 +140,4 @@ type from struct {
 
 type personalization struct {
 	To []from `json:"to"`
-}
-
-type ResetPasswordEmailData struct {
-	Name      string
-	ResetLink string
 }
