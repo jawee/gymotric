@@ -2,17 +2,47 @@ package email
 
 import (
 	"bytes"
+	"embed"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 
 	_ "github.com/joho/godotenv/autoload"
 )
 
-func SendEmail(html string) error {
+//go:embed emails/*.html
+var embedEmails embed.FS
+
+func SendEmail() error {
 	SGKEY := os.Getenv("SENDGRID_KEY")
+
+	html, err := embedEmails.ReadFile("emails/reset-password.html")
+	if err != nil {
+		slog.Error("Failed to read HTML file", "error", err)
+		return err
+	}
+
+	tmpl, err := template.New("reset-password").Parse(string(html))
+	if err != nil {
+		slog.Error("Failed to parse HTML template", "error", err)
+		return err
+	}
+
+	data := ResetPasswordEmailData{
+		Name:      "John Doe",
+		ResetLink: "https://gymotric.com/reset-password?token=abcd1234",
+	}
+
+	var emailContent bytes.Buffer
+	if err := tmpl.Execute(&emailContent, data); err != nil {
+		slog.Error("Failed to execute template", "error", err)
+		return err
+	}
+
 	client := &http.Client{}
 	emailRequestBodyObj := &sendGridRequest{
 		Personalizations: []personalization{
@@ -32,7 +62,7 @@ func SendEmail(html string) error {
 		Content: []content{
 			{
 				Type:  "text/html",
-				Value: html,
+				Value: emailContent.String(),
 			},
 		},
 	}
@@ -80,4 +110,9 @@ type from struct {
 
 type personalization struct {
 	To []from `json:"to"`
+}
+
+type ResetPasswordEmailData struct {
+	Name      string
+	ResetLink string
 }
