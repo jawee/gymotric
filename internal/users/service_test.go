@@ -17,6 +17,11 @@ type repoMock struct {
 	mock.Mock
 }
 
+func (u *repoMock) EmailExists(ctx context.Context, email string) (bool, error) {
+	args := u.Called(ctx, email)
+	return args.Bool(0), args.Error(1)
+}
+
 func (u *repoMock) UpdateUser(ctx context.Context, arg repository.UpdateUserParams) error {
 	args := u.Called(ctx, arg)
 	return args.Error(0)

@@ -165,7 +165,7 @@ func (s *handler) changePasswordHandler(w http.ResponseWriter, r *http.Request) 
 
 	err = s.service.ChangePassword(r.Context(), request, userId)
 	if err != nil {
-		slog.Error("Failed to change password", "error", err)
+		slog.Error("Failed to change password", "error", err) 
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}

@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"strconv"
@@ -42,7 +43,28 @@ type usersService struct {
 }
 
 func (s *usersService) ConfirmEmail(ctx context.Context, userId string, email string) error {
-	_, err := s.repo.GetByUserId(ctx, userId)
+	user, err := s.repo.GetByUserId(ctx, userId)
+	if err != nil {
+		return err
+	}
+
+	emailExists, err := s.repo.EmailExists(ctx, email)
+	if err != nil {
+		return err
+	}
+	if emailExists {
+		return fmt.Errorf("email already exists")
+	}
+
+	err = s.repo.UpdateUser(ctx, repository.UpdateUserParams{
+		ID:        user.ID,
+		Username:  user.Username,
+		Email:     email,
+		Password:  user.Password,
+		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
+	})
+
+	 
 	if err != nil {
 		return err
 	}
@@ -51,7 +73,7 @@ func (s *usersService) ConfirmEmail(ctx context.Context, userId string, email st
 }
 
 func (s *usersService) ChangePassword(ctx context.Context, request changePasswordRequest, userId string) error {
-	user, err := s.repo.GetByUserId(ctx, userId) 
+	user, err := s.repo.GetByUserId(ctx, userId)
 	if err != nil {
 		return err
 	}

@@ -20,10 +20,20 @@ type UsersRepository interface {
 	CreateAndReturnId(ctx context.Context, arg repository.CreateUserAndReturnIdParams) (string, error)
 	GetByUserId(ctx context.Context, userId string) (User, error)
 	UpdateUser(ctx context.Context, arg repository.UpdateUserParams) error
+	EmailExists(ctx context.Context, email string) (bool, error)
 }
 
 type usersRepository struct {
 	repo repository.Querier
+}
+
+func (u *usersRepository) EmailExists(ctx context.Context, email string) (bool, error) {
+	exists, err := u.repo.EmailExists(ctx, email)
+	if err != nil {
+		return false, err
+	}
+
+	return exists > 0, nil
 }
 
 func (u *usersRepository) UpdateUser(ctx context.Context, arg repository.UpdateUserParams) error {
