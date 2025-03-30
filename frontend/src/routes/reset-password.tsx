@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import ApiService from "@/services/api-service";
 import { Dumbbell } from "lucide-react";
 import { useState } from "react";
@@ -34,7 +36,10 @@ const PasswordReset = () => {
   return (
     <>
       <PasswordResetContent>
-        <><Input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="Email" /> <Button onClick={submitPasswordReset}>Reset Password</Button></>
+        <>
+          <Input className="w-full" value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="Email" />
+          <Button className="w-full" onClick={submitPasswordReset}>Reset Password</Button>
+        </>
       </PasswordResetContent>
     </>
   );
@@ -42,7 +47,7 @@ const PasswordReset = () => {
 
 export const PasswordResetContent = ({ ...props }: React.ComponentProps<"div">) => {
   return (
-    <div className="flex min-h-svh flex-col items-center gap-6 bg-muted p-6 md:p-10">
+    <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
       <div className="flex w-full max-w-sm flex-col gap-6">
         <a href="/" className="flex items-center gap-2 self-center font-medium text-2xl">
           <div className="flex h-10 w-10 items-center justify-center rounded-md text-primary m-1 ml-0 border-2 border-primary">
@@ -51,7 +56,18 @@ export const PasswordResetContent = ({ ...props }: React.ComponentProps<"div">) 
           Gymotric
         </a>
       </div>
-      <div className="flex w-full max-w-sm flex-col gap-6" {...props} />
+      <div className={cn("flex w-full max-w-sm flex-col gap-6")}>
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-xl">Reset Password</CardTitle>
+            <CardDescription>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 w-full" {...props} />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
