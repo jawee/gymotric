@@ -10,6 +10,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import ApiService from "@/services/api-service"
+import { Link } from "react-router"
 
 type loginFormProps = {
   message?: string;
@@ -84,6 +85,9 @@ const LoginForm = ({ message }: loginFormProps) => {
       <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary  ">
         By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
         and <a href="#">Privacy Policy</a>.
+      </div>
+      <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary  ">
+        <Link to="/password-reset">Reset Password</Link>
       </div>
     </div>
   )
