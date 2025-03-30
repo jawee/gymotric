@@ -88,3 +88,18 @@ func TestLoginAndReturnToken(t *testing.T) {
 	assert.NotEmpty(t, token)
 	repoMock.AssertExpectations(t)
 }
+
+func TestCreateToken(t *testing.T) {
+	os.Setenv(utils.EnvJwtExpireMinutes, "10")
+	os.Setenv(utils.EnvJwtSignKey, "testkey")
+
+	userId, _ := uuid.NewV7()
+	repoMock := repoMock{}
+
+	service := NewService(&repoMock)
+	token, err := service.CreateToken(userId.String())
+
+	assert.Nil(t, err)
+	assert.NotEmpty(t, token)
+	repoMock.AssertExpectations(t)
+}
