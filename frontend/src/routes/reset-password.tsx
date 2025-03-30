@@ -37,8 +37,8 @@ const PasswordReset = () => {
     <>
       <PasswordResetContent>
         <>
-          <Input className="w-full" value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="Email" />
-          <Button className="w-full" onClick={submitPasswordReset}>Reset Password</Button>
+          <Input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="Email" />
+          <Button onClick={submitPasswordReset}>Reset Password</Button>
         </>
       </PasswordResetContent>
     </>
