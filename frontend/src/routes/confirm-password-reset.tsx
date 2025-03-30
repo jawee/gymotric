@@ -1,6 +1,6 @@
 import ApiService from "@/services/api-service";
 import { useState } from "react";
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import { PasswordResetContent } from "./reset-password";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ const PasswordResetConfirm = () => {
 
     const res = await ApiService.passwordResetConfirm(password, token);
     if (res.status === 204) {
-      setMessage("Password confirmed successfully!");
+      setMessage("Password set successfully!.");
       return;
     }
     const text = await res.text();
@@ -42,6 +42,7 @@ const PasswordResetConfirm = () => {
     return (
       <PasswordResetContent>
         <p>{message}</p>
+        <Button><Link to="/login">Log In</Link></Button>
       </PasswordResetContent>
     );
   }

@@ -65,18 +65,18 @@ const LoginForm = ({ message }: loginFormProps) => {
                 </Button>
               </div>
               <div className="text-center text-sm">
-                <a
-                  href="#"
+                <Link
+                  to="/password-reset"
                   className="ml-auto text-sm underline-offset-4 hover:underline"
                 >
                   Forgot your password?
-                </a>
+                </Link>
               </div>
               <div className="text-center text-sm">
                 Don&apos;t have an account?{" "}
-                <a href="#" className="underline underline-offset-4">
+                <Link to="#" className="underline underline-offset-4">
                   Sign up
-                </a>
+                </Link>
               </div>
             </div>
           </form>
@@ -85,9 +85,6 @@ const LoginForm = ({ message }: loginFormProps) => {
       <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary  ">
         By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
         and <a href="#">Privacy Policy</a>.
-      </div>
-      <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary  ">
-        <Link to="/password-reset">Reset Password</Link>
       </div>
     </div>
   )
