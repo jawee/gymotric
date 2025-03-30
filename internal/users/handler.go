@@ -32,6 +32,15 @@ type changePasswordRequest struct {
 	NewPassword string
 }
 
+type resetPasswordRequest struct {
+	Email string
+}
+
+type resetPasswordConfirmRequest struct {
+	Token    string
+	Password string
+}
+
 type changeEmailRequest struct {
 	Email string
 }
@@ -56,7 +65,109 @@ func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper 
 
 	mux.Handle("POST /confirm-email", http.HandlerFunc(handler.confirmEmailHandler))
 
+	mux.Handle("POST /reset-password", http.HandlerFunc(handler.resetPasswordHandler))
+	mux.Handle("POST /reset-password/confirm", http.HandlerFunc(handler.resetPasswordConfirmHandler))
+
 	mux.Handle("POST /logout", authenticationWrapper(http.HandlerFunc(handler.logoutHandler)))
+}
+
+func (s *handler) resetPasswordHandler(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+	var request resetPasswordRequest
+	err := decoder.Decode(&request)
+	if err != nil {
+		slog.Error("Failed to decode request body", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	user, err := s.service.GetByEmail(r.Context(), request.Email)
+	if err != nil {
+		slog.Error("Failed to get user", "error", err, "email", request.Email)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	token, err := s.service.CreateResetPasswordToken(r.Context(), user.ID)
+	if err != nil {
+		slog.Error("Failed to create reset password token", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	baseUrl := os.Getenv("BASE_URL")
+
+	err = email.SendPasswordReset(request.Email, email.ResetPasswordEmailData{
+		Name:      user.Username,
+		ResetLink: baseUrl + "/password-reset/" + token,
+	})
+
+	if err != nil {
+		slog.Error("Failed to send email", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *handler) resetPasswordConfirmHandler(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("Reset password confirm handler")
+	decoder := json.NewDecoder(r.Body)
+	var request resetPasswordConfirmRequest
+	err := decoder.Decode(&request)
+	if err != nil {
+		slog.Error("Failed to decode request body", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	if request.Password == "" {
+		slog.Error("Password is empty")
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	if request.Token == "" {
+		slog.Error("Token is empty")
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	token, err := jwt.Parse(request.Token, func(token *jwt.Token) (interface{}, error) {
+		signingKey := os.Getenv(utils.EnvJwtSignKey)
+		return []byte(signingKey), nil
+	})
+
+	if err != nil {
+		slog.Error("Failed to parse token", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	slog.Debug("Parsed token")
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		sub, err := claims.GetSubject()
+
+		if err != nil {
+			slog.Error("GetSubject", "error", err)
+			http.Error(w, "", http.StatusBadRequest)
+			return
+		}
+
+		slog.Debug("Success", "sub", sub)
+		err = s.service.ResetPassword(r.Context(), sub, request.Password)
+		if err != nil {
+			slog.Error("Failed to reset password", "error", err)
+			http.Error(w, "", http.StatusBadRequest)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	w.WriteHeader(http.StatusBadRequest)
 }
 
 func (s *handler) confirmEmailHandler(w http.ResponseWriter, r *http.Request) {
@@ -69,7 +180,7 @@ func (s *handler) confirmEmailHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := jwt.ParseWithClaims(tokenString, &emailConfirmationCustomClaims{},func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &emailConfirmationCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 		signingKey := os.Getenv(utils.EnvJwtSignKey)
 		return []byte(signingKey), nil
 	})
@@ -130,7 +241,7 @@ func (s *handler) changeEmailHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//TODO check if email is already in use
-	token, err := s.service.CreateConfirmationToken(r.Context(), userId, request.Email) 
+	token, err := s.service.CreateConfirmationToken(r.Context(), userId, request.Email)
 	if err != nil {
 		slog.Error("Failed to create confirmation token", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
@@ -168,7 +279,7 @@ func (s *handler) changePasswordHandler(w http.ResponseWriter, r *http.Request) 
 
 	err = s.service.ChangePassword(r.Context(), request, userId)
 	if err != nil {
-		slog.Error("Failed to change password", "error", err) 
+		slog.Error("Failed to change password", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}

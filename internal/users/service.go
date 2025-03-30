@@ -36,11 +36,48 @@ type Service interface {
 	GetByUserId(ctx context.Context, userId string) (getMeResponse, error)
 	ChangePassword(ctx context.Context, request changePasswordRequest, userId string) error
 	CreateConfirmationToken(ctx context.Context, userId string, email string) (string, error)
+	CreateResetPasswordToken(ctx context.Context, userId string) (string, error)
 	ConfirmEmail(ctx context.Context, userId string, email string) error
+	GetByEmail(ctx context.Context, email string) (getMeResponse, error)
+	ResetPassword(ctx context.Context, userId string, newPassword string) error
 }
 
 type usersService struct {
 	repo UsersRepository
+}
+
+func (u *usersService) ResetPassword(ctx context.Context, userId string, newPassword string) error {
+	user, err := u.repo.GetByUserId(ctx, userId)
+	if err != nil {
+		return err
+	}
+	newPasswordBytes, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	err = u.repo.UpdateUser(ctx, repository.UpdateUserParams{
+		ID:        user.ID,
+		Username:  user.Username,
+		Email:     user.Email,
+		Password:  string(newPasswordBytes),
+		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
+	})
+
+	return err
+}
+
+func (s *usersService) GetByEmail(ctx context.Context, email string) (getMeResponse, error) {
+	user, err := s.repo.GetByEmail(ctx, email)
+	if err != nil {
+		return getMeResponse{}, err
+	}
+	return getMeResponse{
+		ID:        user.ID,
+		Username:  user.Username,
+		Email:     user.Email,
+		CreatedOn: user.CreatedOn,
+		UpdatedOn: user.UpdatedOn,
+	}, nil
 }
 
 func (s *usersService) ConfirmEmail(ctx context.Context, userId string, email string) error {
@@ -144,6 +181,21 @@ type emailConfirmationCustomClaims struct {
 
 func (e emailConfirmationCustomClaims) GetEmail() (string, error) {
 	return e.Email, nil
+}
+
+func (u *usersService) CreateResetPasswordToken(ctx context.Context, userId string) (string, error) {
+	signingKey := os.Getenv(utils.EnvJwtSignKey)
+
+	mySigningKey := []byte(signingKey)
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Minute * time.Duration(utils.ResetPasswordTokenExpireMinutes))),
+		Issuer:    "weight-tracker",
+		Subject:   userId,
+		Audience:  []string{"weight-tracker"},
+	})
+
+	return token.SignedString(mySigningKey)
 }
 
 func (u *usersService) CreateConfirmationToken(ctx context.Context, userId string, email string) (string, error) {

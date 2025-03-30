@@ -22,3 +22,7 @@ WHERE id = sqlc.arg(id);
 -- name: EmailExists :one
 SELECT count(*) from Users
 WHERE email = sqlc.arg(email);
+
+-- name: GetByEmail :one
+SELECT * FROM users 
+WHERE email = sqlc.arg(email);

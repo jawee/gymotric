@@ -51,6 +51,25 @@ func (q *Queries) EmailExists(ctx context.Context, email interface{}) (int64, er
 	return count, err
 }
 
+const getByEmail = `-- name: GetByEmail :one
+SELECT id, username, password, created_on, updated_on, email FROM users 
+WHERE email = ?1
+`
+
+func (q *Queries) GetByEmail(ctx context.Context, email interface{}) (User, error) {
+	row := q.db.QueryRowContext(ctx, getByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Password,
+		&i.CreatedOn,
+		&i.UpdatedOn,
+		&i.Email,
+	)
+	return i, err
+}
+
 const getByUserId = `-- name: GetByUserId :one
 SELECT id, username, password, created_on, updated_on, email FROM users 
 WHERE id = ?1

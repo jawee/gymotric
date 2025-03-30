@@ -11,12 +11,16 @@ import Logout from './routes/logout';
 import './index.css';
 import Profile from './routes/profile';
 import ConfirmEmail from './routes/confirm-email';
+import PasswordReset from './routes/reset-password';
+import PasswordResetConfirm from './routes/confirm-password-reset';
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
         <BrowserRouter>
             <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route path="/confirm-email" element={<ConfirmEmail />} /> 
+                <Route path="/password-reset" element={<PasswordReset />} /> 
+                <Route path="/password-reset/:token" element={<PasswordResetConfirm />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/app" element={<Default />}>
                     <Route index element={<Home />} />

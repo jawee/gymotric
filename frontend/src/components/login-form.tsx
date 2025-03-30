@@ -10,6 +10,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import ApiService from "@/services/api-service"
+import { Link } from "react-router"
 
 type loginFormProps = {
   message?: string;
@@ -64,18 +65,18 @@ const LoginForm = ({ message }: loginFormProps) => {
                 </Button>
               </div>
               <div className="text-center text-sm">
-                <a
-                  href="#"
+                <Link
+                  to="/password-reset"
                   className="ml-auto text-sm underline-offset-4 hover:underline"
                 >
                   Forgot your password?
-                </a>
+                </Link>
               </div>
               <div className="text-center text-sm">
                 Don&apos;t have an account?{" "}
-                <a href="#" className="underline underline-offset-4">
+                <Link to="#" className="underline underline-offset-4">
                   Sign up
-                </a>
+                </Link>
               </div>
             </div>
           </form>

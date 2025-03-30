@@ -332,6 +332,25 @@ const confirmEmail = async (token: string) => {
   return res;
 };
 
+const passwordReset = async (email: string) => {
+  const res = await fetch("/api/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ email: email })
+  });
+
+  return res;
+};
+
+const passwordResetConfirm = async (password: string, token: string) => {
+  const res = await fetch("/api/reset-password/confirm", {
+    method: "POST",
+    body: JSON.stringify({ token: token, password: password })
+  });
+
+  return res;
+};
+
+
 const ApiService = {
   login,
   logout,
@@ -359,6 +378,8 @@ const ApiService = {
   changePassword,
   registerEmail,
   confirmEmail,
+  passwordReset,
+  passwordResetConfirm,
 };
 
 export default ApiService;
