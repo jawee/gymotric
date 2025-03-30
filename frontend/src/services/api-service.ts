@@ -333,7 +333,7 @@ const confirmEmail = async (token: string) => {
 };
 
 const passwordReset = async (email: string) => {
-  const res = await fetch("/api/password-reset", {
+  const res = await fetch("/api/reset-password", {
     method: "POST",
     body: JSON.stringify({ email: email })
   });
@@ -341,9 +341,10 @@ const passwordReset = async (email: string) => {
   return res;
 };
 
-const passwordResetConfirm = async (token: string) => {
-  const res = await fetch("/api/password-reset/" + token, {
+const passwordResetConfirm = async (password: string, token: string) => {
+  const res = await fetch("/api/reset-password/confirm", {
     method: "POST",
+    body: JSON.stringify({ token: token, password: password })
   });
 
   return res;

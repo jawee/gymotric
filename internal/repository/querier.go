@@ -24,6 +24,7 @@ type Querier interface {
 	GetAllExercises(ctx context.Context, userID string) ([]Exercise, error)
 	GetAllSets(ctx context.Context, userID string) ([]Set, error)
 	GetAllWorkouts(ctx context.Context, userID string) ([]Workout, error)
+	GetByEmail(ctx context.Context, email interface{}) (User, error)
 	GetByUserId(ctx context.Context, id string) (User, error)
 	GetByUsername(ctx context.Context, username string) (User, error)
 	GetExerciseById(ctx context.Context, arg GetExerciseByIdParams) (Exercise, error)

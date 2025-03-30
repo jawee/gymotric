@@ -21,10 +21,21 @@ type UsersRepository interface {
 	GetByUserId(ctx context.Context, userId string) (User, error)
 	UpdateUser(ctx context.Context, arg repository.UpdateUserParams) error
 	EmailExists(ctx context.Context, email string) (bool, error)
+	GetByEmail(ctx context.Context, email string) (User, error)
 }
 
 type usersRepository struct {
 	repo repository.Querier
+}
+
+func (u *usersRepository) GetByEmail(ctx context.Context, email string) (User, error) {
+	user, err := u.repo.GetByEmail(ctx, email)
+
+	if err != nil {
+		return User{}, err
+	}
+
+	return newUser(user), nil
 }
 
 func (u *usersRepository) EmailExists(ctx context.Context, email string) (bool, error) {
