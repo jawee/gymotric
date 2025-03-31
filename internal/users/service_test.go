@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"errors"
 	"os"
 	"testing"
 	"weight-tracker/internal/repository"
@@ -78,6 +79,7 @@ func TestLoginAndReturnToken(t *testing.T) {
 		Password:  string(pwBytes),
 		CreatedOn: "2024-09-05T19:22:00Z",
 		UpdatedOn: "2024-09-05T19:22:00Z",
+		Email:     "test@test.se",
 	}, nil).Once()
 
 	service := NewService(&repoMock)
@@ -103,3 +105,178 @@ func TestCreateToken(t *testing.T) {
 	assert.NotEmpty(t, token)
 	repoMock.AssertExpectations(t)
 }
+
+func TestGetUserById(t *testing.T) {
+	ctx := context.Background()
+	userId, _ := uuid.NewV7()
+	repoMock := repoMock{}
+	repoMock.On("GetByUserId", ctx, userId.String()).Return(User{
+		ID:        userId.String(),
+		Username:  "testusername",
+		Password:  "test",
+		CreatedOn: "2024-09-05T19:22:00Z",
+		UpdatedOn: "2024-09-05T19:22:00Z",
+		Email:     "test@test.se",
+	}, nil).Once()
+	service := NewService(&repoMock)
+	user, err := service.GetByUserId(ctx, userId.String())
+	assert.Nil(t, err)
+	assert.Equal(t, userId.String(), user.ID)
+	assert.Equal(t, "testusername", user.Username)
+	assert.Equal(t, "test@test.se", user.Email)
+	assert.Equal(t, "2024-09-05T19:22:00Z", user.CreatedOn)
+	assert.Equal(t, "2024-09-05T19:22:00Z", user.UpdatedOn)
+	repoMock.AssertExpectations(t)
+}
+
+func TestGetUserByIdErr(t *testing.T) {
+	ctx := context.Background()
+	userId, _ := uuid.NewV7()
+	repoMock := repoMock{}
+	repoMock.On("GetByUserId", ctx, userId.String()).Return(User{}, errors.New("testerror")).Once()
+	service := NewService(&repoMock)
+	user, err := service.GetByUserId(ctx, userId.String())
+	assert.NotNil(t, err)
+	assert.Equal(t, "testerror", err.Error())
+	assert.Equal(t, "", user.ID)
+	assert.Equal(t, "", user.Username)
+	assert.Equal(t, nil, user.Email)
+	assert.Equal(t, "", user.CreatedOn)
+	assert.Equal(t, "", user.UpdatedOn)
+	repoMock.AssertExpectations(t)
+}
+
+func TestChangePassword(t *testing.T) {
+	ctx := context.Background()
+	userId, _ := uuid.NewV7()
+	pwBytes, _ := bcrypt.GenerateFromPassword([]byte("test"), bcrypt.DefaultCost)
+	repoMock := repoMock{}
+	repoMock.On("GetByUserId", ctx, userId.String()).Return(User{
+		ID:        userId.String(),
+		Username:  "testusername",
+		Password:  string(pwBytes),
+		CreatedOn: "2024-09-05T19:22:00Z",
+		UpdatedOn: "2024-09-05T19:22:00Z",
+	}, nil).Once()
+
+	repoMock.On("UpdateUser", ctx, mock.MatchedBy(func(input repository.UpdateUserParams) bool {
+		return input.ID == userId.String() && input.Username == "testusername" && input.Password != ""
+	})).Return(nil).Once()
+
+	service := NewService(&repoMock)
+	err := service.ChangePassword(ctx, changePasswordRequest{
+		NewPassword: "newpassword",
+		OldPassword: "test"}, userId.String())
+
+	assert.Nil(t, err)
+	repoMock.AssertExpectations(t)
+}
+
+func TestChangePasswordUserNotFoundErr(t *testing.T) {
+	ctx := context.Background()
+	userId, _ := uuid.NewV7()
+	repoMock := repoMock{}
+	repoMock.On("GetByUserId", ctx, userId.String()).Return(User{}, errors.New("testerror")).Once()
+	service := NewService(&repoMock)
+	err := service.ChangePassword(ctx, changePasswordRequest{
+		NewPassword: "newpassword",
+		OldPassword: "test"}, userId.String())
+	assert.NotNil(t, err)
+	assert.Equal(t, "testerror", err.Error())
+	repoMock.AssertExpectations(t)
+}
+
+func TestChangePasswordWrongPasswordErr(t *testing.T) {
+	ctx := context.Background()
+	userId, _ := uuid.NewV7()
+	pwBytes, _ := bcrypt.GenerateFromPassword([]byte("oldpassword"), bcrypt.DefaultCost)
+	repoMock := repoMock{}
+	repoMock.On("GetByUserId", ctx, userId.String()).Return(User{
+		ID:        userId.String(),
+		Username:  "testusername",
+		Password:  string(pwBytes),
+		CreatedOn: "2024-09-05T19:22:00Z",
+		UpdatedOn: "2024-09-05T19:22:00Z",
+	}, nil).Once()
+
+	service := NewService(&repoMock)
+	err := service.ChangePassword(ctx, changePasswordRequest{
+		NewPassword: "newpassword",
+		OldPassword: "wrongpassword"}, userId.String())
+	assert.NotNil(t, err)
+	repoMock.AssertExpectations(t)
+}
+
+func TestChangePasswordUpdateUserFailsErr(t *testing.T) {
+	ctx := context.Background()
+	userId, _ := uuid.NewV7()
+	pwBytes, _ := bcrypt.GenerateFromPassword([]byte("test"), bcrypt.DefaultCost)
+	repoMock := repoMock{}
+	repoMock.On("GetByUserId", ctx, userId.String()).Return(User{
+		ID:        userId.String(),
+		Username:  "testusername",
+		Password:  string(pwBytes),
+		CreatedOn: "2024-09-05T19:22:00Z",
+		UpdatedOn: "2024-09-05T19:22:00Z",
+	}, nil).Once()
+
+	repoMock.On("UpdateUser", ctx, mock.Anything).Return(errors.New("testerror")).Once()
+
+	service := NewService(&repoMock)
+	err := service.ChangePassword(ctx, changePasswordRequest{
+		NewPassword: "newpassword",
+		OldPassword: "test"}, userId.String())
+	assert.NotNil(t, err)
+	assert.Equal(t, "testerror", err.Error())
+	repoMock.AssertExpectations(t)
+}
+
+func TestCreateConfirmationToken(t *testing.T) {
+	ctx := context.Background()
+	userId, _ := uuid.NewV7()
+	repoMock := repoMock{}
+	repoMock.On("EmailExists", ctx, "test@test.se").Return(false, nil).Once()
+
+	service := NewService(&repoMock)
+	token, err := service.CreateConfirmationToken(ctx, userId.String(), "test@test.se")
+
+	assert.Nil(t, err)
+	assert.NotEmpty(t, token)
+	repoMock.AssertExpectations(t)
+}
+
+func TestCreateConfirmationTokenEmailAlreadyExistsErr(t *testing.T) {
+	ctx := context.Background()
+	userId, _ := uuid.NewV7()
+	repoMock := repoMock{}
+	repoMock.On("EmailExists", ctx, "test@test.se").Return(true, nil).Once()
+
+	service := NewService(&repoMock)
+	token, err := service.CreateConfirmationToken(ctx, userId.String(), "test@test.se")
+
+	assert.NotNil(t, err)
+	assert.Empty(t, token)
+	assert.Equal(t, "email already exists", err.Error())
+	repoMock.AssertExpectations(t)
+}
+
+func TestCreateConfirmationTokenRepoErr(t *testing.T) {
+	ctx := context.Background()
+	userId, _ := uuid.NewV7()
+	repoMock := repoMock{}
+	repoMock.On("EmailExists", ctx, "test@test.se").Return(false, errors.New("testerror")).Once()
+
+	service := NewService(&repoMock)
+	token, err := service.CreateConfirmationToken(ctx, userId.String(), "test@test.se")
+
+	assert.NotNil(t, err)
+	assert.Empty(t, token)
+	assert.Equal(t, "testerror", err.Error())
+	repoMock.AssertExpectations(t)
+}
+
+// CreateConfirmationToken(ctx context.Context, userId string, email string) (string, error)
+// CreateResetPasswordToken(ctx context.Context, userId string) (string, error)
+// ConfirmEmail(ctx context.Context, userId string, email string) error
+// GetByEmail(ctx context.Context, email string) (getMeResponse, error)
+// ResetPassword(ctx context.Context, userId string, newPassword string) error
