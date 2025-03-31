@@ -275,7 +275,17 @@ func TestCreateConfirmationTokenRepoErr(t *testing.T) {
 	repoMock.AssertExpectations(t)
 }
 
-// CreateConfirmationToken(ctx context.Context, userId string, email string) (string, error)
+func TestCreateResetPasswordToken(t *testing.T) {
+	ctx := context.Background()
+	userId, _ := uuid.NewV7()
+
+	service := NewService(nil)
+	token, err := service.CreateResetPasswordToken(ctx, userId.String())
+
+	assert.Nil(t, err)
+	assert.NotEmpty(t, token)
+}
+
 // CreateResetPasswordToken(ctx context.Context, userId string) (string, error)
 // ConfirmEmail(ctx context.Context, userId string, email string) error
 // GetByEmail(ctx context.Context, email string) (getMeResponse, error)
