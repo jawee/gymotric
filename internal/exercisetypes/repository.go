@@ -39,8 +39,9 @@ func (e exerciseTypeRepository) GetMaxWeightRepsByExerciseTypeId(ctx context.Con
 		return MaxLastWeightReps{}, err
 	}
 
-	weight := a.Max.(float64)
-	return MaxLastWeightReps{ weight, int(a.Repetitions) }, nil
+	weight := a.Weight.(float64)
+	repetitions := a.Repetitions.(int64)
+	return MaxLastWeightReps{ weight, int(repetitions) }, nil
 }
 
 func (e exerciseTypeRepository) GetAll(context context.Context, userId string) ([]ExerciseType, error) {

@@ -23,7 +23,7 @@ AND user_id = sqlc.arg(user_id);
 
 
 -- name: GetMaxWeightRepsByExerciseTypeId :one
-SELECT s.repetitions, Max(s.weight) FROM exercises e
+SELECT Max(s.repetitions) as repetitions, Max(s.weight) as weight FROM exercises e
 JOIN sets s ON s.exercise_id = e.id
 WHERE exercise_type_id = sqlc.arg(id) AND s.user_id = sqlc.arg(user_id);
 

@@ -145,7 +145,7 @@ func (q *Queries) GetLastWeightRepsByExerciseTypeId(ctx context.Context, arg Get
 }
 
 const getMaxWeightRepsByExerciseTypeId = `-- name: GetMaxWeightRepsByExerciseTypeId :one
-SELECT s.repetitions, Max(s.weight) FROM exercises e
+SELECT Max(s.repetitions) as repetitions, Max(s.weight) as weight FROM exercises e
 JOIN sets s ON s.exercise_id = e.id
 WHERE exercise_type_id = ?1 AND s.user_id = ?2
 `
@@ -156,13 +156,13 @@ type GetMaxWeightRepsByExerciseTypeIdParams struct {
 }
 
 type GetMaxWeightRepsByExerciseTypeIdRow struct {
-	Repetitions int64       `json:"repetitions"`
-	Max         interface{} `json:"max"`
+	Repetitions interface{} `json:"repetitions"`
+	Weight      interface{} `json:"weight"`
 }
 
 func (q *Queries) GetMaxWeightRepsByExerciseTypeId(ctx context.Context, arg GetMaxWeightRepsByExerciseTypeIdParams) (GetMaxWeightRepsByExerciseTypeIdRow, error) {
 	row := q.db.QueryRowContext(ctx, getMaxWeightRepsByExerciseTypeId, arg.ID, arg.UserID)
 	var i GetMaxWeightRepsByExerciseTypeIdRow
-	err := row.Scan(&i.Repetitions, &i.Max)
+	err := row.Scan(&i.Repetitions, &i.Weight)
 	return i, err
 }
