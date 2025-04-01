@@ -72,7 +72,7 @@ func createWorkout(completed bool, daysAgo int, exerciseType repository.CreateEx
 
 	set := repository.CreateSetAndReturnIdParams{
 		ID:          getUuidString(),
-		Repetitions: 8,
+		Repetitions: 9,
 		Weight:      110,
 		ExerciseID:  exercise.ID,
 		UserID:      userId,
