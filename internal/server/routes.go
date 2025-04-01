@@ -22,7 +22,7 @@ import (
 func (s *Server) RegisterRoutes() http.Handler {
 	mux := http.NewServeMux()
 
-	mux.Handle("GET /health", s.AuthenticatedMiddleware(http.HandlerFunc(s.healthHandler)))
+	mux.Handle("GET /health", http.HandlerFunc(s.healthHandler))
 
 	users.AddEndpoints(mux, s.db, s.AuthenticatedMiddleware)
 
@@ -139,8 +139,13 @@ func (s *Server) corsMiddleware(next http.Handler) http.Handler {
 }
 
 func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
-	sub := r.Context().Value("sub")
-	slog.Info("Health check", "sub", sub)
+	apiKey := r.Header.Get("X-wt-api-key")
+	if apiKey != os.Getenv(utils.EnvApiKey) {
+		slog.Error("Invalid API key", "provided", apiKey)
+		http.Error(w, "", http.StatusUnauthorized)
+		return
+	}
+
 	resp, err := json.Marshal(s.db.Health())
 	if err != nil {
 		slog.Error("Failed to marshal health check response", "error", err)

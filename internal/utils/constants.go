@@ -8,6 +8,7 @@ const (
 	EnvJwtSignKey = "JWT_SIGN_KEY"
 	EnvJwtRefreshSignKey = "JWT_REFRESH_SIGN_KEY"
 	EnvSendGridApiKey = "SENDGRID_KEY"
+	EnvApiKey = "API_KEY"
 	ResetPasswordTokenExpireMinutes= 10
 	EmailConfirmationTokenExpireMinutes= 10
 )
