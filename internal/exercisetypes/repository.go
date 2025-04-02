@@ -39,7 +39,7 @@ func (e exerciseTypeRepository) GetMaxWeightRepsByExerciseTypeId(ctx context.Con
 		return MaxLastWeightReps{}, err
 	}
 
-	weight := a.Weight.(float64)
+	weight := a.Weight
 	repetitions := a.Repetitions.(int64)
 	return MaxLastWeightReps{ weight, int(repetitions) }, nil
 }
