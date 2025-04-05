@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"weight-tracker/internal/server"
+	"weight-tracker/internal/utils"
 )
 
 func gracefulShutdown(apiServer *http.Server, done chan bool) {
@@ -37,6 +38,22 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 	done <- true
 }
 
+func getLogLevel() slog.Level {
+	levelStr := os.Getenv(utils.EnvLogLevel)
+	switch levelStr {
+	case "DEBUG":
+		return slog.LevelDebug
+	case "INFO":
+		return slog.LevelInfo
+	case "WARN":
+		return slog.LevelWarn
+	case "ERROR":
+		return slog.LevelError
+	default:
+		return slog.LevelWarn
+	}
+}
+
 func setupSlog() {
 	replace := func(groups []string, a slog.Attr) slog.Attr {
 		//format time as RFC3339
@@ -48,7 +65,7 @@ func setupSlog() {
 
 	opts := &slog.HandlerOptions{
 		// AddSource:   true,
-		Level:       slog.LevelDebug,
+		Level:       getLogLevel(),
 		ReplaceAttr: replace,
 	}
 

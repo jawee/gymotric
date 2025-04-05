@@ -11,4 +11,5 @@ const (
 	EnvApiKey = "API_KEY"
 	ResetPasswordTokenExpireMinutes= 10
 	EmailConfirmationTokenExpireMinutes= 10
+	EnvLogLevel = "LOG_LEVEL"
 )
