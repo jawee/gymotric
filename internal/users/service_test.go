@@ -91,6 +91,47 @@ func TestLoginAndReturnToken(t *testing.T) {
 	repoMock.AssertExpectations(t)
 }
 
+func TestLoginUserNotFoundReturnsEmptyAndErr(t *testing.T) {
+	ctx := context.Background()
+	repoMock := repoMock{}
+	repoMock.On("GetByUsername", ctx, "testusername").Return(User{}, errors.New("testerror")).Once()
+
+	service := NewService(&repoMock)
+	token, err := service.Login(context.Background(), loginRequest{
+		Username: "testusername", Password: "test"})
+
+	assert.NotNil(t, err)
+	assert.Empty(t, token)
+	assert.Equal(t, "testerror", err.Error())
+	repoMock.AssertExpectations(t)
+}
+
+func TestLoginPasswordNotMatchReturnsEmptyAndErr(t *testing.T) {
+	os.Setenv(utils.EnvJwtExpireMinutes, "10")
+	ctx := context.Background()
+
+	userId, _ := uuid.NewV7()
+	pwBytes, _ := bcrypt.GenerateFromPassword([]byte("test"), bcrypt.DefaultCost)
+	repoMock := repoMock{}
+	repoMock.On("GetByUsername", ctx, "testusername").Return(User{
+		ID:        userId.String(),
+		Username:  "testusername",
+		Password:  string(pwBytes),
+		CreatedOn: "2024-09-05T19:22:00Z",
+		UpdatedOn: "2024-09-05T19:22:00Z",
+		Email:     "test@test.se",
+	}, nil).Once()
+
+	service := NewService(&repoMock)
+	token, err := service.Login(context.Background(), loginRequest{
+		Username: "testusername", Password: "wrong"})
+
+	assert.NotNil(t, err)
+	assert.Empty(t, token)
+	assert.Equal(t, bcrypt.ErrMismatchedHashAndPassword.Error(), err.Error())
+	repoMock.AssertExpectations(t)
+}
+
 func TestCreateToken(t *testing.T) {
 	os.Setenv(utils.EnvJwtExpireMinutes, "10")
 	os.Setenv(utils.EnvJwtSignKey, "testkey")
@@ -138,11 +179,7 @@ func TestGetUserByIdErr(t *testing.T) {
 	user, err := service.GetByUserId(ctx, userId.String())
 	assert.NotNil(t, err)
 	assert.Equal(t, "testerror", err.Error())
-	assert.Equal(t, "", user.ID)
-	assert.Equal(t, "", user.Username)
-	assert.Equal(t, nil, user.Email)
-	assert.Equal(t, "", user.CreatedOn)
-	assert.Equal(t, "", user.UpdatedOn)
+	assert.Empty(t, user)
 	repoMock.AssertExpectations(t)
 }
 
