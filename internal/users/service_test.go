@@ -320,8 +320,7 @@ func TestConfirmEmailUserNotFound(t *testing.T) {
 	email := "test@test.se"
 
 	repoMock := repoMock{}
-	repoMock.On("GetByUserId", ctx, userId.String()).Return(User{
-	}, errors.New("not found")).Once()
+	repoMock.On("GetByUserId", ctx, userId.String()).Return(User{}, errors.New("not found")).Once()
 
 	service := NewService(&repoMock)
 
@@ -443,5 +442,44 @@ func TestResetPasswordUserNotFound(t *testing.T) {
 	repoMock.AssertExpectations(t)
 }
 
-// GetByEmail(ctx context.Context, email string) (getMeResponse, error)
-// ResetPassword(ctx context.Context, userId string, newPassword string) error
+func TestGetByEmail(t *testing.T) {
+	ctx := context.Background()
+	userId, _ := uuid.NewV7()
+	email := "testemail@example.com"
+	repoMock := repoMock{}
+	repoMock.On("GetByEmail", ctx, email).Return(User{
+		ID:        userId.String(),
+		Username:  "testusername",
+		CreatedOn: "2024-09-05T19:22:00Z",
+		UpdatedOn: "2024-09-05T19:22:00Z",
+		Email:     email,
+	}, nil).Once()
+
+	service := NewService(&repoMock)
+	user, err := service.GetByEmail(ctx, email)
+	assert.Nil(t, err)
+	assert.Equal(t, userId.String(), user.ID)
+	assert.Equal(t, "testusername", user.Username)
+	assert.Equal(t, email, user.Email)
+	assert.Equal(t, "2024-09-05T19:22:00Z", user.CreatedOn)
+	assert.Equal(t, "2024-09-05T19:22:00Z", user.UpdatedOn)
+	repoMock.AssertExpectations(t)
+}
+
+func TestGetByEmailNotFoundReturnsEmptyWithErr(t *testing.T) {
+	ctx := context.Background()
+	email := "testemail@example.com"
+	repoMock := repoMock{}
+	repoMock.On("GetByEmail", ctx, email).Return(User{}, errors.New("User not found")).Once()
+
+	service := NewService(&repoMock)
+	user, err := service.GetByEmail(ctx, email)
+	assert.NotNil(t, err)
+	assert.Equal(t, "User not found", err.Error())
+	assert.Equal(t, "", user.ID)
+	assert.Equal(t, "", user.Username)
+	assert.Equal(t, nil, user.Email)
+	assert.Equal(t, "", user.CreatedOn)
+	assert.Equal(t, "", user.UpdatedOn)
+	repoMock.AssertExpectations(t)
+}
