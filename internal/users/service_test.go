@@ -513,10 +513,6 @@ func TestGetByEmailNotFoundReturnsEmptyWithErr(t *testing.T) {
 	user, err := service.GetByEmail(ctx, email)
 	assert.NotNil(t, err)
 	assert.Equal(t, "User not found", err.Error())
-	assert.Equal(t, "", user.ID)
-	assert.Equal(t, "", user.Username)
-	assert.Equal(t, nil, user.Email)
-	assert.Equal(t, "", user.CreatedOn)
-	assert.Equal(t, "", user.UpdatedOn)
+	assert.Empty(t, user)
 	repoMock.AssertExpectations(t)
 }
