@@ -74,7 +74,7 @@ func main() {
 		exerciseTypes[name] = id
 		exerciseType := repository.CreateExerciseTypeAndReturnIdParams{
 			ID:     id,
-			Name:   "Deadlift",
+			Name:   name,
 			UserID: userId,
 		}
 		repo.CreateExerciseTypeAndReturnId(ctx, exerciseType)
