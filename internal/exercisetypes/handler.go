@@ -91,6 +91,12 @@ func (s *handler) getAllWorkoutTypesHandler(w http.ResponseWriter, r *http.Reque
 	userId := r.Context().Value("sub").(string)
 	exerciseTypes, err := s.service.GetAll(r.Context(), userId)
 
+	if err != nil {
+		slog.Warn("Failed to get all exercise types", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
 	slog.Debug(fmt.Sprintf("returning %d exercise types", len(exerciseTypes)))
 
 	resp := map[string]interface{}{"exercise_types": exerciseTypes}
@@ -138,8 +144,8 @@ func (s *handler) createExerciseTypeHandler(w http.ResponseWriter, r *http.Reque
 	id, err := s.service.CreateAndReturnId(r.Context(), t, userId)
 
 	if err != nil {
-		slog.Warn("Failed to create workout", "error", err)
-		http.Error(w, "Failed to create workout", http.StatusBadRequest)
+		slog.Warn("Failed to create exercise", "error", err)
+		http.Error(w, "Failed to create exercise", http.StatusBadRequest)
 		return
 	}
 
