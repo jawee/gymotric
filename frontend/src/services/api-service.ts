@@ -57,14 +57,14 @@ const fetchStatistics = async (isRetry: boolean = false) => {
   return res;
 };
 
-const fetchWorkouts = async (isRetry: boolean = false) => {
-  const res = await fetch("/api/workouts", {
+const fetchWorkouts = async (pageSize: number = 25, pageNumber: number = 1, isRetry: boolean = false) => {
+  const res = await fetch("/api/workouts?page_size=" + pageSize + "&page=" + pageNumber, {
     credentials: "include",
   });
 
   const shouldRetry = await checkIfUnauthorized(res, isRetry);
   if (shouldRetry && !isRetry) {
-    return await fetchWorkouts(true);
+    return await fetchWorkouts(pageSize, pageNumber, true);
   }
 
   return res;

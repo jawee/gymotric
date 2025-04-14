@@ -255,9 +255,9 @@ const WorkoutComponent = () => {
       const res = await ApiService.fetchWorkout(id);
       if (res.status === 200) {
         const resObj = await res.json();
-        setWorkout(resObj.workout);
+        setWorkout(resObj.data);
         setIsLoading(false);
-        setNote(resObj.workout.note);
+        setNote(resObj.data.note);
         return
       }
 

@@ -88,11 +88,18 @@ func (q *Queries) DeleteWorkoutById(ctx context.Context, arg DeleteWorkoutByIdPa
 const getAllWorkouts = `-- name: GetAllWorkouts :many
 SELECT id, name, completed_on, created_on, updated_on, user_id, note FROM workouts 
 WHERE user_id = ?1
-ORDER by id asc
+ORDER BY id DESC
+LIMIT ?3 OFFSET ?2
 `
 
-func (q *Queries) GetAllWorkouts(ctx context.Context, userID string) ([]Workout, error) {
-	rows, err := q.db.QueryContext(ctx, getAllWorkouts, userID)
+type GetAllWorkoutsParams struct {
+	UserID string `json:"user_id"`
+	Offset int64  `json:"offset"`
+	Limit  int64  `json:"limit"`
+}
+
+func (q *Queries) GetAllWorkouts(ctx context.Context, arg GetAllWorkoutsParams) ([]Workout, error) {
+	rows, err := q.db.QueryContext(ctx, getAllWorkouts, arg.UserID, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -120,6 +127,18 @@ func (q *Queries) GetAllWorkouts(ctx context.Context, userID string) ([]Workout,
 		return nil, err
 	}
 	return items, nil
+}
+
+const getAllWorkoutsCount = `-- name: GetAllWorkoutsCount :one
+SELECT count(*) FROM workouts 
+WHERE user_id = ?1
+`
+
+func (q *Queries) GetAllWorkoutsCount(ctx context.Context, userID string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getAllWorkoutsCount, userID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }
 
 const getWorkoutById = `-- name: GetWorkoutById :one
