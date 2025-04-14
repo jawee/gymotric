@@ -80,8 +80,8 @@ func main() {
 		repo.CreateExerciseTypeAndReturnId(ctx, exerciseType)
 	}
 
-	for i := range 25 {
-		createWorkout(true, 25-i, exerciseTypes, repo, ctx, userId)
+	for i := range 100 {
+		createWorkout(true, 100-i, exerciseTypes, repo, ctx, userId)
 	}
 
 	fmt.Printf("Done\n")
