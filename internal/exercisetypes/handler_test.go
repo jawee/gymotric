@@ -139,3 +139,73 @@ func TestCreateExerciseTypeHandlerErr(t *testing.T) {
 
 	serviceMock.AssertExpectations(t)
 }
+
+func TestGetAllExerciseTypesHandler(t *testing.T) {
+	userId := "userId"
+
+	req, err := http.NewRequest("GET", "/exercise-types", nil)
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("GetAll", req.Context(), userId).
+		Return([]ExerciseType{
+			{
+				ID:   "1",
+				Name: "exerciseName",
+			},
+		}, nil).
+		Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.getAllWorkoutTypesHandler)
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	expected := `{"exercise_types":[{"id":"1","name":"exerciseName"}]}`
+	if rr.Body.String() != expected {
+		t.Errorf("handler returned unexpected body: got %v want %v",
+			rr.Body.String(), expected)
+	}
+
+	serviceMock.AssertExpectations(t)
+
+}
+func TestGetAllExerciseTypesHandlerErr(t *testing.T) {
+	userId := "userId"
+
+	req, err := http.NewRequest("GET", "/exercise-types", nil)
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("GetAll", req.Context(), userId).
+		Return([]ExerciseType{}, errors.New("Err")).
+		Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.getAllWorkoutTypesHandler)
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	if rr.Body.String() != "\n" {
+		t.Errorf("handler returned unexpected body: got '%v' want '%v'",
+			rr.Body.String(), "")
+	}
+
+	serviceMock.AssertExpectations(t)
+}
