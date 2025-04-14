@@ -11,7 +11,8 @@ import (
 )
 
 type Service interface {
-	GetAll(context context.Context, userId string) ([]Workout, error)
+	GetAll(context context.Context, userId string, page int, pageSize int) ([]Workout, error)
+	GetAllCount(context context.Context, userId string) (int, error)
 	GetById(context context.Context, id string, userId string) (Workout, error)
 	CreateAndReturnId(context context.Context, t createWorkoutRequest, userId string) (string, error)
 	CompleteById(context context.Context, workoutId string, userId string) error
@@ -120,8 +121,26 @@ func (w *workoutsService) CreateAndReturnId(context context.Context, t createWor
 	return id, err
 }
 
-func (w *workoutsService) GetAll(context context.Context, userId string) ([]Workout, error) {
-	workouts, err := w.repo.GetAll(context, userId)
+func (w *workoutsService) GetAllCount(context context.Context, userId string) (int, error) {
+	count, err := w.repo.GetAllCount(context, userId)
+	return int(count), err
+}
+
+func (w *workoutsService) GetAll(context context.Context, userId string, page int, pageSize int) ([]Workout, error) {
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+
+	arg := repository.GetAllWorkoutsParams{
+		UserID: userId,
+		Limit:  int64(pageSize),
+		Offset: int64((page - 1) * pageSize),
+	}
+
+	workouts, err := w.repo.GetAll(context, arg)
 
 	if err != nil {
 		return []Workout{}, err

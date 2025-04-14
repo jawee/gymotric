@@ -30,9 +30,14 @@ func (r *repoMock) CreateAndReturnId(ctx context.Context, arg repository.CreateW
 	return args.String(0), args.Error(1)
 }
 
-func (r *repoMock) GetAll(ctx context.Context, userId string) ([]Workout, error) {
-	args := r.Called(ctx, userId)
+func (r *repoMock) GetAll(ctx context.Context, arg repository.GetAllWorkoutsParams) ([]Workout, error) {
+	args := r.Called(ctx, arg)
 	return args.Get(0).([]Workout), args.Error(1)
+}
+
+func (r *repoMock) GetAllCount(ctx context.Context, userId string) (int64, error) {
+	args := r.Called(ctx, userId)
+	return args.Get(0).(int64), args.Error(1)
 }
 
 func (r *repoMock) GetById(ctx context.Context, arg repository.GetWorkoutByIdParams) (Workout, error) {
@@ -54,13 +59,15 @@ func TestGetAll(t *testing.T) {
 	ctx := context.Background()
 
 	repoMock := repoMock{}
-	repoMock.On("GetAll", ctx, userId).Return([]Workout{
+	repoMock.On("GetAll", ctx, mock.MatchedBy(func(input repository.GetAllWorkoutsParams) bool {
+		return input.UserID == userId && input.Offset == 0 && input.Limit == 10
+	})).Return([]Workout{
 		{ID: "a", Name: "A", CreatedOn: time.Now().UTC().Format(time.RFC3339), CompletedOn: time.Now().UTC().Format(time.RFC3339), UpdatedOn: time.Now().UTC().Format(time.RFC3339)},
 	}, nil).Once()
 
 	service := NewService(&repoMock, nil) 
 
-	result, err := service.GetAll(ctx, userId)
+	result, err := service.GetAll(ctx, userId, 1, 10)
 
 	assert.Nil(t, err)
 	assert.Len(t, result, 1)
