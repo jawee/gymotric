@@ -1,7 +1,12 @@
 -- name: GetAllWorkouts :many
 SELECT * FROM workouts 
 WHERE user_id = sqlc.arg(user_id)
-ORDER by id asc;
+ORDER BY id DESC
+LIMIT sqlc.arg(limit) OFFSET sqlc.arg(offset);
+
+-- name: GetAllWorkoutsCount :one
+SELECT count(*) FROM workouts 
+WHERE user_id = sqlc.arg(user_id);
 
 -- name: GetWorkoutById :one
 SELECT * FROM workouts 

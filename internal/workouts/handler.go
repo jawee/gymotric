@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"weight-tracker/internal/database"
 	"weight-tracker/internal/exercises"
 )
@@ -95,22 +96,81 @@ func (s *handler) deleteWorkoutByIdHandler(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Content-Type", "application/json")
 }
 
+func createPaginatedResponse[T any](items []T, page int, pageSize int, totalCount int) ([]byte, error) {
+	resp := map[string]any{
+		"data":        items,
+		"page":        page,
+		"page_size":   pageSize,
+		"total":       totalCount,
+		"total_pages": (totalCount + pageSize - 1) / pageSize, // ceiling division
+	}
+
+	return json.Marshal(resp)
+}
+
+func createResponse[T any](data T) ([]byte, error) {
+	resp := map[string]any{
+		"data": data,
+	}
+	return json.Marshal(resp)
+}
+
+func createIdResponse(id string) ([]byte, error) {
+	resp := map[string]any{
+		"id": id,
+	}
+	return json.Marshal(resp)
+}
+
 func (s *handler) getAllWorkoutsHandler(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value("sub").(string)
 	slog.Info("Getting all workouts")
-	workouts, err := s.service.GetAll(r.Context(), userId)
+
+	page, err := strconv.Atoi(r.URL.Query().Get("page"))
+	if err != nil || page < 1 {
+		page = 1 // Default to page 1
+	}
+	pageSize, err := strconv.Atoi(r.URL.Query().Get("page_size"))
+	if err != nil || pageSize < 1 {
+		pageSize = 10 // Default to 10 items per page
+	}
+
+	slog.Info("QueryParams", "page", page, "pageSize", pageSize)
+
+	workouts, err := s.service.GetAll(r.Context(), userId, page, pageSize)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "", http.StatusNotFound)
+			return
+		}
+		slog.Error("Failed to get workout", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	count, err := s.service.GetAllCount(r.Context(), userId)
+	if err != nil {
+		slog.Error("Failed to get workout count", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
 
 	slog.Debug(fmt.Sprintf("returning %d workouts", len(workouts)))
 
-	resp := map[string]any{"workouts": workouts}
-	jsonResp, err := json.Marshal(resp)
+	jsonResp, err := createPaginatedResponse(workouts, page, pageSize, count)
+
 	if err != nil {
 		slog.Warn("Failed to marshal response", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
+
+	returnJson(w, jsonResp)
+}
+
+func returnJson(w http.ResponseWriter, data []byte) {
 	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(jsonResp); err != nil {
+	if _, err := w.Write(data); err != nil {
 		slog.Warn("Failed to write response", "error", err)
 	}
 }
@@ -132,17 +192,15 @@ func (s *handler) getWorkoutByIdHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	resp := map[string]any{"workout": workout}
-	jsonResp, err := json.Marshal(resp)
+	jsonResp, err := createResponse(workout)
+
 	if err != nil {
 		slog.Error("Failed to marshal response", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(jsonResp); err != nil {
-		slog.Warn("Failed to write response", "error", err)
-	}
+
+	returnJson(w, jsonResp)
 }
 
 func (s *handler) createWorkoutHandler(w http.ResponseWriter, r *http.Request) {
@@ -167,17 +225,13 @@ func (s *handler) createWorkoutHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 
-	resp := map[string]any{"id": id}
-	jsonResp, err := json.Marshal(resp)
+	jsonResp, err := createIdResponse(id)
 	if err != nil {
 		slog.Error("Failed to marshal response", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(jsonResp); err != nil {
-		slog.Warn("Failed to write response", "error", err)
-	}
+	returnJson(w, jsonResp)
 }
 
 func (s *handler) completeWorkoutById(w http.ResponseWriter, r *http.Request) {

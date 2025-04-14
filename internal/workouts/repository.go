@@ -19,7 +19,8 @@ type Workout struct {
 type WorkoutsRepository interface {
 	CompleteById(ctx context.Context, arg repository.CompleteWorkoutByIdParams) (int64, error)
 	CreateAndReturnId(ctx context.Context, arg repository.CreateWorkoutAndReturnIdParams) (string, error)
-	GetAll(ctx context.Context, userId string) ([]Workout, error)
+	GetAll(ctx context.Context, arg repository.GetAllWorkoutsParams) ([]Workout, error)
+	GetAllCount(ctx context.Context, userId string) (int64, error)
 	GetById(ctx context.Context, arg repository.GetWorkoutByIdParams) (Workout, error)
 	DeleteById(ctx context.Context, arg repository.DeleteWorkoutByIdParams) error
 	UpdateById(context context.Context, arg repository.UpdateWorkoutByIdParams) error
@@ -28,6 +29,16 @@ type WorkoutsRepository interface {
 type workoutsRepository struct {
 	repo repository.Querier
 }
+
+func (w *workoutsRepository) GetAllCount(ctx context.Context, userId string) (int64, error) {
+	count, err := w.repo.GetAllWorkoutsCount(ctx, userId)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
 
 func (w *workoutsRepository) UpdateById(ctx context.Context, arg repository.UpdateWorkoutByIdParams) error {
 	rows, err := w.repo.UpdateWorkoutById(ctx, arg)
@@ -61,8 +72,8 @@ func (w *workoutsRepository) CreateAndReturnId(ctx context.Context, arg reposito
 	return w.repo.CreateWorkoutAndReturnId(ctx, arg)
 }
 
-func (w *workoutsRepository) GetAll(ctx context.Context, userId string) ([]Workout, error) {
-	workouts, err := w.repo.GetAllWorkouts(ctx, userId)
+func (w *workoutsRepository) GetAll(ctx context.Context, arg repository.GetAllWorkoutsParams) ([]Workout, error) {
+	workouts, err := w.repo.GetAllWorkouts(ctx, arg)
 	if err != nil {
 		return []Workout{}, err
 	}
