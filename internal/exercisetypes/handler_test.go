@@ -3,6 +3,7 @@ package exercisetypes
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -269,6 +270,218 @@ func TestDeleteExerciseTypeByIdHandlerErr(t *testing.T) {
 	if rr.Body.String() != expected {
 		t.Errorf("handler returned unexpected body: got '%v' want '%v'",
 			rr.Body.String(), expected)
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
+func TestGetLastSet(t *testing.T) {
+	userId := "userId"
+	exerciseTypeId := "exerciseTypeId"
+
+	req, err := http.NewRequest("GET", "/exercise-types/"+exerciseTypeId+"/last", nil)
+	req.SetPathValue("id", exerciseTypeId)
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("GetLastWeightRepsByExerciseTypeId", req.Context(), exerciseTypeId, userId).
+		Return(MaxLastWeightReps{Weight: 100, Reps: 10}, nil).
+		Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.getLastSet)
+	
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	expected := `{"reps":10,"weight":100}`
+	if rr.Body.String() != expected {
+		t.Errorf("handler returned unexpected body: got '%v' want '%v'",
+			rr.Body.String(), expected)
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
+func TestGetLastSetErr(t *testing.T) {
+	userId := "userId"
+	exerciseTypeId := "exerciseTypeId"
+
+	req, err := http.NewRequest("GET", "/exercise-types/"+exerciseTypeId+"/last", nil)
+	req.SetPathValue("id", exerciseTypeId)
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("GetLastWeightRepsByExerciseTypeId", req.Context(), exerciseTypeId, userId).
+		Return(MaxLastWeightReps{}, errors.New("Failed")).
+		Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.getLastSet)
+	
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	if rr.Body.String() != "\n" {
+		t.Errorf("handler returned unexpected body: got '%v' want '%v'",
+			rr.Body.String(), "\n")
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
+func TestGetLastSetSqlErr(t *testing.T) {
+	userId := "userId"
+	exerciseTypeId := "exerciseTypeId"
+
+	req, err := http.NewRequest("GET", "/exercise-types/"+exerciseTypeId+"/last", nil)
+	req.SetPathValue("id", exerciseTypeId)
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("GetLastWeightRepsByExerciseTypeId", req.Context(), exerciseTypeId, userId).
+		Return(MaxLastWeightReps{}, sql.ErrNoRows).
+		Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.getLastSet)
+	
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusNotFound {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	if rr.Body.String() != "\n" {
+		t.Errorf("handler returned unexpected body: got '%v' want '%v'",
+			rr.Body.String(), "\n")
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
+func TestGetMaxSet(t *testing.T) {
+	userId := "userId"
+	exerciseTypeId := "exerciseTypeId"
+
+	req, err := http.NewRequest("GET", "/exercise-types/"+exerciseTypeId+"/max", nil)
+	req.SetPathValue("id", exerciseTypeId)
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("GetMaxWeightRepsByExerciseTypeId", req.Context(), exerciseTypeId, userId).
+		Return(MaxLastWeightReps{Weight: 110, Reps: 10}, nil).
+		Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.getMaxSet)
+	
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	expected := `{"reps":10,"weight":110}`
+	if rr.Body.String() != expected {
+		t.Errorf("handler returned unexpected body: got '%v' want '%v'",
+			rr.Body.String(), expected)
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
+func TestGetMaxSetErr(t *testing.T) {
+	userId := "userId"
+	exerciseTypeId := "exerciseTypeId"
+
+	req, err := http.NewRequest("GET", "/exercise-types/"+exerciseTypeId+"/max", nil)
+	req.SetPathValue("id", exerciseTypeId)
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("GetMaxWeightRepsByExerciseTypeId", req.Context(), exerciseTypeId, userId).
+		Return(MaxLastWeightReps{}, errors.New("Failed")).
+		Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.getMaxSet)
+	
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	if rr.Body.String() != "\n" {
+		t.Errorf("handler returned unexpected body: got '%v' want '%v'",
+			rr.Body.String(), "\n")
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
+func TestGetMaxSetSqlErr(t *testing.T) {
+	userId := "userId"
+	exerciseTypeId := "exerciseTypeId"
+
+	req, err := http.NewRequest("GET", "/exercise-types/"+exerciseTypeId+"/max", nil)
+	req.SetPathValue("id", exerciseTypeId)
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("GetMaxWeightRepsByExerciseTypeId", req.Context(), exerciseTypeId, userId).
+		Return(MaxLastWeightReps{}, sql.ErrNoRows).
+		Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.getMaxSet)
+	
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusNotFound {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	if rr.Body.String() != "\n" {
+		t.Errorf("handler returned unexpected body: got '%v' want '%v'",
+			rr.Body.String(), "\n")
 	}
 
 	serviceMock.AssertExpectations(t)
