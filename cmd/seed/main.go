@@ -81,7 +81,7 @@ func main() {
 	}
 
 	for i := range 25 {
-		createWorkout(true, i, exerciseTypes, repo, ctx, userId)
+		createWorkout(true, 25-i, exerciseTypes, repo, ctx, userId)
 	}
 
 	fmt.Printf("Done\n")
