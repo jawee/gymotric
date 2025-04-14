@@ -138,8 +138,8 @@ func (s *handler) createExerciseTypeHandler(w http.ResponseWriter, r *http.Reque
 	id, err := s.service.CreateAndReturnId(r.Context(), t, userId)
 
 	if err != nil {
-		slog.Warn("Failed to create workout", "error", err)
-		http.Error(w, "Failed to create workout", http.StatusBadRequest)
+		slog.Warn("Failed to create exercise", "error", err)
+		http.Error(w, "Failed to create exercise", http.StatusBadRequest)
 		return
 	}
 
