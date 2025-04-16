@@ -23,7 +23,6 @@ func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper 
 func (s *handler) deleteSetByIdHandler(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value("sub").(string)
 	setId := r.PathValue("setId")
-	// _, err := repo.DeleteSetById(r.Context(), setId)
 
 	err := s.service.DeleteById(r.Context(), setId, userId)
 
