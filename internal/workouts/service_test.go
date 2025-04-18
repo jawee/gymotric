@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+var testError = errors.New("Testerror")
+
 type exerciseRepoMock struct {
 	mock.Mock
 }
@@ -80,6 +82,7 @@ func (r *repoMock) DeleteById(ctx context.Context, arg repository.DeleteWorkoutB
 func TestGetAll(t *testing.T) {
 	userId := "userid"
 	expected := []Workout{
+		{ID: "b", Name: "B", CreatedOn: time.Now().Add(time.Minute * 2).UTC().Format(time.RFC3339), CompletedOn: time.Now().Add(time.Minute * 2).UTC().Format(time.RFC3339), UpdatedOn: time.Now().Add(time.Minute * 2).UTC().Format(time.RFC3339)},
 		{ID: "a", Name: "A", CreatedOn: time.Now().UTC().Format(time.RFC3339), CompletedOn: time.Now().UTC().Format(time.RFC3339), UpdatedOn: time.Now().UTC().Format(time.RFC3339)},
 	}
 
@@ -90,15 +93,63 @@ func TestGetAll(t *testing.T) {
 		return input.UserID == userId && input.Offset == 0 && input.Limit == 10
 	})).Return([]Workout{
 		{ID: "a", Name: "A", CreatedOn: time.Now().UTC().Format(time.RFC3339), CompletedOn: time.Now().UTC().Format(time.RFC3339), UpdatedOn: time.Now().UTC().Format(time.RFC3339)},
+		{ID: "b", Name: "B", CreatedOn: time.Now().Add(time.Minute * 2).UTC().Format(time.RFC3339), CompletedOn: time.Now().Add(time.Minute * 2).UTC().Format(time.RFC3339), UpdatedOn: time.Now().Add(time.Minute * 2).UTC().Format(time.RFC3339)},
 	}, nil).Once()
-
 	service := NewService(&repoMock, nil)
 
 	result, err := service.GetAll(ctx, userId, 1, 10)
 
 	assert.Nil(t, err)
-	assert.Len(t, result, 1)
+	assert.Len(t, result, 2)
+	assert.Equal(t, expected[0].ID, result[0].ID)
 	assert.Equal(t, expected, result)
+	repoMock.AssertExpectations(t)
+}
+
+func TestGetAllDefaultPage(t *testing.T) {
+	userId := "userid"
+	expected := []Workout{
+		{ID: "b", Name: "B", CreatedOn: time.Now().Add(time.Minute * 2).UTC().Format(time.RFC3339), CompletedOn: time.Now().Add(time.Minute * 2).UTC().Format(time.RFC3339), UpdatedOn: time.Now().Add(time.Minute * 2).UTC().Format(time.RFC3339)},
+		{ID: "a", Name: "A", CreatedOn: time.Now().UTC().Format(time.RFC3339), CompletedOn: time.Now().UTC().Format(time.RFC3339), UpdatedOn: time.Now().UTC().Format(time.RFC3339)},
+	}
+
+	ctx := context.Background()
+
+	repoMock := repoMock{}
+	repoMock.On("GetAll", ctx, mock.MatchedBy(func(input repository.GetAllWorkoutsParams) bool {
+		return input.UserID == userId && input.Offset == 0 && input.Limit == 10
+	})).Return([]Workout{
+		{ID: "a", Name: "A", CreatedOn: time.Now().UTC().Format(time.RFC3339), CompletedOn: time.Now().UTC().Format(time.RFC3339), UpdatedOn: time.Now().UTC().Format(time.RFC3339)},
+		{ID: "b", Name: "B", CreatedOn: time.Now().Add(time.Minute * 2).UTC().Format(time.RFC3339), CompletedOn: time.Now().Add(time.Minute * 2).UTC().Format(time.RFC3339), UpdatedOn: time.Now().Add(time.Minute * 2).UTC().Format(time.RFC3339)},
+	}, nil).Once()
+	service := NewService(&repoMock, nil)
+
+	result, err := service.GetAll(ctx, userId, 0, 0)
+
+	assert.Nil(t, err)
+	assert.Len(t, result, 2)
+	assert.Equal(t, expected[0].ID, result[0].ID)
+	assert.Equal(t, expected, result)
+	repoMock.AssertExpectations(t)
+
+}
+
+func TestGetAllRepoErr(t *testing.T) {
+	userId := "userid"
+	ctx := context.Background()
+
+	repoMock := repoMock{}
+	repoMock.On("GetAll", ctx, mock.MatchedBy(func(input repository.GetAllWorkoutsParams) bool {
+		return input.UserID == userId && input.Offset == 0 && input.Limit == 10
+	})).Return([]Workout{}, testError).Once()
+
+	service := NewService(&repoMock, nil)
+
+	result, err := service.GetAll(ctx, userId, 1, 10)
+
+	assert.NotNil(t, err)
+	assert.True(t, errors.Is(err, testError))
+	assert.Len(t, result, 0)
 	repoMock.AssertExpectations(t)
 }
 
@@ -235,13 +286,14 @@ func TestUpdateByIdNotFound(t *testing.T) {
 	repoMock := repoMock{}
 	repoMock.On("GetById", ctx, mock.MatchedBy(func(input repository.GetWorkoutByIdParams) bool {
 		return input.ID == workoutId && input.UserID == userId
-	})).Return(Workout{}, errors.New("Testerror")).Once()
+	})).Return(Workout{}, testError).Once()
 
 	service := NewService(&repoMock, nil)
 
 	err := service.UpdateWorkoutById(ctx, workoutId, request, userId)
 
 	assert.NotNil(t, err)
+	assert.ErrorIs(t, err, testError)
 	repoMock.AssertExpectations(t)
 }
 
@@ -264,13 +316,14 @@ func TestUpdateByIdUpdateErr(t *testing.T) {
 		CompletedOn: time.Now().UTC().Format(time.RFC3339),
 		UpdatedOn:   time.Now().UTC().Format(time.RFC3339),
 	}, nil).Once()
-	repoMock.On("UpdateById", ctx, mock.Anything).Return(errors.New("Testerr")).Once()
+	repoMock.On("UpdateById", ctx, mock.Anything).Return(testError).Once()
 
 	service := NewService(&repoMock, nil)
 
 	err := service.UpdateWorkoutById(ctx, workoutId, request, userId)
 
 	assert.NotNil(t, err)
+	assert.ErrorIs(t, err, testError)
 	repoMock.AssertExpectations(t)
 }
 
@@ -332,13 +385,14 @@ func TestCloneByIdAndReturnIdSourceNotFound(t *testing.T) {
 	repoMock := repoMock{}
 	repoMock.On("GetById", ctx, mock.MatchedBy(func(input repository.GetWorkoutByIdParams) bool {
 		return input.ID == workoutId && input.UserID == userId
-	})).Return(Workout{}, errors.New("Testerror")).Once()
+	})).Return(Workout{}, testError).Once()
 
 	service := NewService(&repoMock, nil)
 
 	result, err := service.CloneByIdAndReturnId(ctx, workoutId, userId)
 
 	assert.NotNil(t, err)
+	assert.ErrorIs(t, err, testError)
 	assert.Equal(t, "", result)
 	repoMock.AssertExpectations(t)
 }
@@ -359,13 +413,14 @@ func TestCloneByIdAndReturnIdCreateAndReturnIdErr(t *testing.T) {
 		UpdatedOn:   time.Now().UTC().Format(time.RFC3339),
 	}, nil).Once()
 
-	repoMock.On("CreateAndReturnId", ctx, mock.Anything).Return("", errors.New("Testerr")).Once()
+	repoMock.On("CreateAndReturnId", ctx, mock.Anything).Return("", testError).Once()
 
 	service := NewService(&repoMock, nil)
 
 	result, err := service.CloneByIdAndReturnId(ctx, workoutId, userId)
 
 	assert.NotNil(t, err)
+	assert.ErrorIs(t, err, testError)
 	assert.Equal(t, "", result)
 	repoMock.AssertExpectations(t)
 }
@@ -406,13 +461,14 @@ func TestCloneByIdAndReturnIdCreateExerciseErr(t *testing.T) {
 		},
 	}, nil).Once()
 
-	exerciseRepoMock.On("CreateAndReturnId", ctx, mock.Anything).Return("", errors.New("Testerr")).Once()
+	exerciseRepoMock.On("CreateAndReturnId", ctx, mock.Anything).Return("", testError).Once()
 
 	service := NewService(&repoMock, &exerciseRepoMock)
 
 	result, err := service.CloneByIdAndReturnId(ctx, workoutId, userId)
 
 	assert.NotNil(t, err)
+	assert.ErrorIs(t, err, testError)
 	assert.Equal(t, "", result)
 	repoMock.AssertExpectations(t)
 	exerciseRepoMock.AssertExpectations(t)
@@ -440,13 +496,14 @@ func TestGetAllCountError(t *testing.T) {
 	ctx := context.Background()
 
 	repoMock := repoMock{}
-	repoMock.On("GetAllCount", ctx, userId).Return(int64(0), errors.New("Testerror")).Once()
+	repoMock.On("GetAllCount", ctx, userId).Return(int64(0), testError).Once()
 
 	service := NewService(&repoMock, nil)
 
 	count, err := service.GetAllCount(ctx, userId)
 
 	assert.NotNil(t, err)
+	assert.ErrorIs(t, err, testError)
 	assert.Equal(t, 0, count)
 	repoMock.AssertExpectations(t)
 }
