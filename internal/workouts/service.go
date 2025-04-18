@@ -39,7 +39,12 @@ func (w *workoutsService) UpdateWorkoutById(context context.Context, workoutId s
 		UserID:    userId,
 	}
 
-	return w.repo.UpdateById(context, arg)
+	err = w.repo.UpdateById(context, arg)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (w *workoutsService) CloneByIdAndReturnId(context context.Context, workoutId string, userId string) (string, error) {

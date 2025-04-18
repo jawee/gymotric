@@ -2,6 +2,7 @@ package workouts
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 	"weight-tracker/internal/repository"
@@ -13,7 +14,6 @@ import (
 type repoMock struct {
 	mock.Mock
 }
-
 
 func (r *repoMock) UpdateById(ctx context.Context, arg repository.UpdateWorkoutByIdParams) error {
 	args := r.Called(ctx, arg)
@@ -65,7 +65,7 @@ func TestGetAll(t *testing.T) {
 		{ID: "a", Name: "A", CreatedOn: time.Now().UTC().Format(time.RFC3339), CompletedOn: time.Now().UTC().Format(time.RFC3339), UpdatedOn: time.Now().UTC().Format(time.RFC3339)},
 	}, nil).Once()
 
-	service := NewService(&repoMock, nil) 
+	service := NewService(&repoMock, nil)
 
 	result, err := service.GetAll(ctx, userId, 1, 10)
 
@@ -162,5 +162,87 @@ func TestDeleteById(t *testing.T) {
 	err := service.DeleteById(ctx, workoutId, userId)
 
 	assert.Nil(t, err)
+	repoMock.AssertExpectations(t)
+}
+
+func TestUpdateById(t *testing.T) {
+	userId := "userid"
+	workoutId := "workoutId"
+	ctx := context.Background()
+
+	request := updateWorkoutRequest{
+		Note: "The note",
+	}
+
+	repoMock := repoMock{}
+	repoMock.On("GetById", ctx, mock.MatchedBy(func(input repository.GetWorkoutByIdParams) bool {
+		return input.ID == workoutId && input.UserID == userId
+	})).Return(Workout{
+		ID:          workoutId,
+		Name:        "A",
+		CreatedOn:   time.Now().UTC().Format(time.RFC3339),
+		CompletedOn: time.Now().UTC().Format(time.RFC3339),
+		UpdatedOn:   time.Now().UTC().Format(time.RFC3339),
+	}, nil).Once()
+	repoMock.On("UpdateById", ctx, mock.MatchedBy(func(input repository.UpdateWorkoutByIdParams) bool {
+		return input.ID == workoutId && input.UserID == userId && input.Note == request.Note
+	})).Return(nil).Once()
+
+	service := NewService(&repoMock, nil)
+
+	err := service.UpdateWorkoutById(ctx, workoutId, request, userId)
+
+	assert.Nil(t, err)
+	repoMock.AssertExpectations(t)
+}
+
+func TestUpdateByIdNotFound(t *testing.T) {
+	userId := "userid"
+	workoutId := "workoutId"
+	ctx := context.Background()
+
+	request := updateWorkoutRequest{
+		Note: "The note",
+	}
+
+	repoMock := repoMock{}
+	repoMock.On("GetById", ctx, mock.MatchedBy(func(input repository.GetWorkoutByIdParams) bool {
+		return input.ID == workoutId && input.UserID == userId
+	})).Return(Workout{}, errors.New("Testerror")).Once()
+
+	service := NewService(&repoMock, nil)
+
+	err := service.UpdateWorkoutById(ctx, workoutId, request, userId)
+
+	assert.NotNil(t, err)
+	repoMock.AssertExpectations(t)
+}
+
+func TestUpdateByIdUpdateErr(t *testing.T) {
+	userId := "userid"
+	workoutId := "workoutId"
+	ctx := context.Background()
+
+	request := updateWorkoutRequest{
+		Note: "The note",
+	}
+
+	repoMock := repoMock{}
+	repoMock.On("GetById", ctx, mock.MatchedBy(func(input repository.GetWorkoutByIdParams) bool {
+		return input.ID == workoutId && input.UserID == userId
+	})).Return(Workout{
+		ID:          workoutId,
+		Name:        "A",
+		CreatedOn:   time.Now().UTC().Format(time.RFC3339),
+		CompletedOn: time.Now().UTC().Format(time.RFC3339),
+		UpdatedOn:   time.Now().UTC().Format(time.RFC3339),
+	}, nil).Once()
+	repoMock.On("UpdateById", ctx, mock.Anything).Return(errors.New("Testerr")).Once()
+
+	service := NewService(&repoMock, nil)
+
+	err := service.UpdateWorkoutById(ctx, workoutId, request, userId)
+
+	assert.NotNil(t, err)
 	repoMock.AssertExpectations(t)
 }
