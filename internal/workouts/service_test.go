@@ -417,3 +417,37 @@ func TestCloneByIdAndReturnIdCreateExerciseErr(t *testing.T) {
 	repoMock.AssertExpectations(t)
 	exerciseRepoMock.AssertExpectations(t)
 }
+
+func TestGetAllCount(t *testing.T) {
+	userId := "userid"
+	ctx := context.Background()
+	expectedCount := 5
+
+	repoMock := repoMock{}
+	repoMock.On("GetAllCount", ctx, userId).Return(int64(expectedCount), nil).Once()
+
+	service := NewService(&repoMock, nil)
+
+	count, err := service.GetAllCount(ctx, userId)
+
+	assert.Nil(t, err)
+	assert.Equal(t, expectedCount, count)
+	repoMock.AssertExpectations(t)
+}
+
+func TestGetAllCountError(t *testing.T) {
+	userId := "userid"
+	ctx := context.Background()
+
+	repoMock := repoMock{}
+	repoMock.On("GetAllCount", ctx, userId).Return(int64(0), errors.New("Testerror")).Once()
+
+	service := NewService(&repoMock, nil)
+
+	count, err := service.GetAllCount(ctx, userId)
+
+	assert.NotNil(t, err)
+	assert.Equal(t, 0, count)
+	repoMock.AssertExpectations(t)
+}
+
