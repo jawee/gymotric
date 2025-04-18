@@ -5,11 +5,38 @@ import (
 	"errors"
 	"testing"
 	"time"
+	"weight-tracker/internal/exercises"
+	"weight-tracker/internal/exercisetypes"
 	"weight-tracker/internal/repository"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+type exerciseRepoMock struct {
+	mock.Mock
+}
+
+func (r *exerciseRepoMock) GetAll(context context.Context, userId string) ([]exercises.Exercise, error) {
+	args := r.Called(context, userId)
+	return args.Get(0).([]exercises.Exercise), args.Error(1)
+}
+func (r *exerciseRepoMock) GetByWorkoutId(context context.Context, arg repository.GetExercisesByWorkoutIdParams) ([]exercises.Exercise, error) {
+	args := r.Called(context, arg)
+	return args.Get(0).([]exercises.Exercise), args.Error(1)
+}
+func (r *exerciseRepoMock) DeleteById(context context.Context, arg repository.DeleteExerciseByIdParams) error {
+	args := r.Called(context, arg)
+	return args.Error(0)
+}
+func (r *exerciseRepoMock) CreateAndReturnId(context context.Context, exercise repository.CreateExerciseAndReturnIdParams) (string, error) {
+	args := r.Called(context, exercise)
+	return args.String(0), args.Error(1)
+}
+func (r *exerciseRepoMock) GetExerciseTypeById(context context.Context, arg repository.GetExerciseTypeByIdParams) (*exercisetypes.ExerciseType, error) {
+	args := r.Called(context, arg)
+	return args.Get(0).(*exercisetypes.ExerciseType), args.Error(1)
+}
 
 type repoMock struct {
 	mock.Mock
@@ -245,4 +272,148 @@ func TestUpdateByIdUpdateErr(t *testing.T) {
 
 	assert.NotNil(t, err)
 	repoMock.AssertExpectations(t)
+}
+
+func TestCloneByIdAndReturnId(t *testing.T) {
+	userId := "userid"
+	workoutId := "workoutId"
+	newWorkoutId := "newWorkoutId"
+	ctx := context.Background()
+
+	request := createWorkoutRequest{
+		Name: "A",
+	}
+
+	repoMock := repoMock{}
+	repoMock.On("GetById", ctx, mock.MatchedBy(func(input repository.GetWorkoutByIdParams) bool {
+		return input.ID == workoutId && input.UserID == userId
+	})).Return(Workout{
+		ID:          workoutId,
+		Name:        "A",
+		CreatedOn:   time.Now().UTC().Format(time.RFC3339),
+		CompletedOn: time.Now().UTC().Format(time.RFC3339),
+		UpdatedOn:   time.Now().UTC().Format(time.RFC3339),
+	}, nil).Once()
+	repoMock.On("CreateAndReturnId", ctx, mock.MatchedBy(func(input repository.CreateWorkoutAndReturnIdParams) bool {
+		return input.Name == request.Name && input.UserID == userId
+	})).Return(newWorkoutId, nil).Once()
+
+	exerciseRepoMock := exerciseRepoMock{}
+	exerciseRepoMock.On("GetByWorkoutId", ctx, mock.MatchedBy(func(input repository.GetExercisesByWorkoutIdParams) bool {
+		return input.UserID == userId && input.WorkoutID == workoutId
+	})).Return([]exercises.Exercise{
+		{
+			ID:             "exerciseId",
+			Name:           "Exercise A",
+			ExerciseTypeID: "exerciseTypeId",
+			WorkoutID:      workoutId,
+		},
+	}, nil).Once()
+
+	exerciseRepoMock.On("CreateAndReturnId", ctx, mock.MatchedBy(func(input repository.CreateExerciseAndReturnIdParams) bool {
+		return input.WorkoutID == newWorkoutId && input.UserID == userId && input.Name == "Exercise A" && input.ExerciseTypeID == "exerciseTypeId"
+	})).Return("newExerciseId", nil).Once()
+
+	service := NewService(&repoMock, &exerciseRepoMock)
+
+	result, err := service.CloneByIdAndReturnId(ctx, workoutId, userId)
+
+	assert.Nil(t, err)
+	assert.Equal(t, newWorkoutId, result)
+	repoMock.AssertExpectations(t)
+	exerciseRepoMock.AssertExpectations(t)
+}
+
+func TestCloneByIdAndReturnIdSourceNotFound(t *testing.T) {
+	userId := "userid"
+	workoutId := "workoutId"
+	ctx := context.Background()
+
+	repoMock := repoMock{}
+	repoMock.On("GetById", ctx, mock.MatchedBy(func(input repository.GetWorkoutByIdParams) bool {
+		return input.ID == workoutId && input.UserID == userId
+	})).Return(Workout{}, errors.New("Testerror")).Once()
+
+	service := NewService(&repoMock, nil)
+
+	result, err := service.CloneByIdAndReturnId(ctx, workoutId, userId)
+
+	assert.NotNil(t, err)
+	assert.Equal(t, "", result)
+	repoMock.AssertExpectations(t)
+}
+
+func TestCloneByIdAndReturnIdCreateAndReturnIdErr(t *testing.T) {
+	userId := "userid"
+	workoutId := "workoutId"
+	ctx := context.Background()
+
+	repoMock := repoMock{}
+	repoMock.On("GetById", ctx, mock.MatchedBy(func(input repository.GetWorkoutByIdParams) bool {
+		return input.ID == workoutId && input.UserID == userId
+	})).Return(Workout{
+		ID:          workoutId,
+		Name:        "A",
+		CreatedOn:   time.Now().UTC().Format(time.RFC3339),
+		CompletedOn: time.Now().UTC().Format(time.RFC3339),
+		UpdatedOn:   time.Now().UTC().Format(time.RFC3339),
+	}, nil).Once()
+
+	repoMock.On("CreateAndReturnId", ctx, mock.Anything).Return("", errors.New("Testerr")).Once()
+
+	service := NewService(&repoMock, nil)
+
+	result, err := service.CloneByIdAndReturnId(ctx, workoutId, userId)
+
+	assert.NotNil(t, err)
+	assert.Equal(t, "", result)
+	repoMock.AssertExpectations(t)
+}
+
+func TestCloneByIdAndReturnIdCreateExerciseErr(t *testing.T) {
+	userId := "userid"
+	workoutId := "workoutId"
+	newWorkoutId := "newWorkoutId"
+	ctx := context.Background()
+
+	request := createWorkoutRequest{
+		Name: "A",
+	}
+
+	repoMock := repoMock{}
+	repoMock.On("GetById", ctx, mock.MatchedBy(func(input repository.GetWorkoutByIdParams) bool {
+		return input.ID == workoutId && input.UserID == userId
+	})).Return(Workout{
+		ID:          workoutId,
+		Name:        "A",
+		CreatedOn:   time.Now().UTC().Format(time.RFC3339),
+		CompletedOn: time.Now().UTC().Format(time.RFC3339),
+		UpdatedOn:   time.Now().UTC().Format(time.RFC3339),
+	}, nil).Once()
+	repoMock.On("CreateAndReturnId", ctx, mock.MatchedBy(func(input repository.CreateWorkoutAndReturnIdParams) bool {
+		return input.Name == request.Name && input.UserID == userId
+	})).Return(newWorkoutId, nil).Once()
+
+	exerciseRepoMock := exerciseRepoMock{}
+	exerciseRepoMock.On("GetByWorkoutId", ctx, mock.MatchedBy(func(input repository.GetExercisesByWorkoutIdParams) bool {
+		return input.UserID == userId && input.WorkoutID == workoutId
+	})).Return([]exercises.Exercise{
+		{
+			ID:             "exerciseId",
+			Name:           "Exercise A",
+			ExerciseTypeID: "exerciseTypeId",
+			WorkoutID:      workoutId,
+		},
+	}, nil).Once()
+
+	exerciseRepoMock.On("CreateAndReturnId", ctx, mock.Anything).Return("", errors.New("Testerr")).Once()
+
+	service := NewService(&repoMock, &exerciseRepoMock)
+
+	result, err := service.CloneByIdAndReturnId(ctx, workoutId, userId)
+
+	assert.NotNil(t, err)
+	assert.Equal(t, "", result)
+	repoMock.AssertExpectations(t)
+	exerciseRepoMock.AssertExpectations(t)
 }
