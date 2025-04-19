@@ -74,7 +74,7 @@ func TestGetExercisesByWorkoutIdHandlerSuccess(t *testing.T) {
 			ctype, "application/json")
 	}
 
-	expected := `{"exercises":[{"id":"a","name":"a","workout_id":"` + workoutId + `","exercise_type_id":"` + exerciseTypeId + `"}]}`
+	expected := `{"data":[{"id":"a","name":"a","workout_id":"` + workoutId + `","exercise_type_id":"` + exerciseTypeId + `"}]}`
 	if rr.Body.String() != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v",
 			rr.Body.String(), expected)

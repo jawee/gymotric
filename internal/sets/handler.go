@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"weight-tracker/internal/database"
+	"weight-tracker/internal/utils"
 )
 
 type handler struct {
@@ -59,17 +60,14 @@ func (s *handler) createSetHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 
-	resp := map[string]interface{}{"id": id}
-	jsonResp, err := json.Marshal(resp)
+	jsonResp, err := utils.CreateIdResponse(id)
 	if err != nil {
 		slog.Error("Failed to marshal response", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(jsonResp); err != nil {
-		slog.Warn("Failed to write response", "error", err)
-	}
+
+	utils.ReturnJson(w, jsonResp)
 }
 
 func (s *handler) getSetsByExerciseIdHandler(w http.ResponseWriter, r *http.Request) {
@@ -90,18 +88,13 @@ func (s *handler) getSetsByExerciseIdHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	resp := map[string]interface{}{"sets": sets}
-	jsonResp, err := json.Marshal(resp)
+	jsonResp, err := utils.CreateResponse(sets)
 	if err != nil {
 		slog.Warn("Failed to marshal response", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(jsonResp); err != nil {
-		slog.Warn("Failed to write response", "error", err)
-		http.Error(w, "", http.StatusBadRequest)
-	}
+	utils.ReturnJson(w, jsonResp)
 }
 
 type createSetRequest struct {

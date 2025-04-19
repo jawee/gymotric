@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"weight-tracker/internal/database"
+	"weight-tracker/internal/utils"
 )
 
 func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper func(next http.Handler) http.Handler) {
@@ -25,6 +26,11 @@ type handler struct {
 	service Service
 }
 
+type getLastMaxSetResponse struct {
+	Weight float64 `json:"weight"`
+	Reps   int `json:"reps"`
+}
+
 func (s *handler) getLastSet(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value("sub").(string)
 	exerciseTypeId := r.PathValue("id")
@@ -41,26 +47,21 @@ func (s *handler) getLastSet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := map[string]interface{}{"weight": lastSet.Weight, "reps": lastSet.Reps}
-	jsonResp, err := json.Marshal(resp)
+	jsonResp, err := utils.CreateResponse(getLastMaxSetResponse{Weight: lastSet.Weight, Reps: lastSet.Reps})
 	if err != nil {
 		slog.Warn("Failed to marshal response", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(jsonResp); err != nil {
-		slog.Warn("Failed to write response", "error", err)
-		http.Error(w, "", http.StatusBadRequest)
-	}
+	utils.ReturnJson(w, jsonResp)
 }
 
 func (s *handler) getMaxSet(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value("sub").(string)
 	exerciseTypeId := r.PathValue("id")
 
-	lastSet, err := s.service.GetMaxWeightRepsByExerciseTypeId(r.Context(), exerciseTypeId, userId)
+	maxSet, err := s.service.GetMaxWeightRepsByExerciseTypeId(r.Context(), exerciseTypeId, userId)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			http.Error(w, "", http.StatusNotFound)
@@ -72,19 +73,14 @@ func (s *handler) getMaxSet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := map[string]interface{}{"weight": lastSet.Weight, "reps": lastSet.Reps}
-	jsonResp, err := json.Marshal(resp)
+	jsonResp, err := utils.CreateResponse(getLastMaxSetResponse{Weight: maxSet.Weight, Reps: maxSet.Reps})
 	if err != nil {
 		slog.Warn("Failed to marshal response", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(jsonResp); err != nil {
-		slog.Warn("Failed to write response", "error", err)
-		http.Error(w, "", http.StatusBadRequest)
-	}
+	utils.ReturnJson(w, jsonResp)
 }
 
 func (s *handler) getAllWorkoutTypesHandler(w http.ResponseWriter, r *http.Request) {
@@ -99,19 +95,14 @@ func (s *handler) getAllWorkoutTypesHandler(w http.ResponseWriter, r *http.Reque
 
 	slog.Debug(fmt.Sprintf("returning %d exercise types", len(exerciseTypes)))
 
-	resp := map[string]interface{}{"exercise_types": exerciseTypes}
-	jsonResp, err := json.Marshal(resp)
+	jsonResp, err := utils.CreateResponse(exerciseTypes)
 	if err != nil {
 		slog.Warn("Failed to marshal response", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(jsonResp); err != nil {
-		slog.Warn("Failed to write response", "error", err)
-		http.Error(w, "", http.StatusBadRequest)
-	}
+	utils.ReturnJson(w, jsonResp)
 }
 
 func (s *handler) deleteExerciseTypeByIdHandler(w http.ResponseWriter, r *http.Request) {
@@ -151,17 +142,14 @@ func (s *handler) createExerciseTypeHandler(w http.ResponseWriter, r *http.Reque
 
 	w.WriteHeader(http.StatusCreated)
 
-	resp := map[string]interface{}{"id": id}
-	jsonResp, err := json.Marshal(resp)
+	jsonResp, err := utils.CreateIdResponse(id)
 	if err != nil {
 		slog.Warn("Failed to marshal response", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(jsonResp); err != nil {
-		slog.Warn("Failed to write response", "error", err)
-	}
+
+	utils.ReturnJson(w, jsonResp)
 }
 
 type createExerciseTypeRequest struct {

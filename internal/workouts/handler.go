@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"weight-tracker/internal/database"
 	"weight-tracker/internal/exercises"
+	"weight-tracker/internal/utils"
 )
 
 type handler struct {
@@ -68,13 +69,14 @@ func (s *handler) cloneWorkoutById(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 
-	jsonResp, err := createIdResponse(newId)
+	jsonResp, err := utils.CreateIdResponse(newId)
 	if err != nil {
 		slog.Error("Failed to marshal response", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
-	returnJson(w, jsonResp)
+
+	utils.ReturnJson(w, jsonResp)
 }
 
 func (s *handler) deleteWorkoutByIdHandler(w http.ResponseWriter, r *http.Request) {
@@ -90,32 +92,6 @@ func (s *handler) deleteWorkoutByIdHandler(w http.ResponseWriter, r *http.Reques
 
 	w.WriteHeader(http.StatusNoContent)
 	w.Header().Set("Content-Type", "application/json")
-}
-
-func createPaginatedResponse[T any](items []T, page int, pageSize int, totalCount int) ([]byte, error) {
-	resp := map[string]any{
-		"data":        items,
-		"page":        page,
-		"page_size":   pageSize,
-		"total":       totalCount,
-		"total_pages": (totalCount + pageSize - 1) / pageSize, // ceiling division
-	}
-
-	return json.Marshal(resp)
-}
-
-func createResponse[T any](data T) ([]byte, error) {
-	resp := map[string]any{
-		"data": data,
-	}
-	return json.Marshal(resp)
-}
-
-func createIdResponse(id string) ([]byte, error) {
-	resp := map[string]any{
-		"id": id,
-	}
-	return json.Marshal(resp)
 }
 
 func (s *handler) getAllWorkoutsHandler(w http.ResponseWriter, r *http.Request) {
@@ -153,7 +129,7 @@ func (s *handler) getAllWorkoutsHandler(w http.ResponseWriter, r *http.Request) 
 
 	slog.Debug(fmt.Sprintf("returning %d workouts", len(workouts)))
 
-	jsonResp, err := createPaginatedResponse(workouts, page, pageSize, count)
+	jsonResp, err := utils.CreatePaginatedResponse(workouts, page, pageSize, count)
 
 	if err != nil {
 		slog.Warn("Failed to marshal response", "error", err)
@@ -161,14 +137,7 @@ func (s *handler) getAllWorkoutsHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	returnJson(w, jsonResp)
-}
-
-func returnJson(w http.ResponseWriter, data []byte) {
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(data); err != nil {
-		slog.Warn("Failed to write response", "error", err)
-	}
+	utils.ReturnJson(w, jsonResp)
 }
 
 var ErrNotFound = errors.New("sql: no rows in result set")
@@ -188,7 +157,7 @@ func (s *handler) getWorkoutByIdHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	jsonResp, err := createResponse(workout)
+	jsonResp, err := utils.CreateResponse(workout)
 
 	if err != nil {
 		slog.Error("Failed to marshal response", "error", err)
@@ -196,7 +165,7 @@ func (s *handler) getWorkoutByIdHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	returnJson(w, jsonResp)
+	utils.ReturnJson(w, jsonResp)
 }
 
 func (s *handler) createWorkoutHandler(w http.ResponseWriter, r *http.Request) {
@@ -221,13 +190,13 @@ func (s *handler) createWorkoutHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 
-	jsonResp, err := createIdResponse(id)
+	jsonResp, err := utils.CreateIdResponse(id)
 	if err != nil {
 		slog.Error("Failed to marshal response", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
-	returnJson(w, jsonResp)
+	utils.ReturnJson(w, jsonResp)
 }
 
 func (s *handler) completeWorkoutById(w http.ResponseWriter, r *http.Request) {
