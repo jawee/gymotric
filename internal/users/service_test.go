@@ -83,11 +83,13 @@ func TestLoginAndReturnToken(t *testing.T) {
 	}, nil).Once()
 
 	service := NewService(&repoMock)
-	token, err := service.Login(context.Background(), loginRequest{
+	loginResponse, err := service.Login(context.Background(), loginRequest{
 		Username: "testusername", Password: "test"})
 
 	assert.Nil(t, err)
-	assert.NotEmpty(t, token)
+	assert.NotEmpty(t, loginResponse)
+	assert.NotEmpty(t, loginResponse.Token)
+	assert.Equal(t, userId.String(), loginResponse.UserId)
 	repoMock.AssertExpectations(t)
 }
 

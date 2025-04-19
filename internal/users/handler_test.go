@@ -7,8 +7,11 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
+	"weight-tracker/internal/utils"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -153,6 +156,156 @@ func TestCreateUserHandlerServiceErr(t *testing.T) {
 	rr := httptest.NewRecorder()
 	s := handler{service: &serviceMock}
 	handler := http.HandlerFunc(s.createUserHandler)
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
+func TestLoginHandler(t *testing.T) {
+	os.Setenv(utils.EnvJwtExpireMinutes, "10")
+	os.Setenv(utils.EnvJwtSignKey, "test")
+	os.Setenv(utils.EnvJwtRefreshExpireMinutes, "10")
+
+	jsonReqObj := loginRequest{
+		Username: "testuser",
+		Password: "testpassword",
+	}
+
+	jsonReq, err := json.Marshal(jsonReqObj)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req, err := http.NewRequest("POST", "/users/login", bytes.NewBuffer(jsonReq))
+	if err != nil {
+		t.Fatal(err)
+	}
+	serviceMock := serviceMock{}
+	serviceMock.On("Login", req.Context(), mock.MatchedBy(func(input loginRequest) bool {
+		return input.Username == "testuser" && input.Password == "testpassword"
+	})).Return(loginResponse{
+		Token:  "asdf",
+		UserId: "userId",
+	}, nil).Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.loginHandler)
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	cookies := rr.Result().Cookies()
+	assert.Condition(t, func() bool {
+		for _, cookie := range cookies {
+			if cookie.Name == utils.RefreshTokenCookieName {
+				return true
+			}
+		}
+		return false
+	}, "handler did not set refresh cookie")
+
+	assert.Condition(t, func() bool {
+		for _, cookie := range cookies {
+			if cookie.Name == utils.AccessTokenCookieName {
+				return true
+			}
+		}
+		return false
+	}, "handler did not set access cookie")
+
+	var response map[string]interface{}
+	json.Unmarshal(rr.Body.Bytes(), &response)
+
+	if response["access_token"] != "asdf" {
+		t.Errorf("handler returned unexpected access_token: got %v want %v", response["access_token"], "asdf")
+	}
+	if response["token_type"] != "Bearer" {
+		t.Errorf("handler returned unexpected token_type: got %v want %v", response["token_type"], "Bearer")
+	}
+
+	if val, ok := response["expires_in"].(float64); !ok || val != 600 {
+		t.Errorf("handler returned unexpected expires_in: got %v want %v", val, 600)
+	}
+
+	if _, ok := response["refresh_token"]; !ok {
+		t.Errorf("handler returned unexpected refresh_token: got %v want %v", response["refresh_token"], "asdf")
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
+func TestLoginHandlerJwtExpireNotParseable(t *testing.T) {
+	os.Setenv(utils.EnvJwtExpireMinutes, "notparseable")
+
+	jsonReqObj := loginRequest{
+		Username: "testuser",
+		Password: "testpassword",
+	}
+
+	jsonReq, err := json.Marshal(jsonReqObj)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req, err := http.NewRequest("POST", "/users/login", bytes.NewBuffer(jsonReq))
+	if err != nil {
+		t.Fatal(err)
+	}
+	serviceMock := serviceMock{}
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.loginHandler)
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+}
+
+func TestLoginHandlerInvalidJson(t *testing.T) {
+	os.Setenv(utils.EnvJwtExpireMinutes, "10")
+	req, err := http.NewRequest("POST", "/users/login", bytes.NewBuffer(invalidJsonBytes))
+	if err != nil {
+		t.Fatal(err)
+	}
+	serviceMock := serviceMock{}
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.loginHandler)
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+}
+
+func TestLoginHandlerServiceErr(t *testing.T) {
+	os.Setenv(utils.EnvJwtExpireMinutes, "10")
+
+	jsonReqObj := loginRequest{
+		Username: "testuser",
+		Password: "testpassword",
+	}
+
+	jsonReq, err := json.Marshal(jsonReqObj)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req, err := http.NewRequest("POST", "/users/login", bytes.NewBuffer(jsonReq))
+	if err != nil {
+		t.Fatal(err)
+	}
+	serviceMock := serviceMock{}
+	serviceMock.On("Login", req.Context(), mock.MatchedBy(func(input loginRequest) bool {
+		return input.Username == "testuser" && input.Password == "testpassword"
+	})).Return(loginResponse{}, testError).Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.loginHandler)
 	handler.ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusBadRequest {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
