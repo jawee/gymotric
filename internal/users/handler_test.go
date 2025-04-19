@@ -352,3 +352,58 @@ func TestGetSubjectFromCookieNoCookieFound(t *testing.T) {
 	assert.ErrorIs(t, err, NoTokenFoundError)
 	assert.Empty(t, sub)
 }
+
+func TestMeHandler(t *testing.T) {
+	userId := "testuserId"
+	req, err := http.NewRequest("GET", "/users/me", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req = populateContextWithSub(req, userId)
+
+	serviceMock := serviceMock{}
+	serviceMock.On("GetByUserId", req.Context(), userId).Return(getMeResponse{
+		ID:        userId,
+		Username:  "testuser",
+		Email:     "testuser@email.com",
+		CreatedOn: "2025-04-19T08:16:15Z",
+		UpdatedOn: "2025-04-19T08:16:15Z",
+	}, nil).Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.meHandler)
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	expected := `{"id":"testuserId","username":"testuser","email":"testuser@email.com","created_on":"2025-04-19T08:16:15Z","updated_on":"2025-04-19T08:16:15Z"}`
+	if rr.Body.String() != expected {
+		t.Errorf("handler returned unexpected body: got %v want %v", rr.Body.String(), expected)
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
+func TestMeHandlerServiceErr(t *testing.T) {
+	userId := "testuserId"
+	req, err := http.NewRequest("GET", "/users/me", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req = populateContextWithSub(req, userId)
+
+	serviceMock := serviceMock{}
+	serviceMock.On("GetByUserId", req.Context(), userId).Return(getMeResponse{}, testError).Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.meHandler)
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	serviceMock.AssertExpectations(t)
+}
