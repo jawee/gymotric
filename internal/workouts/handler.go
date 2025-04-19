@@ -37,13 +37,13 @@ func (s *handler) updateWorkoutByIdHandler(w http.ResponseWriter, r *http.Reques
 	var t updateWorkoutRequest
 	err := decoder.Decode(&t)
 
-	slog.Debug("Updating workout", "id", id, "note", t.Note)
-
 	if err != nil {
 		slog.Error("Failed to decode request body", "error", err)
 		http.Error(w, "Failed to update workout", http.StatusBadRequest)
 		return
 	}
+
+	slog.Debug("Updating workout", "id", id, "note", t.Note)
 
 	err = s.service.UpdateWorkoutById(r.Context(), id, t, userId)
 

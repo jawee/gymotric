@@ -400,3 +400,107 @@ func TestCompleteWorkoutByIdHandlerServiceErr(t *testing.T) {
 
 	serviceMock.AssertExpectations(t)
 }
+
+func TestUpdateWorkoutByIdHandler(t *testing.T) {
+	userId := "userId"
+	workoutId := "workoutId"
+
+	reqBodyObj := updateWorkoutRequest{
+		Note: "workoutNote",
+	}
+
+	reqBody, err := json.Marshal(reqBodyObj)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req, err := http.NewRequest("PUT", "/workouts/"+workoutId, bytes.NewBuffer(reqBody))
+	req.SetPathValue("id", workoutId)
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("UpdateWorkoutById", req.Context(), workoutId, mock.MatchedBy(func(input updateWorkoutRequest) bool {
+		return input.Note == reqBodyObj.Note
+	}), userId).Return(nil).Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.updateWorkoutByIdHandler)
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusNoContent {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusNoContent)
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
+var invalidJsonBytes = []byte("{invalidJson}")
+func TestUpdateWorkoutByIdHandlerJsonErr(t *testing.T) {
+	userId := "userId"
+	workoutId := "workoutId"
+
+	req, err := http.NewRequest("PUT", "/workouts/"+workoutId, bytes.NewBuffer(invalidJsonBytes))
+	req.SetPathValue("id", workoutId)
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.updateWorkoutByIdHandler)
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+	}
+}
+
+func TestUpdateWorkoutByIdHandlerServiceErr(t *testing.T) {
+	userId := "userId"
+	workoutId := "workoutId"
+
+	reqBodyObj := updateWorkoutRequest{
+		Note: "workoutNote",
+	}
+
+	reqBody, err := json.Marshal(reqBodyObj)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req, err := http.NewRequest("PUT", "/workouts/"+workoutId, bytes.NewBuffer(reqBody))
+	req.SetPathValue("id", workoutId)
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("UpdateWorkoutById", req.Context(), workoutId, mock.Anything, userId).Return(testError).Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.updateWorkoutByIdHandler)
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+	}
+
+	serviceMock.AssertExpectations(t)
+}
