@@ -442,6 +442,7 @@ func TestUpdateWorkoutByIdHandler(t *testing.T) {
 }
 
 var invalidJsonBytes = []byte("{invalidJson}")
+
 func TestUpdateWorkoutByIdHandlerJsonErr(t *testing.T) {
 	userId := "userId"
 	workoutId := "workoutId"
@@ -561,4 +562,63 @@ func TestDeleteWorkoutByIdHandlerServiceErr(t *testing.T) {
 	serviceMock.AssertExpectations(t)
 }
 
+func TestCloneWorkoutByIdHandler(t *testing.T) {
+	userId := "userId"
+	workoutId := "workoutId"
 
+	req, err := http.NewRequest("POST", "/workouts/"+workoutId+"/clone", nil)
+	req.SetPathValue("id", workoutId)
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("CloneByIdAndReturnId", req.Context(), workoutId, userId).Return("newWorkoutId", nil).Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.cloneWorkoutById)
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusCreated {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusCreated)
+	}
+
+	expected := `{"id":"newWorkoutId"}`
+	if rr.Body.String() != expected {
+		t.Errorf("handler returned unexpected body: got %v want %v",
+			rr.Body.String(), expected)
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
+func TestCloneWorkoutByIdHandlerServiceErr(t *testing.T) {
+	userId := "userId"
+	workoutId := "workoutId"
+
+	req, err := http.NewRequest("POST", "/workouts/"+workoutId+"/clone", nil)
+	req.SetPathValue("id", workoutId)
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("CloneByIdAndReturnId", req.Context(), workoutId, userId).Return("", testError).Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.cloneWorkoutById)
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+	}
+
+	serviceMock.AssertExpectations(t)
+}
