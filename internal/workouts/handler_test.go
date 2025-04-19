@@ -504,3 +504,61 @@ func TestUpdateWorkoutByIdHandlerServiceErr(t *testing.T) {
 
 	serviceMock.AssertExpectations(t)
 }
+
+func TestDeleteWorkoutByIdHandler(t *testing.T) {
+	userId := "userId"
+	workoutId := "workoutId"
+
+	req, err := http.NewRequest("DELETE", "/workouts/"+workoutId, nil)
+	req.SetPathValue("id", workoutId)
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("DeleteById", req.Context(), workoutId, userId).Return(nil).Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.deleteWorkoutByIdHandler)
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusNoContent {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusNoContent)
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
+func TestDeleteWorkoutByIdHandlerServiceErr(t *testing.T) {
+	userId := "userId"
+	workoutId := "workoutId"
+
+	req, err := http.NewRequest("DELETE", "/workouts/"+workoutId, nil)
+	req.SetPathValue("id", workoutId)
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("DeleteById", req.Context(), workoutId, userId).Return(testError).Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.deleteWorkoutByIdHandler)
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
+
