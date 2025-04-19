@@ -262,7 +262,8 @@ func TestChangePasswordUpdateUserFailsErr(t *testing.T) {
 	service := NewService(&repoMock)
 	err := service.ChangePassword(ctx, changePasswordRequest{
 		NewPassword: "newpassword",
-		OldPassword: "test"}, userId.String())
+		OldPassword: "test",
+	}, userId.String())
 	assert.NotNil(t, err)
 	assert.Equal(t, "testerror", err.Error())
 	repoMock.AssertExpectations(t)
