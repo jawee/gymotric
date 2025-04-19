@@ -528,7 +528,7 @@ func (s *handler) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := s.service.Login(r.Context(), t)
+	loginResponse, err := s.service.Login(r.Context(), t)
 
 	if err != nil {
 		slog.Warn("Failed to login", "error", err)
@@ -536,9 +536,9 @@ func (s *handler) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie := createCookie(utils.AccessTokenCookieName, token.Token, time.Now().Add(time.Minute*time.Duration(tokenExpiration)))
+	cookie := createCookie(utils.AccessTokenCookieName, loginResponse.Token, time.Now().Add(time.Minute*time.Duration(tokenExpiration)))
 
-	refresh_token, err := createRefreshToken(token.UserId)
+	refresh_token, err := createRefreshToken(loginResponse.UserId)
 	if err != nil {
 		slog.Warn("Failed to create refresh token", "error", err)
 		http.Error(w, "Failed to login", http.StatusBadRequest)
@@ -551,10 +551,10 @@ func (s *handler) loginHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &refresh_cookie)
 
 	resp := map[string]interface{}{
-		"access_token":  token,
+		"access_token":  loginResponse.Token,
 		"token_type":    "Bearer",
 		"expires_in":    tokenExpiration * 60,
-		"refresh_token": "refresh_token",
+		"refresh_token": refresh_token,
 	}
 
 	jsonResp, err := json.Marshal(resp)
