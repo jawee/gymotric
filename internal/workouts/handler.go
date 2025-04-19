@@ -37,13 +37,13 @@ func (s *handler) updateWorkoutByIdHandler(w http.ResponseWriter, r *http.Reques
 	var t updateWorkoutRequest
 	err := decoder.Decode(&t)
 
-	slog.Debug("Updating workout", "id", id, "note", t.Note)
-
 	if err != nil {
 		slog.Error("Failed to decode request body", "error", err)
 		http.Error(w, "Failed to update workout", http.StatusBadRequest)
 		return
 	}
+
+	slog.Debug("Updating workout", "id", id, "note", t.Note)
 
 	err = s.service.UpdateWorkoutById(r.Context(), id, t, userId)
 
@@ -68,17 +68,13 @@ func (s *handler) cloneWorkoutById(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 
-	resp := map[string]any{"id": newId}
-	jsonResp, err := json.Marshal(resp)
+	jsonResp, err := createIdResponse(newId)
 	if err != nil {
 		slog.Error("Failed to marshal response", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(jsonResp); err != nil {
-		slog.Warn("Failed to write response", "error", err)
-	}
+	returnJson(w, jsonResp)
 }
 
 func (s *handler) deleteWorkoutByIdHandler(w http.ResponseWriter, r *http.Request) {

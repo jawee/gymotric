@@ -39,7 +39,12 @@ func (w *workoutsService) UpdateWorkoutById(context context.Context, workoutId s
 		UserID:    userId,
 	}
 
-	return w.repo.UpdateById(context, arg)
+	err = w.repo.UpdateById(context, arg)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (w *workoutsService) CloneByIdAndReturnId(context context.Context, workoutId string, userId string) (string, error) {
@@ -123,7 +128,11 @@ func (w *workoutsService) CreateAndReturnId(context context.Context, t createWor
 
 func (w *workoutsService) GetAllCount(context context.Context, userId string) (int, error) {
 	count, err := w.repo.GetAllCount(context, userId)
-	return int(count), err
+	if err != nil {
+		return 0, err
+	}
+
+	return int(count), nil
 }
 
 func (w *workoutsService) GetAll(context context.Context, userId string, page int, pageSize int) ([]Workout, error) {
