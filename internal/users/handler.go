@@ -357,9 +357,9 @@ func createCookie(name string, value string, expiration time.Time) http.Cookie {
 	}
 }
 
-func getSubjectFromCookie(cookieName string, signingKey string, r *http.Request) (string, error) {
+func getSubjectFromCookie(cookieName string, signingKey string, cookies []*http.Cookie) (string, error) {
 	cookieTokenStr := ""
-	for _, cookie := range r.Cookies() {
+	for _, cookie := range cookies {
 		if cookie.Name == cookieName {
 			cookieTokenStr = cookie.Value
 		}
@@ -387,8 +387,10 @@ func getSubjectFromCookie(cookieName string, signingKey string, r *http.Request)
 		return "", errors.New("error getting claims")
 	}
 
-	return "", errors.New("No token found")
+	return "", NoTokenFoundError
 }
+
+var NoTokenFoundError = errors.New("No token found")
 
 func (s *handler) createTokenResponse(w http.ResponseWriter, sub string) error {
 	tokenExpiration, err := strconv.Atoi(os.Getenv(utils.EnvJwtExpireMinutes))
@@ -454,7 +456,7 @@ func (s *handler) createTokenResponse(w http.ResponseWriter, sub string) error {
 func (s *handler) refreshHandler(w http.ResponseWriter, r *http.Request) {
 	signingKey := os.Getenv(utils.EnvJwtRefreshSignKey)
 
-	cookieSub, err := getSubjectFromCookie(utils.RefreshTokenCookieName, signingKey, r)
+	cookieSub, err := getSubjectFromCookie(utils.RefreshTokenCookieName, signingKey, r.Cookies())
 	if err == nil {
 		err = s.createTokenResponse(w, cookieSub)
 
@@ -528,7 +530,7 @@ func (s *handler) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := s.service.Login(r.Context(), t)
+	loginResponse, err := s.service.Login(r.Context(), t)
 
 	if err != nil {
 		slog.Warn("Failed to login", "error", err)
@@ -536,9 +538,9 @@ func (s *handler) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie := createCookie(utils.AccessTokenCookieName, token.Token, time.Now().Add(time.Minute*time.Duration(tokenExpiration)))
+	cookie := createCookie(utils.AccessTokenCookieName, loginResponse.Token, time.Now().Add(time.Minute*time.Duration(tokenExpiration)))
 
-	refresh_token, err := createRefreshToken(token.UserId)
+	refresh_token, err := createRefreshToken(loginResponse.UserId)
 	if err != nil {
 		slog.Warn("Failed to create refresh token", "error", err)
 		http.Error(w, "Failed to login", http.StatusBadRequest)
@@ -551,10 +553,10 @@ func (s *handler) loginHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &refresh_cookie)
 
 	resp := map[string]interface{}{
-		"access_token":  token,
+		"access_token":  loginResponse.Token,
 		"token_type":    "Bearer",
 		"expires_in":    tokenExpiration * 60,
-		"refresh_token": "refresh_token",
+		"refresh_token": refresh_token,
 	}
 
 	jsonResp, err := json.Marshal(resp)
