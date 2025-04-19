@@ -10,6 +10,12 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+func populateContextWithSub(req *http.Request, userId string) *http.Request {
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, "sub", userId)
+	return req.WithContext(ctx)
+}
+
 type serviceMock struct {
 	mock.Mock
 }
@@ -112,7 +118,7 @@ func TestGetAllWorkoutsHandlerNoFound(t *testing.T) {
 	serviceMock.AssertExpectations(t)
 }
 
-func TestGetAllWorkoutsHandlerGetAllErr(t * testing.T) {
+func TestGetAllWorkoutsHandlerGetAllErr(t *testing.T) {
 	userId := "userId"
 
 	req, err := http.NewRequest("GET", "/workouts", nil)
@@ -170,8 +176,90 @@ func TestGetAllWorkoutsHandlerGetAllCountErr(t *testing.T) {
 	serviceMock.AssertExpectations(t)
 }
 
-func populateContextWithSub(req *http.Request, userId string) *http.Request {
-	ctx := req.Context()
-	ctx = context.WithValue(ctx, "sub", userId)
-	return req.WithContext(ctx)
+func TestGetWorkoutByIdHandler(t *testing.T) {
+	userId := "userId"
+	workoutId := "workoutId"
+
+	req, err := http.NewRequest("GET", "/workouts/"+workoutId, nil)
+	req.SetPathValue("id", workoutId)
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("GetById", req.Context(), workoutId, userId).
+		Return(Workout{
+			ID:   workoutId,
+			Name: "workoutName",
+		}, nil).Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.getWorkoutByIdHandler)
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	serviceMock.AssertExpectations(t)
 }
+
+func TestGetWorkoutByIdHandlerNotFound(t *testing.T) {
+	userId := "userId"
+	workoutId := "workoutId"
+
+	req, err := http.NewRequest("GET", "/workouts/"+workoutId, nil)
+	req.SetPathValue("id", workoutId)
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("GetById", req.Context(), workoutId, userId).
+		Return(Workout{}, sql.ErrNoRows).Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.getWorkoutByIdHandler)
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusNotFound {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusNotFound)
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
+func TestGetWorkoutByIdHandlerServiceErr(t *testing.T) {
+	userId := "userId"
+	workoutId := "workoutId"
+
+	req, err := http.NewRequest("GET", "/workouts/"+workoutId, nil)
+	req.SetPathValue("id", workoutId)
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("GetById", req.Context(), workoutId, userId).
+		Return(Workout{}, testError).Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.getWorkoutByIdHandler)
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
