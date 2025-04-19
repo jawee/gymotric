@@ -407,3 +407,39 @@ func TestMeHandlerServiceErr(t *testing.T) {
 
 	serviceMock.AssertExpectations(t)
 }
+
+func TestLogoutHandler(t *testing.T) {
+	userId := "testuserId"
+	req, err := http.NewRequest("GET", "/users/logout", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req = populateContextWithSub(req, userId)
+
+	serviceMock := serviceMock{}
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.logoutHandler)
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusNoContent)
+	}
+	cookies := rr.Result().Cookies()
+	assert.Condition(t, func() bool {
+		for _, cookie := range cookies {
+			if cookie.Name == utils.AccessTokenCookieName && cookie.Value == "" && cookie.Expires.Before(time.Now().Add(time.Second)) {
+				return true
+			}
+		}
+		return false
+	}, "handler did not set access cookie")
+	assert.Condition(t, func() bool {
+		for _, cookie := range cookies {
+			if cookie.Name == utils.RefreshTokenCookieName && cookie.Value == "" && cookie.Expires.Before(time.Now().Add(time.Second)) {
+				return true
+			}
+		}
+		return false
+	}, "handler did not set refresh cookie")
+}
