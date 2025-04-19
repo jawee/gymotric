@@ -287,7 +287,7 @@ func TestCreateWorkoutHandler(t *testing.T) {
 	}
 
 	serviceMock := serviceMock{}
-	serviceMock.On("CreateAndReturnId", req.Context(), mock.MatchedBy(func (input createWorkoutRequest) bool {
+	serviceMock.On("CreateAndReturnId", req.Context(), mock.MatchedBy(func(input createWorkoutRequest) bool {
 		return input.Name == reqBodyObj.Name
 	}), userId).Return("id", nil).Once()
 
@@ -345,3 +345,58 @@ func TestCreateWorkoutHandlerServiceErr(t *testing.T) {
 	serviceMock.AssertExpectations(t)
 }
 
+func TestCompleteWorkoutByIdHandler(t *testing.T) {
+	userId := "userId"
+	workoutId := "workoutId"
+
+	req, err := http.NewRequest("POST", "/workouts/"+workoutId+"/complete", nil)
+	req.SetPathValue("id", workoutId)
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("CompleteById", req.Context(), workoutId, userId).Return(nil).Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.completeWorkoutById)
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusNoContent {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
+func TestCompleteWorkoutByIdHandlerServiceErr(t *testing.T) {
+	userId := "userId"
+	workoutId := "workoutId"
+
+	req, err := http.NewRequest("POST", "/workouts/"+workoutId+"/complete", nil)
+	req.SetPathValue("id", workoutId)
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("CompleteById", req.Context(), workoutId, userId).Return(testError).Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.completeWorkoutById)
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+	}
+
+	serviceMock.AssertExpectations(t)
+}
