@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"io"
@@ -25,7 +26,7 @@ type ResetPasswordEmailData struct {
 
 type SendEmailConfirmationData struct {
 	Name string
-	Link  string
+	Link string
 }
 
 func SendPasswordReset(recipient string, data ResetPasswordEmailData) error {
@@ -63,6 +64,11 @@ func SendEmailConfirmation(recipient string, data SendEmailConfirmationData) err
 func sendEmail(html string, recipient string, subject string, data any) error {
 	SGKEY := os.Getenv(utils.EnvSendGridApiKey)
 
+	if SGKEY == "" {
+		slog.Error("SendGrid API key not set", "SGKEY", "")
+		return errors.New("SendGrid API key not set")
+	}
+
 	tmpl, err := template.New("email").Parse(string(html))
 	if err != nil {
 		slog.Error("Failed to parse HTML template", "error", err)
@@ -87,7 +93,7 @@ func sendEmail(html string, recipient string, subject string, data any) error {
 			},
 		},
 		From: from{
-			Name: "Gymotric",
+			Name:  "Gymotric",
 			Email: "noreply@gymotric.anol.se",
 		},
 		Subject: subject,

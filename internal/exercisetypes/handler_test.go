@@ -170,7 +170,7 @@ func TestGetAllExerciseTypesHandler(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
-	expected := `{"exercise_types":[{"id":"1","name":"exerciseName"}]}`
+	expected := `{"data":[{"id":"1","name":"exerciseName"}]}`
 	if rr.Body.String() != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v",
 			rr.Body.String(), expected)
@@ -296,13 +296,13 @@ func TestGetLastSet(t *testing.T) {
 	rr := httptest.NewRecorder()
 	s := handler{service: &serviceMock}
 	handler := http.HandlerFunc(s.getLastSet)
-	
+
 	handler.ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
-	expected := `{"reps":10,"weight":100}`
+	expected := `{"data":{"weight":100,"reps":10}}`
 	if rr.Body.String() != expected {
 		t.Errorf("handler returned unexpected body: got '%v' want '%v'",
 			rr.Body.String(), expected)
@@ -332,7 +332,7 @@ func TestGetLastSetErr(t *testing.T) {
 	rr := httptest.NewRecorder()
 	s := handler{service: &serviceMock}
 	handler := http.HandlerFunc(s.getLastSet)
-	
+
 	handler.ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusBadRequest {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
@@ -367,7 +367,7 @@ func TestGetLastSetSqlErr(t *testing.T) {
 	rr := httptest.NewRecorder()
 	s := handler{service: &serviceMock}
 	handler := http.HandlerFunc(s.getLastSet)
-	
+
 	handler.ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusNotFound {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
@@ -402,13 +402,13 @@ func TestGetMaxSet(t *testing.T) {
 	rr := httptest.NewRecorder()
 	s := handler{service: &serviceMock}
 	handler := http.HandlerFunc(s.getMaxSet)
-	
+
 	handler.ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
-	expected := `{"reps":10,"weight":110}`
+	expected := `{"data":{"weight":110,"reps":10}}`
 	if rr.Body.String() != expected {
 		t.Errorf("handler returned unexpected body: got '%v' want '%v'",
 			rr.Body.String(), expected)
@@ -438,7 +438,7 @@ func TestGetMaxSetErr(t *testing.T) {
 	rr := httptest.NewRecorder()
 	s := handler{service: &serviceMock}
 	handler := http.HandlerFunc(s.getMaxSet)
-	
+
 	handler.ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusBadRequest {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
@@ -473,7 +473,7 @@ func TestGetMaxSetSqlErr(t *testing.T) {
 	rr := httptest.NewRecorder()
 	s := handler{service: &serviceMock}
 	handler := http.HandlerFunc(s.getMaxSet)
-	
+
 	handler.ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusNotFound {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)

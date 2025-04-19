@@ -31,7 +31,7 @@ const fetchSets = async (wId: string, eId: string, setSets: React.Dispatch<React
 
   if (res.status === 200) {
     const resObj = await res.json();
-    setSets(resObj.sets);
+    setSets(resObj.data);
   }
 };
 
@@ -85,8 +85,8 @@ const EditableExercise = (props: EditableExerciseProps) => {
 
       if (res.status === 200) {
         const resObj = await res.json();
-        setMaxWeight(resObj.weight);
-        setMaxReps(resObj.reps);
+        setMaxWeight(resObj.data.weight);
+        setMaxReps(resObj.data.reps);
       }
     };
 
@@ -95,8 +95,8 @@ const EditableExercise = (props: EditableExerciseProps) => {
 
       if (res.status === 200) {
         const resObj = await res.json();
-        setLastWeight(resObj.weight);
-        setLastReps(resObj.reps);
+        setLastWeight(resObj.data.weight);
+        setLastReps(resObj.data.reps);
       }
     };
 
@@ -238,7 +238,7 @@ const WorkoutComponent = () => {
       const res = await ApiService.fetchExerciseTypes();
       if (res.status === 200) {
         const resObj = await res.json();
-        setExerciseTypes(resObj.exercise_types);
+        setExerciseTypes(resObj.data);
       }
     };
 
@@ -295,7 +295,7 @@ const WorkoutComponent = () => {
       const res = await ApiService.fetchExercises(id);
       if (res.status === 200) {
         const resObj = await res.json();
-        setExercises(resObj.exercises);
+        setExercises(resObj.data);
       }
     };
     fetchExercises();

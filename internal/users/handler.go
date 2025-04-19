@@ -134,7 +134,7 @@ func (s *handler) resetPasswordConfirmHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	token, err := jwt.Parse(request.Token, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(request.Token, func(token *jwt.Token) (any, error) {
 		signingKey := os.Getenv(utils.EnvJwtSignKey)
 		return []byte(signingKey), nil
 	})
@@ -180,7 +180,7 @@ func (s *handler) confirmEmailHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := jwt.ParseWithClaims(tokenString, &emailConfirmationCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &emailConfirmationCustomClaims{}, func(token *jwt.Token) (any, error) {
 		signingKey := os.Getenv(utils.EnvJwtSignKey)
 		return []byte(signingKey), nil
 	})
@@ -310,11 +310,7 @@ func (s *handler) meHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(jsonResp); err != nil {
-		slog.Warn("Failed to write response", "error", err)
-		http.Error(w, "", http.StatusBadRequest)
-	}
+	utils.ReturnJson(w, jsonResp)
 }
 
 func (s *handler) logoutHandler(w http.ResponseWriter, r *http.Request) {
@@ -366,7 +362,7 @@ func getSubjectFromCookie(cookieName string, signingKey string, cookies []*http.
 	}
 
 	if cookieTokenStr != "" {
-		cookieToken, err := jwt.Parse(cookieTokenStr, func(token *jwt.Token) (interface{}, error) {
+		cookieToken, err := jwt.Parse(cookieTokenStr, func(token *jwt.Token) (any, error) {
 			return []byte(signingKey), nil
 		})
 
@@ -430,26 +426,14 @@ func (s *handler) createTokenResponse(w http.ResponseWriter, sub string) error {
 	http.SetCookie(w, &cookie)
 	http.SetCookie(w, &refresh_cookie)
 
-	resp := map[string]interface{}{
-		"access_token":  newToken,
-		"token_type":    "Bearer",
-		"expires_in":    tokenExpiration * 60,
-		"refresh_token": refresh_token,
-	}
-
-	jsonResp, err := json.Marshal(resp)
+	jsonResp, err := utils.CreateTokenResponse(newToken, refresh_token, tokenExpiration)
 	if err != nil {
 		slog.Error("Failed to marshal response", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return err
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(jsonResp); err != nil {
-		slog.Warn("Failed to write response", "error", err)
-		return err
-	}
-
+	utils.ReturnJson(w, jsonResp)
 	return nil
 }
 
@@ -479,7 +463,7 @@ func (s *handler) refreshHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (any, error) {
 		return []byte(signingKey), nil
 	})
 
@@ -540,36 +524,26 @@ func (s *handler) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	cookie := createCookie(utils.AccessTokenCookieName, loginResponse.Token, time.Now().Add(time.Minute*time.Duration(tokenExpiration)))
 
-	refresh_token, err := createRefreshToken(loginResponse.UserId)
+	refreshToken, err := createRefreshToken(loginResponse.UserId)
 	if err != nil {
 		slog.Warn("Failed to create refresh token", "error", err)
 		http.Error(w, "Failed to login", http.StatusBadRequest)
 		return
 	}
 
-	refresh_cookie := createCookie(utils.RefreshTokenCookieName, refresh_token, time.Now().Add(time.Hour*24))
+	refresh_cookie := createCookie(utils.RefreshTokenCookieName, refreshToken, time.Now().Add(time.Hour*24))
 
 	http.SetCookie(w, &cookie)
 	http.SetCookie(w, &refresh_cookie)
 
-	resp := map[string]interface{}{
-		"access_token":  loginResponse.Token,
-		"token_type":    "Bearer",
-		"expires_in":    tokenExpiration * 60,
-		"refresh_token": refresh_token,
-	}
-
-	jsonResp, err := json.Marshal(resp)
+	jsonResp, err := utils.CreateTokenResponse(loginResponse.Token, refreshToken, tokenExpiration)
 	if err != nil {
 		slog.Error("Failed to marshal response", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(jsonResp); err != nil {
-		slog.Warn("Failed to write response", "error", err)
-	}
+	utils.ReturnJson(w, jsonResp)
 }
 
 func (s *handler) createUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -593,16 +567,12 @@ func (s *handler) createUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 
-	resp := map[string]interface{}{"id": id}
-	jsonResp, err := json.Marshal(resp)
+	jsonResp, err := utils.CreateIdResponse(id)
+
 	if err != nil {
 		slog.Error("Failed to marshal response", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(jsonResp); err != nil {
-		slog.Warn("Failed to write response", "error", err)
-		http.Error(w, "", http.StatusBadRequest)
-	}
+	utils.ReturnJson(w, jsonResp)
 }

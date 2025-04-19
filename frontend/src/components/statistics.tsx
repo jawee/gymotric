@@ -13,7 +13,7 @@ const StatisticsComponent = () => {
 
       if (res.status === 200) {
         const resObj = await res.json();
-        setStats(resObj);
+        setStats(resObj.data);
         setIsLoading(false);
       }
     };

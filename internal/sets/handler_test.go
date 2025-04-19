@@ -134,7 +134,7 @@ func TestGetSetsByExerciseIdHandler(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
-	expected := `{"sets":[{"id":"a","repetitions":10,"weight":100,"exercise_id":"exerciseId"}]}`
+	expected := `{"data":[{"id":"a","repetitions":10,"weight":100,"exercise_id":"exerciseId"}]}`
 	if rr.Body.String() != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v", rr.Body.String(), expected)
 	}

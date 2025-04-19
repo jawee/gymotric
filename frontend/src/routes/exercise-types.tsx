@@ -26,7 +26,7 @@ const ExerciseTypes = () => {
     if (res.status === 200) {
       const resObj = await res.json();
       setIsLoading(false);
-      setExerciseTypes(resObj.exercise_types);
+      setExerciseTypes(resObj.data);
     }
   };
 

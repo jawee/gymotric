@@ -2,10 +2,10 @@ package statistics
 
 import (
 	"database/sql"
-	"encoding/json"
 	"log/slog"
 	"net/http"
 	"weight-tracker/internal/database"
+	"weight-tracker/internal/utils"
 )
 
 func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper func(next http.Handler) http.Handler) {
@@ -18,6 +18,12 @@ func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper 
 
 type handler struct {
 	service Service
+}
+
+type getStatisticsResponse struct {
+	Week  int `json:"week"`
+	Month int `json:"month"`
+	Year  int `json:"year"`
 }
 
 func (s *handler) getStatistics(w http.ResponseWriter, r *http.Request) {
@@ -35,17 +41,12 @@ func (s *handler) getStatistics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := map[string]any{"week": statistics.Week, "month": statistics.Month, "year": statistics.Year}
-	jsonResp, err := json.Marshal(resp)
+	jsonResp, err := utils.CreateResponse(getStatisticsResponse{Week: statistics.Week, Month: statistics.Month, Year: statistics.Year})
 	if err != nil {
 		slog.Warn("Failed to marshal response", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(jsonResp); err != nil {
-		slog.Warn("Failed to write response", "error", err)
-		http.Error(w, "", http.StatusBadRequest)
-	}
+	utils.ReturnJson(w, jsonResp)
 }

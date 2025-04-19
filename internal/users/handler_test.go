@@ -219,7 +219,7 @@ func TestLoginHandler(t *testing.T) {
 		return false
 	}, "handler did not set access cookie")
 
-	var response map[string]interface{}
+	var response map[string]any
 	json.Unmarshal(rr.Body.Bytes(), &response)
 
 	if response["access_token"] != "asdf" {

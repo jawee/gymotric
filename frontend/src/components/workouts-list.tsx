@@ -90,7 +90,7 @@ const WorkoutListItem = ({ workout }: WorkoutListItemProps) => {
 
       if (res.status === 200) {
         const resObj = await res.json();
-        setExercises(resObj.exercises);
+        setExercises(resObj.data);
       }
     };
 
