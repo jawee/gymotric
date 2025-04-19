@@ -9,8 +9,10 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 	"weight-tracker/internal/utils"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -312,4 +314,41 @@ func TestLoginHandlerServiceErr(t *testing.T) {
 	}
 
 	serviceMock.AssertExpectations(t)
+}
+
+func TestGetSubjectFromCookie(t *testing.T) {
+	userId := "testuserId"
+	os.Setenv(utils.EnvJwtSignKey, "testsigningkey")
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Minute * time.Duration(10))),
+		Issuer:    "weight-tracker",
+		Subject:   userId,
+		Audience:  []string{"weight-tracker"},
+	})
+	signedToken, err := token.SignedString([]byte("testsigningkey"))
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cookies := []*http.Cookie{
+		{
+			Name:  utils.AccessTokenCookieName,
+			Value: signedToken,
+		},
+	}
+	sub, err := getSubjectFromCookie(utils.AccessTokenCookieName, "testsigningkey", cookies)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, sub)
+	assert.Equal(t, userId, sub)
+}
+
+func TestGetSubjectFromCookieNoCookieFound(t *testing.T) {
+	cookies := []*http.Cookie{}
+	sub, err := getSubjectFromCookie(utils.AccessTokenCookieName, "testsigningkey", cookies)
+
+	assert.NotNil(t, err)
+	assert.ErrorIs(t, err, NoTokenFoundError)
+	assert.Empty(t, sub)
 }
