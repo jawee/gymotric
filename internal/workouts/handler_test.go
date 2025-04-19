@@ -1,8 +1,10 @@
 package workouts
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -256,6 +258,86 @@ func TestGetWorkoutByIdHandlerServiceErr(t *testing.T) {
 	s := handler{service: &serviceMock}
 	handler := http.HandlerFunc(s.getWorkoutByIdHandler)
 	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
+func TestCreateWorkoutHandler(t *testing.T) {
+	userId := "userId"
+
+	reqBodyObj := createWorkoutRequest{
+		Name: "workoutName",
+	}
+
+	reqBody, err := json.Marshal(reqBodyObj)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req, err := http.NewRequest("POST", "/workouts", bytes.NewBuffer(reqBody))
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("CreateAndReturnId", req.Context(), mock.MatchedBy(func (input createWorkoutRequest) bool {
+		return input.Name == reqBodyObj.Name
+	}), userId).Return("id", nil).Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.createWorkoutHandler)
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusCreated {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusCreated)
+	}
+
+	expected := `{"id":"id"}`
+	if rr.Body.String() != expected {
+		t.Errorf("handler returned unexpected body: got %v want %v",
+			rr.Body.String(), expected)
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
+func TestCreateWorkoutHandlerServiceErr(t *testing.T) {
+	userId := "userId"
+
+	reqBodyObj := createWorkoutRequest{
+		Name: "workoutName",
+	}
+
+	reqBody, err := json.Marshal(reqBodyObj)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req, err := http.NewRequest("POST", "/workouts", bytes.NewBuffer(reqBody))
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("CreateAndReturnId", req.Context(), mock.Anything, userId).Return("", testError).Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.createWorkoutHandler)
+	handler.ServeHTTP(rr, req)
+
 	if status := rr.Code; status != http.StatusBadRequest {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
 	}
