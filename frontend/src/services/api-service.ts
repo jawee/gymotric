@@ -351,7 +351,6 @@ const passwordResetConfirm = async (password: string, token: string) => {
 };
 
 const register = async (username: string, email: string, password: string) => {
-  throw new Error("Not implemented");
   const res = await fetch("/api/register", {
     method: "POST",
     body: JSON.stringify({ username: username, email: email, password: password })

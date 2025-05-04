@@ -6,7 +6,7 @@ import ApiService from "@/services/api-service";
 import { Dumbbell } from "lucide-react";
 import { useState } from "react";
 
-const PasswordReset = () => {
+const Register = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,7 +43,7 @@ const PasswordReset = () => {
       return;
     }
 
-    setMessage("There was an error registering your account. Email and username may already be in use.");
+    setValidationMessage("There was an error registering your account. Email and username may already be in use.");
   };
 
   if (message !== null) {
@@ -99,4 +99,4 @@ export const RegisterContent = ({ ...props }: React.ComponentProps<"div">) => {
   );
 }
 
-export default PasswordReset;
+export default Register;
