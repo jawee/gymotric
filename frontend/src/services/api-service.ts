@@ -350,6 +350,16 @@ const passwordResetConfirm = async (password: string, token: string) => {
   return res;
 };
 
+const register = async (username: string, email: string, password: string) => {
+  throw new Error("Not implemented");
+  const res = await fetch("/api/register", {
+    method: "POST",
+    body: JSON.stringify({ username: username, email: email, password: password })
+  });
+
+  return res;
+};
+
 
 const ApiService = {
   login,
@@ -380,6 +390,7 @@ const ApiService = {
   confirmEmail,
   passwordReset,
   passwordResetConfirm,
+  register,
 };
 
 export default ApiService;

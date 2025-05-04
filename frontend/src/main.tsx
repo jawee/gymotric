@@ -13,12 +13,14 @@ import Profile from './routes/profile';
 import ConfirmEmail from './routes/confirm-email';
 import PasswordReset from './routes/reset-password';
 import PasswordResetConfirm from './routes/confirm-password-reset';
+import Register from './routes/register';
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
         <BrowserRouter>
             <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route path="/confirm-email" element={<ConfirmEmail />} /> 
+                <Route path="/register" element={<Register />} />
                 <Route path="/password-reset" element={<PasswordReset />} /> 
                 <Route path="/password-reset/:token" element={<PasswordResetConfirm />} />
                 <Route path="/login" element={<Login />} />
