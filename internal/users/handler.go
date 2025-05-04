@@ -17,6 +17,12 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
+type registrationRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Email    string `json:"email"`
+}
+
 type createUserAndReturnIdRequest struct {
 	Username string
 	Password string
@@ -69,6 +75,21 @@ func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper 
 	mux.Handle("POST /reset-password/confirm", http.HandlerFunc(handler.resetPasswordConfirmHandler))
 
 	mux.Handle("POST /logout", authenticationWrapper(http.HandlerFunc(handler.logoutHandler)))
+
+	mux.Handle("POST /register", http.HandlerFunc(handler.registrationHandler))
+}
+
+func (s *handler) registrationHandler(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+	var request registrationRequest
+	err := decoder.Decode(&request)
+	if err != nil {
+		slog.Error("Failed to decode request body", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (s *handler) resetPasswordHandler(w http.ResponseWriter, r *http.Request) {
@@ -80,6 +101,8 @@ func (s *handler) resetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
+
+
 
 	user, err := s.service.GetByEmail(r.Context(), request.Email)
 	if err != nil {
