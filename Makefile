@@ -1,14 +1,17 @@
 # Simple Makefile for a Go project
 
+GOOS := $(shell go env GOOS)
+#
+#
 # Build the application
 all: build test
 
 build:
-	@echo "Building..."
+	@echo "Building for $(GOOS)..."
 
 	mjml internal/email/emails/*.mjml -o internal/email/emails/
 
-	@CGO_ENABLED=1 GOOS=linux go build -o main cmd/api/main.go
+	@CGO_ENABLED=1 GOOS=$(GOOS) go build -o main cmd/api/main.go
 
 # Run the application
 run:
