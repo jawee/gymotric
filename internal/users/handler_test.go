@@ -21,6 +21,21 @@ type serviceMock struct {
 	mock.Mock
 }
 
+func (m *serviceMock) Register(ctx context.Context, arg registrationRequest) (string, error) {
+	args := m.Called(ctx, arg)
+	return args.String(0), args.Error(1)
+}
+
+func (m *serviceMock) ConfirmAccount(ctx context.Context, userId string) error {
+	args := m.Called(ctx, userId)
+	return args.Error(0)
+}
+
+func (m *serviceMock) CreateAccountConfirmationToken(ctx context.Context, userId string) (string, error) {
+	args := m.Called(ctx, userId)
+	return args.String(0), args.Error(1)
+}
+
 func (m *serviceMock) CreateAndReturnId(ctx context.Context, arg createUserAndReturnIdRequest) (string, error) {
 	args := m.Called(ctx, arg)
 	return args.String(0), args.Error(1)

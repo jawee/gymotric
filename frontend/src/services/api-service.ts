@@ -359,6 +359,14 @@ const register = async (username: string, email: string, password: string) => {
   return res;
 };
 
+const confirmAccount = async (token: string) => {
+  const res = await fetch("/api/register/confirm?token=" + token, {
+    method: "POST",
+  });
+
+  return res;
+}
+
 
 const ApiService = {
   login,
@@ -390,6 +398,7 @@ const ApiService = {
   passwordReset,
   passwordResetConfirm,
   register,
+  confirmAccount,
 };
 
 export default ApiService;

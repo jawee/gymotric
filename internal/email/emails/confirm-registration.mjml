@@ -1,0 +1,23 @@
+<mjml>
+  <mj-head>
+    <mj-preview>Confirm your account - Gymotric</mj-preview>
+  </mj-head>
+  <mj-body>
+    <mj-section>
+      <mj-column>
+        <mj-text font-size="20px" font-weight="bold">Confirm your account</mj-text>
+        <mj-text>Hello {{.Name}},</mj-text>
+        <mj-text>
+          Thank you for signing up for Gymotric! Please confirm your account by clicking the button below:
+        </mj-text>
+        <mj-button href="{{.Link}}" background-color="#4CAF50" font-size="16px">
+          Confirm Email
+        </mj-button>
+        <mj-text>
+          If you did not sign up for Gymotric, please ignore this email.
+        </mj-text>
+        <mj-text>Thanks, <br/>The Gymotric Team</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

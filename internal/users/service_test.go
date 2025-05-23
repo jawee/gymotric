@@ -80,6 +80,7 @@ func TestLoginAndReturnToken(t *testing.T) {
 		CreatedOn: "2024-09-05T19:22:00Z",
 		UpdatedOn: "2024-09-05T19:22:00Z",
 		Email:     "test@test.se",
+		IsVerified: true,
 	}, nil).Once()
 
 	service := NewService(&repoMock)
@@ -122,6 +123,7 @@ func TestLoginPasswordNotMatchReturnsEmptyAndErr(t *testing.T) {
 		CreatedOn: "2024-09-05T19:22:00Z",
 		UpdatedOn: "2024-09-05T19:22:00Z",
 		Email:     "test@test.se",
+		IsVerified: true,
 	}, nil).Once()
 
 	service := NewService(&repoMock)
@@ -191,15 +193,16 @@ func TestChangePassword(t *testing.T) {
 	pwBytes, _ := bcrypt.GenerateFromPassword([]byte("test"), bcrypt.DefaultCost)
 	repoMock := repoMock{}
 	repoMock.On("GetByUserId", ctx, userId.String()).Return(User{
-		ID:        userId.String(),
-		Username:  "testusername",
-		Password:  string(pwBytes),
-		CreatedOn: "2024-09-05T19:22:00Z",
-		UpdatedOn: "2024-09-05T19:22:00Z",
+		ID:         userId.String(),
+		Username:   "testusername",
+		Password:   string(pwBytes),
+		CreatedOn:  "2024-09-05T19:22:00Z",
+		UpdatedOn:  "2024-09-05T19:22:00Z",
+		IsVerified: true,
 	}, nil).Once()
 
 	repoMock.On("UpdateUser", ctx, mock.MatchedBy(func(input repository.UpdateUserParams) bool {
-		return input.ID == userId.String() && input.Username == "testusername" && input.Password != ""
+		return input.ID == userId.String() && input.Password != "" && input.Email == nil && input.IsVerified == true && input.UpdatedOn != "2024-09-05T19:22:00Z"
 	})).Return(nil).Once()
 
 	service := NewService(&repoMock)
@@ -334,16 +337,17 @@ func TestConfirmEmail(t *testing.T) {
 
 	repoMock := repoMock{}
 	repoMock.On("GetByUserId", ctx, userId.String()).Return(User{
-		ID:        userId.String(),
-		Username:  "testusername",
-		Password:  "test",
-		CreatedOn: "2024-09-05T19:22:00Z",
-		UpdatedOn: "2024-09-05T19:22:00Z",
-		Email:     email,
+		ID:         userId.String(),
+		Username:   "testusername",
+		Password:   "test",
+		CreatedOn:  "2024-09-05T19:22:00Z",
+		UpdatedOn:  "2024-09-05T19:22:00Z",
+		Email:      email,
+		IsVerified: true,
 	}, nil).Once()
 	repoMock.On("EmailExists", ctx, email).Return(false, nil).Once()
 	repoMock.On("UpdateUser", ctx, mock.MatchedBy(func(input repository.UpdateUserParams) bool {
-		return input.ID == userId.String() && input.Username == "testusername" && input.Email == email
+		return input.ID == userId.String() && input.Email == email && input.IsVerified == true && input.UpdatedOn != "2024-09-05T19:22:00Z"
 	})).Return(nil).Once()
 	service := NewService(&repoMock)
 
@@ -427,16 +431,17 @@ func TestConfirmEmailUpdateErr(t *testing.T) {
 
 	repoMock := repoMock{}
 	repoMock.On("GetByUserId", ctx, userId.String()).Return(User{
-		ID:        userId.String(),
-		Username:  "testusername",
-		Password:  "test",
-		CreatedOn: "2024-09-05T19:22:00Z",
-		UpdatedOn: "2024-09-05T19:22:00Z",
-		Email:     email,
+		ID:         userId.String(),
+		Username:   "testusername",
+		Password:   "test",
+		CreatedOn:  "2024-09-05T19:22:00Z",
+		UpdatedOn:  "2024-09-05T19:22:00Z",
+		Email:      email,
+		IsVerified: true,
 	}, nil).Once()
 	repoMock.On("EmailExists", ctx, email).Return(false, nil).Once()
 	repoMock.On("UpdateUser", ctx, mock.MatchedBy(func(input repository.UpdateUserParams) bool {
-		return input.ID == userId.String() && input.Username == "testusername" && input.Email == email
+		return input.ID == userId.String() && input.Email == email && input.IsVerified == true && input.UpdatedOn != "2024-09-05T19:22:00Z"
 	})).Return(errors.New("testerror")).Once()
 	service := NewService(&repoMock)
 
@@ -452,13 +457,14 @@ func TestResetPassword(t *testing.T) {
 
 	repoMock := repoMock{}
 	repoMock.On("GetByUserId", ctx, userId.String()).Return(User{
-		ID:        userId.String(),
-		Username:  "testusername",
-		CreatedOn: "2024-09-05T19:22:00Z",
-		UpdatedOn: "2024-09-05T19:22:00Z",
+		ID:         userId.String(),
+		Username:   "testusername",
+		CreatedOn:  "2024-09-05T19:22:00Z",
+		UpdatedOn:  "2024-09-05T19:22:00Z",
+		IsVerified: true,
 	}, nil).Once()
 	repoMock.On("UpdateUser", ctx, mock.MatchedBy(func(input repository.UpdateUserParams) bool {
-		return input.ID == userId.String() && input.Username == "testusername" && input.Password != ""
+		return input.ID == userId.String() && input.Password != "" && input.Email == nil && input.IsVerified == true && input.UpdatedOn != "2024-09-05T19:22:00Z"
 	})).Return(nil).Once()
 
 	service := NewService(&repoMock)

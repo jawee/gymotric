@@ -7,12 +7,13 @@ import (
 )
 
 type User struct {
-	ID        string      `json:"id"`
-	Username  string      `json:"username"`
-	Password  string      `json:"password"`
-	CreatedOn string      `json:"created_on"`
-	UpdatedOn string      `json:"updated_on"`
-	Email     interface{} `json:"email"`
+	ID         string `json:"id"`
+	Username   string `json:"username"`
+	Password   string `json:"password"`
+	CreatedOn  string `json:"created_on"`
+	UpdatedOn  string `json:"updated_on"`
+	Email      any    `json:"email"`
+	IsVerified bool   `json:"is_verified"`
 }
 
 type UsersRepository interface {
@@ -98,6 +99,7 @@ func newUser(v repository.User) User {
 		Password:  v.Password,
 		CreatedOn: v.CreatedOn,
 		UpdatedOn: v.UpdatedOn,
+		IsVerified: v.IsVerified,
 	}
 
 	return user
