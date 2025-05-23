@@ -29,6 +29,11 @@ type SendEmailConfirmationData struct {
 	Link string
 }
 
+type SendAccountConfirmationData struct {
+	Name string
+	Link string
+}
+
 func SendPasswordReset(recipient string, data ResetPasswordEmailData) error {
 	html, err := embedEmails.ReadFile("emails/reset-password.html")
 	if err != nil {
@@ -53,6 +58,22 @@ func SendEmailConfirmation(recipient string, data SendEmailConfirmationData) err
 	}
 
 	err = sendEmail(string(html), recipient, "Email Confirmation", data)
+	if err != nil {
+		slog.Error("Failed to send email", "error", err)
+		return err
+	}
+
+	return nil
+}
+
+func SendAccountConfirmation(recipient string, data SendAccountConfirmationData) error {
+	html, err := embedEmails.ReadFile("emails/confirm-registration.html")
+	if err != nil {
+		slog.Error("Failed to read HTML file", "error", err)
+		return err
+	}
+
+	err = sendEmail(string(html), recipient, "Confirm Account", data)
 	if err != nil {
 		slog.Error("Failed to send email", "error", err)
 		return err
@@ -96,7 +117,7 @@ func sendEmail(html string, recipient string, subject string, data any) error {
 			Name:  "Gymotric",
 			Email: "noreply@gymotric.anol.se",
 		},
-		Subject: subject,
+		Subject: subject + " - Gymotric",
 		Content: []content{
 			{
 				Type:  "text/html",

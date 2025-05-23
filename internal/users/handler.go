@@ -17,6 +17,12 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
+type registrationRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Email    string `json:"email"`
+}
+
 type createUserAndReturnIdRequest struct {
 	Username string
 	Password string
@@ -69,6 +75,88 @@ func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper 
 	mux.Handle("POST /reset-password/confirm", http.HandlerFunc(handler.resetPasswordConfirmHandler))
 
 	mux.Handle("POST /logout", authenticationWrapper(http.HandlerFunc(handler.logoutHandler)))
+
+	mux.Handle("POST /register", http.HandlerFunc(handler.registrationHandler))
+	mux.Handle("POST /register/confirm", http.HandlerFunc(handler.confirmRegistrationHandler))
+}
+
+func (s *handler) registrationHandler(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+	var request registrationRequest
+	err := decoder.Decode(&request)
+	if err != nil {
+		slog.Error("Failed to decode request body", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	id, err := s.service.Register(r.Context(), request) 
+
+	if err != nil {
+		slog.Error("Failed to register", "error", err, "email", request.Email)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	token, err := s.service.CreateAccountConfirmationToken(r.Context(), id)
+	if err != nil {
+		slog.Error("Failed to create confirmation token", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	baseUrl := os.Getenv("BASE_URL")
+	err = email.SendAccountConfirmation(request.Email, email.SendAccountConfirmationData{
+		Name: request.Username,
+		Link: baseUrl + "/confirm-registration?token=" + token,
+	})
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (s *handler) confirmRegistrationHandler(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("Confirm registration handler")
+	tokenString := r.URL.Query().Get("token")
+
+	if tokenString == "" {
+		slog.Error("No token found")
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+		signingKey := os.Getenv(utils.EnvJwtSignKey)
+		return []byte(signingKey), nil
+	})
+
+	if err != nil {
+		slog.Error("Failed to parse token", "error", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	slog.Debug("Parsed token")
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		sub, err := claims.GetSubject()
+
+		if err != nil {
+			slog.Error("GetSubject", "error", err)
+			http.Error(w, "", http.StatusBadRequest)
+			return
+		}
+
+		slog.Debug("Success", "sub", sub)
+		err = s.service.ConfirmAccount(r.Context(), sub) 
+		if err != nil {
+			slog.Error("Failed to confirm email", "error", err)
+			http.Error(w, "", http.StatusBadRequest)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	w.WriteHeader(http.StatusBadRequest)
 }
 
 func (s *handler) resetPasswordHandler(w http.ResponseWriter, r *http.Request) {
@@ -240,7 +328,12 @@ func (s *handler) changeEmailHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//TODO check if email is already in use
+	if user.Email == request.Email {
+		slog.Error("Email is the same as current email")
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
 	token, err := s.service.CreateConfirmationToken(r.Context(), userId, request.Email)
 	if err != nil {
 		slog.Error("Failed to create confirmation token", "error", err)
