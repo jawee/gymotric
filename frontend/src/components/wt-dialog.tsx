@@ -13,9 +13,9 @@ type WtDialogProps = {
 };
 const WtDialog = ({ openButtonTitle, form, title, description, onSubmitButtonTitle, onSubmitButtonClick, dialogProps }: WtDialogProps) => {
   return (
-    <Dialog {...dialogProps}>
+    <Dialog {...dialogProps} >
       <DialogTrigger className={buttonVariants({ variant: "default" })}>{openButtonTitle}</DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-md:top-[20%]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
