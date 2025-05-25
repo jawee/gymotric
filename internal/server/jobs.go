@@ -14,7 +14,11 @@ func (s *Server) RegisterJobs() {
 }
 
 func (s *Server) cleanupUnverifiedUsers() {
+	first := true
 	for {
+		if !first {
+			time.Sleep(utils.AccountConfirmationTokenExpireMinutes * time.Minute)
+		}
 		slog.Info("Running cleanup of unverified users")
 
 		context := context.Background()
@@ -47,7 +51,6 @@ func (s *Server) cleanupUnverifiedUsers() {
 		}
 
 		slog.Info("Cleanup of unverified users completed successfully")
-
-		time.Sleep(utils.AccountConfirmationTokenExpireMinutes * time.Minute)
+		first = false
 	}
 }
