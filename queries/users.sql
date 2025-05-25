@@ -26,3 +26,11 @@ WHERE email = sqlc.arg(email);
 -- name: GetByEmail :one
 SELECT * FROM users 
 WHERE email = sqlc.arg(email);
+
+-- name: GetUnverifiedUsers :many
+SELECT * FROM users 
+WHERE is_verified = false;
+
+-- name: DeleteUser :execrows
+DELETE FROM users 
+WHERE id = sqlc.arg(id);

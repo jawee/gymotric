@@ -41,6 +41,19 @@ func (q *Queries) CreateUserAndReturnId(ctx context.Context, arg CreateUserAndRe
 	return id, err
 }
 
+const deleteUser = `-- name: DeleteUser :execrows
+DELETE FROM users 
+WHERE id = ?1
+`
+
+func (q *Queries) DeleteUser(ctx context.Context, id string) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteUser, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const emailExists = `-- name: EmailExists :one
 SELECT count(*) from Users
 WHERE email = ?1
@@ -111,6 +124,42 @@ func (q *Queries) GetByUsername(ctx context.Context, username string) (User, err
 		&i.IsVerified,
 	)
 	return i, err
+}
+
+const getUnverifiedUsers = `-- name: GetUnverifiedUsers :many
+SELECT id, username, password, created_on, updated_on, email, is_verified FROM users 
+WHERE is_verified = false
+`
+
+func (q *Queries) GetUnverifiedUsers(ctx context.Context) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, getUnverifiedUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []User{}
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.Password,
+			&i.CreatedOn,
+			&i.UpdatedOn,
+			&i.Email,
+			&i.IsVerified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const updateUser = `-- name: UpdateUser :execrows
