@@ -51,7 +51,7 @@ func (s *Server) AuthenticatedMiddleware(next http.Handler) http.Handler {
 		}
 
 		if cookieTokenStr != "" {
-			cookieToken, err := jwt.Parse(cookieTokenStr, func(token *jwt.Token) (interface{}, error) {
+			cookieToken, err := jwt.Parse(cookieTokenStr, func(token *jwt.Token) (any, error) {
 				return []byte(signingKey), nil
 			})
 
@@ -68,7 +68,7 @@ func (s *Server) AuthenticatedMiddleware(next http.Handler) http.Handler {
 					}
 					claimsCtx := context.WithValue(r.Context(), "sub", sub)
 					r = r.WithContext(claimsCtx)
-					slog.Info("Cookie: Success", "sub", sub)
+					slog.Debug("Cookie: Success", "sub", sub)
 					next.ServeHTTP(w, r)
 					return
 				} else {
@@ -77,11 +77,11 @@ func (s *Server) AuthenticatedMiddleware(next http.Handler) http.Handler {
 			}
 		}
 
-		slog.Info("Cookie failed. Trying header token")
+		slog.Debug("Cookie failed. Trying header token")
 
 		//header token
 		extractor := request.AuthorizationHeaderExtractor
-		token, err := request.ParseFromRequest(r, extractor, func(token *jwt.Token) (interface{}, error) {
+		token, err := request.ParseFromRequest(r, extractor, func(token *jwt.Token) (any, error) {
 			return []byte(signingKey), nil
 		})
 
@@ -99,7 +99,7 @@ func (s *Server) AuthenticatedMiddleware(next http.Handler) http.Handler {
 			}
 			claimsCtx := context.WithValue(r.Context(), "sub", sub)
 			r = r.WithContext(claimsCtx)
-			slog.Info("Success", "sub", sub)
+			slog.Debug("Success", "sub", sub)
 		} else {
 			slog.Error("error getting claims", "error", err)
 		}
@@ -110,7 +110,7 @@ func (s *Server) AuthenticatedMiddleware(next http.Handler) http.Handler {
 
 func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		slog.Info("Request", "Path", r.URL.Path, "Method", r.Method)
+		slog.Debug("Request", "Path", r.URL.Path, "Method", r.Method)
 
 		// Proceed with the next handler
 		next.ServeHTTP(w, r)
@@ -127,12 +127,12 @@ func (s *Server) corsMiddleware(next http.Handler) http.Handler {
 
 		// Handle preflight OPTIONS requests
 		if r.Method == http.MethodOptions {
-			slog.Info("Returning 204")
+			slog.Debug("Returning 204")
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 
-		slog.Info("Proceeding")
+		slog.Debug("Proceeding")
 		// Proceed with the next handler
 		next.ServeHTTP(w, r)
 	})

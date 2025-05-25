@@ -8,12 +8,12 @@ import (
 )
 
 type Workout struct {
-	ID          string      `json:"id"`
-	Name        string      `json:"name"`
-	CompletedOn interface{} `json:"completed_on"`
-	CreatedOn   string      `json:"created_on"`
-	UpdatedOn   string      `json:"updated_on"`
-	Note        string      `json:"note"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	CompletedOn any    `json:"completed_on"`
+	CreatedOn   string `json:"created_on"`
+	UpdatedOn   string `json:"updated_on"`
+	Note        string `json:"note"`
 }
 
 type WorkoutsRepository interface {
@@ -39,7 +39,6 @@ func (w *workoutsRepository) GetAllCount(ctx context.Context, userId string) (in
 	return count, nil
 }
 
-
 func (w *workoutsRepository) UpdateById(ctx context.Context, arg repository.UpdateWorkoutByIdParams) error {
 	rows, err := w.repo.UpdateWorkoutById(ctx, arg)
 	if err != nil {
@@ -59,7 +58,7 @@ func (w *workoutsRepository) DeleteById(ctx context.Context, arg repository.Dele
 	}
 
 	if rows == 0 {
-		slog.Info("Tried to delete workout that did not exist", "workoutId", arg.ID)
+		slog.Warn("Tried to delete workout that did not exist", "workoutId", arg.ID)
 	}
 	return nil
 }

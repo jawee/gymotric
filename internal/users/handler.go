@@ -546,7 +546,7 @@ func (s *handler) refreshHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	slog.Error("Cookie: Failed to get subject from refresh token", "error", err)
-	slog.Info("Cookie failed. Trying query parameter token")
+	slog.Debug("Cookie failed. Trying query parameter token")
 
 	//body
 	refreshToken := r.URL.Query().Get("refresh_token")
@@ -573,7 +573,7 @@ func (s *handler) refreshHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "", http.StatusUnauthorized)
 			return
 		}
-		slog.Info("Success", "sub", sub)
+		slog.Debug("Success", "sub", sub)
 
 		err = s.createTokenResponse(w, sub)
 

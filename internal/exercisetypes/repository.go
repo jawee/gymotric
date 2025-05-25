@@ -71,7 +71,7 @@ func (e exerciseTypeRepository) DeleteById(context context.Context, arg reposito
 	}
 
 	if rows == 0 {
-		slog.Info("Tried to delete exercise type that did not exist", "exerciseTypeId", arg.ID)
+		slog.Warn("Tried to delete exercise type that did not exist", "exerciseTypeId", arg.ID)
 	}
 	return nil
 }

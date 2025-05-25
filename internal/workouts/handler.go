@@ -96,7 +96,7 @@ func (s *handler) deleteWorkoutByIdHandler(w http.ResponseWriter, r *http.Reques
 
 func (s *handler) getAllWorkoutsHandler(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value("sub").(string)
-	slog.Info("Getting all workouts")
+	slog.Debug("Getting all workouts")
 
 	page, err := strconv.Atoi(r.URL.Query().Get("page"))
 	if err != nil || page < 1 {
@@ -107,7 +107,7 @@ func (s *handler) getAllWorkoutsHandler(w http.ResponseWriter, r *http.Request) 
 		pageSize = 10 // Default to 10 items per page
 	}
 
-	slog.Info("QueryParams", "page", page, "pageSize", pageSize)
+	slog.Debug("QueryParams", "page", page, "pageSize", pageSize)
 
 	workouts, err := s.service.GetAll(r.Context(), userId, page, pageSize)
 	if err != nil {
