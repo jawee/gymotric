@@ -10,12 +10,19 @@ type WtDialogProps = {
   title: string;
   description?: string;
   dialogProps?: React.ComponentProps<typeof Dialog>;
+  shouldUseDefaultSubmit?: boolean;
+  topPercentage?: string;
 };
-const WtDialog = ({ openButtonTitle, form, title, description, onSubmitButtonTitle, onSubmitButtonClick, dialogProps }: WtDialogProps) => {
+const WtDialog = ({ openButtonTitle, form, title, description, onSubmitButtonTitle, onSubmitButtonClick, shouldUseDefaultSubmit = true, topPercentage = "20", dialogProps }: WtDialogProps) => {
+  let topPosition = "max-md:top-[20%]";
+  if (topPercentage == "25") {
+    topPosition = "max-md:top-[25%]";
+  }
+
   return (
     <Dialog {...dialogProps} >
       <DialogTrigger className={buttonVariants({ variant: "default" })}>{openButtonTitle}</DialogTrigger>
-      <DialogContent className="max-md:top-[20%]">
+      <DialogContent className={topPosition}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
@@ -25,7 +32,10 @@ const WtDialog = ({ openButtonTitle, form, title, description, onSubmitButtonTit
         {form}
         <DialogFooter>
           <DialogClose className={cn(buttonVariants({ variant: "default" }), "bg-red-500", "hover:bg-red-700")}>Cancel</DialogClose>
-          <DialogClose asChild><Button onClick={() => onSubmitButtonClick()}>{onSubmitButtonTitle}</Button></DialogClose>
+          {shouldUseDefaultSubmit ?
+            <DialogClose asChild><Button onClick={() => onSubmitButtonClick()}>{onSubmitButtonTitle}</Button></DialogClose> :
+            <Button onClick={onSubmitButtonClick}>Submit</Button>
+          }
         </DialogFooter>
       </DialogContent>
     </Dialog>
