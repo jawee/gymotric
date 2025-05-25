@@ -97,6 +97,10 @@ func main() {
 		createWorkout(true, 100-i, exerciseTypes, repo, ctx, userId)
 	}
 
+	for i := range 70 {
+		createWorkout(true, 365-(100-i), exerciseTypes, repo, ctx, userId)
+	}
+
 	fmt.Printf("Done\n")
 }
 

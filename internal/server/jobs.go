@@ -26,6 +26,7 @@ func (s *Server) cleanupUnverifiedUsers() {
 
 		if err != nil {
 			slog.Error("Failed to get unverified users", "error", err)
+			first = false
 			continue
 		}
 		slog.Info("Found unverified users", "count", len(users))

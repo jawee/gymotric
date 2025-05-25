@@ -7,9 +7,12 @@ import (
 )
 
 type Statistics struct {
-	Week  int
-	Month int
-	Year  int
+	Week          int
+	PreviousWeek  int
+	Month         int
+	PreviousMonth int
+	Year          int
+	PreviousYear  int
 }
 
 type StatisticsRepository interface {
@@ -30,9 +33,28 @@ func (s *statisticsRepository) GetStatistics(context context.Context, userId str
 		return Statistics{}, err
 	}
 
+	previousWeek, err := s.repo.GetStatisticsBetweenDates(context, repository.GetStatisticsBetweenDatesParams{
+		UserID:    userId,
+		StartDate: weekStartDate(time.Now().AddDate(0, 0, -7)),
+		EndDate:   weekStartDate(time.Now()),
+	})
+	if err != nil {
+		return Statistics{}, err
+	}
+
 	month, err := s.repo.GetStatisticsSinceDate(context, repository.GetStatisticsSinceDateParams{
 		UserID:    userId,
 		StartDate: time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.UTC),
+	})
+
+	if err != nil {
+		return Statistics{}, err
+	}
+
+	previousMonth, err := s.repo.GetStatisticsBetweenDates(context, repository.GetStatisticsBetweenDatesParams{
+		UserID:    userId,
+		StartDate: time.Date(time.Now().Year(), time.Now().Month()-1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:   time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.UTC),
 	})
 
 	if err != nil {
@@ -48,10 +70,23 @@ func (s *statisticsRepository) GetStatistics(context context.Context, userId str
 		return Statistics{}, err
 	}
 
+	previousYear, err := s.repo.GetStatisticsBetweenDates(context, repository.GetStatisticsBetweenDatesParams{
+		UserID:    userId,
+		StartDate: time.Date(time.Now().Year()-1, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:   time.Date(time.Now().Year(), 1, 1, 0, 0, 0, 0, time.UTC),
+	})
+
+	if err != nil {
+		return Statistics{}, err
+	}
+
 	return Statistics{
-		Week:  int(week),
-		Month: int(month),
-		Year:  int(year),
+		Week:          int(week),
+		PreviousWeek:  int(previousWeek),
+		Month:         int(month),
+		PreviousMonth: int(previousMonth),
+		Year:          int(year),
+		PreviousYear:  int(previousYear),
 	}, nil
 }
 

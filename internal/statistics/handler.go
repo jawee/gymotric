@@ -21,9 +21,12 @@ type handler struct {
 }
 
 type getStatisticsResponse struct {
-	Week  int `json:"week"`
-	Month int `json:"month"`
-	Year  int `json:"year"`
+	Week          int `json:"week"`
+	PreviousWeek  int `json:"previous_week"`
+	Month         int `json:"month"`
+	PreviousMonth int `json:"previous_month"`
+	Year          int `json:"year"`
+	PreviousYear  int `json:"previous_year"`
 }
 
 func (s *handler) getStatistics(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +44,15 @@ func (s *handler) getStatistics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonResp, err := utils.CreateResponse(getStatisticsResponse{Week: statistics.Week, Month: statistics.Month, Year: statistics.Year})
+	response := getStatisticsResponse{
+		Week:          statistics.Week,
+		PreviousWeek:  statistics.PreviousWeek,
+		Month:         statistics.Month,
+		PreviousMonth: statistics.PreviousMonth,
+		Year:          statistics.Year,
+		PreviousYear:  statistics.PreviousYear,
+	}
+	jsonResp, err := utils.CreateResponse(response)
 	if err != nil {
 		slog.Warn("Failed to marshal response", "error", err)
 		http.Error(w, "", http.StatusBadRequest)

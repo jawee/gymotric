@@ -9,6 +9,27 @@ import (
 	"context"
 )
 
+const getStatisticsBetweenDates = `-- name: GetStatisticsBetweenDates :one
+SELECT count(*) FROM
+workouts
+WHERE user_id = ?1 AND
+completed_on >= ?2 AND
+completed_on <= ?3
+`
+
+type GetStatisticsBetweenDatesParams struct {
+	UserID    string      `json:"user_id"`
+	StartDate interface{} `json:"start_date"`
+	EndDate   interface{} `json:"end_date"`
+}
+
+func (q *Queries) GetStatisticsBetweenDates(ctx context.Context, arg GetStatisticsBetweenDatesParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getStatisticsBetweenDates, arg.UserID, arg.StartDate, arg.EndDate)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const getStatisticsSinceDate = `-- name: GetStatisticsSinceDate :one
 SELECT count(*) FROM
 workouts

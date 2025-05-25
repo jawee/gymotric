@@ -3,7 +3,12 @@ import { useEffect, useState } from "react";
 import Loading from "./loading";
 import ApiService from "@/services/api-service";
 
-const StatisticsComponent = () => {
+type StatisticsComponentProps = {
+  showWeekly?: boolean;
+  showMonthly?: boolean;
+  showYearly?: boolean;
+};
+const StatisticsComponent = ({ showWeekly = true, showMonthly = true, showYearly = true } : StatisticsComponentProps) => {
   const [stats, setStats] = useState<Statistics | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -26,9 +31,12 @@ const StatisticsComponent = () => {
   }
   return (
     <div>
-      <p>Workouts this week: {stats.week}</p>
-      <p>Workouts this month: {stats.month}</p>
-      <p>Workouts this year: {stats.year}</p>
+      {showWeekly && <p>Workouts this week: {stats.week}</p>}
+      {showWeekly && <p>Workouts last week: {stats.previous_week}</p>}
+      {showMonthly && <p>Workouts this month: {stats.month}</p>}
+      {showMonthly && <p>Workouts last month: {stats.previous_month}</p>}
+      {showYearly && <p>Workouts this year: {stats.year}</p>}
+      {showYearly && <p>Workouts last year: {stats.previous_year}</p>}
     </div>
   );
 };
