@@ -5,7 +5,7 @@ const Home = () => {
   return (
     <>
       <h2 className="text-xl mb-2">Statistics</h2>
-      <Statistics />
+      <Statistics showWeekly={true} showMonthly={false} showYearly={false} />
       <h2 className="text-xl mt-2 mb-2">Workouts</h2>
       <WorkoutsList />
     </>
