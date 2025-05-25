@@ -8,9 +8,9 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { LogOut, Mail, RectangleEllipsis } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
+import WtDialog from "@/components/wt-dialog";
 
 const Profile = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -45,7 +45,7 @@ const Profile = () => {
       return;
     }
 
-    const response = await ApiService.registerEmail(email); 
+    const response = await ApiService.registerEmail(email);
     if (response.status === 204) {
       setEmailDialogOpen(false);
       toast("Email registered. A confirmation email has been sent");
@@ -95,46 +95,37 @@ const Profile = () => {
       <h2 className="text-xl mb-2">Statistics</h2>
       <StatisticsComponent />
       <div className="mt-2">
-        <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
-          <DialogTrigger className={buttonVariants({ variant: "default" })}><><RectangleEllipsis /> Change password</></DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Change Password</DialogTitle>
-              <DialogDescription>
-              </DialogDescription>
-            </DialogHeader>
+        <WtDialog
+          openButtonTitle={<><RectangleEllipsis /> Change password</>}
+          form={
             <>
               <Input type="password" value={oldPassword} onChange={e => setOldPassword(e.target.value)} placeholder="Old password" />
               <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="New password" />
               <Input type="password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} placeholder="Confirm new password" />
               {changePasswordError !== null ? <p className="text-red-500">{changePasswordError}</p> : null}
             </>
-            <DialogFooter>
-              <DialogClose className={cn(buttonVariants({ variant: "default" }), "bg-red-500", "hover:bg-red-700")}>Cancel</DialogClose>
-              <Button onClick={changePassword}>Change Password</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          }
+          onSubmitButtonClick={changePassword}
+          onSubmitButtonTitle="Change Password"
+          shouldUseDefaultSubmit={false}
+          dialogProps={{ open: passwordDialogOpen, onOpenChange: setPasswordDialogOpen }}
+          topPercentage={"25"}
+          title="Change Password" />
       </div>
       <div className="mt-2">
-        <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
-          <DialogTrigger className={buttonVariants({ variant: "default" })}><><Mail /> {user.email === null ? "Register email" : "Change email"}</></DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{user.email === null ? "Register email" : "Change email"}</DialogTitle>
-              <DialogDescription>
-              </DialogDescription>
-            </DialogHeader>
+        <WtDialog
+          openButtonTitle={<><Mail /> {user.email === null ? "Register email" : "Change email"}</>}
+          form={
             <>
               <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" />
               {registerEmailError !== null ? <p className="text-red-500">{registerEmailError}</p> : null}
             </>
-            <DialogFooter>
-              <DialogClose className={cn(buttonVariants({ variant: "default" }), "bg-red-500", "hover:bg-red-700")}>Cancel</DialogClose>
-              <Button onClick={registerEmail}>Submit</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          }
+          onSubmitButtonClick={registerEmail}
+          onSubmitButtonTitle={user.email === null ? "Register Email" : "Change Email"}
+          dialogProps={{ open: emailDialogOpen, onOpenChange: setEmailDialogOpen }}
+          shouldUseDefaultSubmit={false}
+          title={user.email === null ? "Register Email" : "Change Email"} />
       </div>
       <div className="mt-2">
         <Button

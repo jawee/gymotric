@@ -35,6 +35,19 @@ func main() {
 		panic(err)
 	}
 
+	// set user verified
+	updateUser := repository.UpdateUserParams{
+		ID:        userId,
+		Password:  user.Password,
+		UpdatedOn: user.UpdatedOn,
+		IsVerified: true,
+	}
+
+	_, err = repo.UpdateUser(ctx, updateUser)
+	if err != nil {
+		panic(err)
+	}
+
 	fmt.Printf("%s\n", userId)
 
 	exerciseTypeNames := []string{
