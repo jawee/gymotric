@@ -6,8 +6,10 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 	"weight-tracker/internal/exercises"
 	"weight-tracker/internal/exercisetypes"
+	"weight-tracker/internal/ratelimiter"
 	"weight-tracker/internal/sets"
 	"weight-tracker/internal/statistics"
 	"weight-tracker/internal/users"
@@ -20,12 +22,13 @@ import (
 )
 
 func (s *Server) RegisterRoutes() http.Handler {
+	rateLimiter := ratelimiter.NewRateLimiter(1*time.Minute, 5) // 100 requests per minute
 	mux := http.NewServeMux()
 
 	mux.Handle("GET /health", http.HandlerFunc(s.healthHandler))
 	mux.Handle("GET /ip", http.HandlerFunc(s.ipHandler))
 
-	users.AddEndpoints(mux, s.db, s.AuthenticatedMiddleware)
+	users.AddEndpoints(mux, s.db, s.AuthenticatedMiddleware, ratelimiter.RateLimitMiddleware, rateLimiter)
 
 	exercisetypes.AddEndpoints(mux, s.db, s.AuthenticatedMiddleware)
 
