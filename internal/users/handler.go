@@ -11,6 +11,7 @@ import (
 	"time"
 	"weight-tracker/internal/database"
 	"weight-tracker/internal/email"
+	"weight-tracker/internal/ratelimiter"
 	"weight-tracker/internal/utils"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -55,29 +56,36 @@ type handler struct {
 	service Service
 }
 
-func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper func(next http.Handler) http.Handler) {
+func AddEndpoints(
+	mux *http.ServeMux,
+	s database.Service,
+	authenticationWrapper func(next http.Handler) http.Handler,
+	rateLimitWrapper func(limiter *ratelimiter.RateLimiter, next http.Handler) http.Handler,
+	rateLimiter *ratelimiter.RateLimiter,
+) {
+
 	handler := handler{
 		service: NewService(&usersRepository{s.GetRepository()}),
 	}
 
-	mux.Handle("POST /users", http.HandlerFunc(handler.createUserHandler))
+	mux.Handle("POST /users", authenticationWrapper(http.HandlerFunc(handler.createUserHandler)))
 
-	mux.Handle("POST /auth/login", http.HandlerFunc(handler.loginHandler))
-	mux.Handle("POST /auth/token", http.HandlerFunc(handler.refreshHandler))
+	mux.Handle("POST /auth/login", rateLimitWrapper(rateLimiter, http.HandlerFunc(handler.loginHandler)))
+	mux.Handle("POST /auth/token", rateLimitWrapper(rateLimiter, http.HandlerFunc(handler.refreshHandler)))
 
 	mux.Handle("GET /me", authenticationWrapper(http.HandlerFunc(handler.meHandler)))
 	mux.Handle("PUT /me/password", authenticationWrapper(http.HandlerFunc(handler.changePasswordHandler)))
 	mux.Handle("PUT /me/email", authenticationWrapper(http.HandlerFunc(handler.changeEmailHandler)))
 
-	mux.Handle("POST /confirm-email", http.HandlerFunc(handler.confirmEmailHandler))
+	mux.Handle("POST /confirm-email", rateLimitWrapper(rateLimiter, http.HandlerFunc(handler.confirmEmailHandler)))
 
-	mux.Handle("POST /reset-password", http.HandlerFunc(handler.resetPasswordHandler))
-	mux.Handle("POST /reset-password/confirm", http.HandlerFunc(handler.resetPasswordConfirmHandler))
+	mux.Handle("POST /reset-password", rateLimitWrapper(rateLimiter, http.HandlerFunc(handler.resetPasswordHandler)))
+	mux.Handle("POST /reset-password/confirm", rateLimitWrapper(rateLimiter, http.HandlerFunc(handler.resetPasswordConfirmHandler)))
 
 	mux.Handle("POST /logout", authenticationWrapper(http.HandlerFunc(handler.logoutHandler)))
 
-	mux.Handle("POST /register", http.HandlerFunc(handler.registrationHandler))
-	mux.Handle("POST /register/confirm", http.HandlerFunc(handler.confirmRegistrationHandler))
+	mux.Handle("POST /register", rateLimitWrapper(rateLimiter, http.HandlerFunc(handler.registrationHandler)))
+	mux.Handle("POST /register/confirm", rateLimitWrapper(rateLimiter, http.HandlerFunc(handler.confirmRegistrationHandler)))
 }
 
 func (s *handler) registrationHandler(w http.ResponseWriter, r *http.Request) {
@@ -90,7 +98,7 @@ func (s *handler) registrationHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := s.service.Register(r.Context(), request) 
+	id, err := s.service.Register(r.Context(), request)
 
 	if err != nil {
 		slog.Error("Failed to register", "error", err, "email", request.Email)
@@ -146,7 +154,7 @@ func (s *handler) confirmRegistrationHandler(w http.ResponseWriter, r *http.Requ
 		}
 
 		slog.Debug("Success", "sub", sub)
-		err = s.service.ConfirmAccount(r.Context(), sub) 
+		err = s.service.ConfirmAccount(r.Context(), sub)
 		if err != nil {
 			slog.Error("Failed to confirm email", "error", err)
 			http.Error(w, "", http.StatusBadRequest)
@@ -407,8 +415,8 @@ func (s *handler) meHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *handler) logoutHandler(w http.ResponseWriter, r *http.Request) {
-	cookie := createCookie(utils.AccessTokenCookieName, "", time.Now().Add(time.Second))
-	refresh_cookie := createCookie(utils.RefreshTokenCookieName, "", time.Now().Add(time.Second))
+	cookie := createCookie(utils.AccessTokenCookieName, "", time.Now())
+	refresh_cookie := createCookie(utils.RefreshTokenCookieName, "", time.Now())
 
 	http.SetCookie(w, &cookie)
 	http.SetCookie(w, &refresh_cookie)
@@ -591,6 +599,7 @@ func (s *handler) refreshHandler(w http.ResponseWriter, r *http.Request) {
 
 func (s *handler) loginHandler(w http.ResponseWriter, r *http.Request) {
 	tokenExpiration, err := strconv.Atoi(os.Getenv(utils.EnvJwtExpireMinutes))
+	slog.Debug("Login handler invoked")
 	if err != nil {
 		slog.Error("Failed to convert JWT_EXPIRE_MINUTES to int", "error", err)
 		http.Error(w, "", http.StatusBadRequest)

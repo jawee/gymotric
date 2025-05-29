@@ -4,10 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
+	"time"
 	"weight-tracker/internal/exercises"
 	"weight-tracker/internal/exercisetypes"
+	"weight-tracker/internal/ratelimiter"
 	"weight-tracker/internal/sets"
 	"weight-tracker/internal/statistics"
 	"weight-tracker/internal/users"
@@ -20,12 +23,13 @@ import (
 )
 
 func (s *Server) RegisterRoutes() http.Handler {
+	rateLimiter := ratelimiter.NewRateLimiter(1*time.Minute, 5)
 	mux := http.NewServeMux()
 
 	mux.Handle("GET /health", http.HandlerFunc(s.healthHandler))
 	mux.Handle("GET /ip", http.HandlerFunc(s.ipHandler))
 
-	users.AddEndpoints(mux, s.db, s.AuthenticatedMiddleware)
+	users.AddEndpoints(mux, s.db, s.AuthenticatedMiddleware, ratelimiter.RateLimitMiddleware, rateLimiter)
 
 	exercisetypes.AddEndpoints(mux, s.db, s.AuthenticatedMiddleware)
 
@@ -161,13 +165,21 @@ func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) ipHandler(w http.ResponseWriter, r *http.Request) {
-	ipFromheader := r.Header.Get("X-Real-IP")
+	ipFromHeader := r.Header.Get("X-Real-IP")
 
-	if ipFromheader == "" {
-		slog.Error("X-Real-IP header not found")
-		http.Error(w, "X-Real-IP header not found", http.StatusBadRequest)
+	if ipFromHeader != "" {
+		w.Write([]byte(ipFromHeader))
+		return
+	}
+	slog.Error("X-Real-IP header not found. Trying remoteAddr")
+
+	ipFromRemoteAddr, _, err := net.SplitHostPort(r.RemoteAddr)
+
+	if err != nil {
+		slog.Error("Failed to split remote address", "error", err)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	w.Write([]byte(ipFromheader))
+	w.Write([]byte(ipFromRemoteAddr))
 }
