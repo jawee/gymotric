@@ -1,27 +1,23 @@
 package ratelimiter
 
 import (
+	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"sync"
 	"time"
 )
 
 type RateLimiter struct {
-	// Mutex to protect concurrent access to the requests map
-	mu sync.Mutex
-	// Map to store request counts and window start time per IP
+	mu       sync.Mutex
 	requests map[string]*clientStats
-	// Duration of the fixed window
-	window time.Duration
-	// Maximum number of requests allowed per window
-	limit int
+	window   time.Duration
+	limit    int
 }
 type clientStats struct {
-	// Time when the current window started
 	windowStart time.Time
-	// Number of requests made within the current window
-	count int
+	count       int
 }
 
 func NewRateLimiter(window time.Duration, limit int) *RateLimiter {
@@ -38,7 +34,6 @@ func (rl *RateLimiter) Allow(ip string) bool {
 
 	stats, ok := rl.requests[ip]
 
-	// If no stats for this IP, create new stats
 	if !ok || time.Since(stats.windowStart) >= rl.window {
 		rl.requests[ip] = &clientStats{
 			windowStart: time.Now(),
@@ -47,14 +42,30 @@ func (rl *RateLimiter) Allow(ip string) bool {
 		return true
 	}
 
-	// If within the window and count is less than the limit, increment count and allow
 	if stats.count < rl.limit {
 		stats.count++
 		return true
 	}
 
-	// If within the window and count is at or above the limit, do not allow
 	return false
+}
+
+func (rl *RateLimiter) GetWindowExpiration() time.Duration {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+
+	if len(rl.requests) == 0 {
+		return 0
+	}
+
+	var earliestExpiration time.Time
+	for _, stats := range rl.requests {
+		if earliestExpiration.IsZero() || stats.windowStart.Add(rl.window).Before(earliestExpiration) {
+			earliestExpiration = stats.windowStart.Add(rl.window)
+		}
+	}
+
+	return time.Until(earliestExpiration)
 }
 
 func RateLimitMiddleware(limiter *RateLimiter, next http.Handler) http.Handler {
@@ -62,14 +73,30 @@ func RateLimitMiddleware(limiter *RateLimiter, next http.Handler) http.Handler {
 		ip := r.Header.Get("X-Real-IP")
 		slog.Debug("Rate limit middleware invoked", "path", r.URL.Path, "IP", ip)
 
+		if ip == "" {
+			slog.Warn("No IP address found in request header", "path", r.URL.Path)
+			remoteAddr := r.RemoteAddr
+			host, _, err := net.SplitHostPort(remoteAddr)
+			if err != nil {
+				slog.Error("Failed to parse remote address", "remoteAddr", remoteAddr, "error", err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+			}
+
+			ip = host
+		}
+
 		if !limiter.Allow(ip) {
+			stats, ok := limiter.requests[ip]
+			if ok {
+				timeUntilReset := max(stats.windowStart.Add(limiter.window).Sub(time.Now()), 0)
+				w.Header().Set("Retry-After", fmt.Sprintf("%d", int(timeUntilReset.Seconds())))
+			}
 			slog.Warn("Rate limit exceeded for IP", "ip", ip, "path", r.URL.Path)
 			http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
 			return
 		}
 
-		// Request is allowed, proceed to the next handler
 		next.ServeHTTP(w, r)
 	})
 }
-
