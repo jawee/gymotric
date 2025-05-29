@@ -23,6 +23,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	mux := http.NewServeMux()
 
 	mux.Handle("GET /health", http.HandlerFunc(s.healthHandler))
+	mux.Handle("GET /ip", http.HandlerFunc(s.ipHandler))
 
 	users.AddEndpoints(mux, s.db, s.AuthenticatedMiddleware)
 
@@ -157,4 +158,16 @@ func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
 		slog.Warn("Failed to write response", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
 	}
+}
+
+func (s *Server) ipHandler(w http.ResponseWriter, r *http.Request) {
+	ipFromheader := r.Header.Get("X-Real-IP")
+
+	if ipFromheader == "" {
+		slog.Error("X-Real-IP header not found")
+		http.Error(w, "X-Real-IP header not found", http.StatusBadRequest)
+		return
+	}
+
+	w.Write([]byte(ipFromheader))
 }
