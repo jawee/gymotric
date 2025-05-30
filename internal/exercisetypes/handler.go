@@ -20,6 +20,7 @@ func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper 
 	mux.Handle("DELETE /exercise-types/{id}", authenticationWrapper(http.HandlerFunc(handler.deleteExerciseTypeByIdHandler)))
 	mux.Handle("GET /exercise-types/{id}/max", authenticationWrapper(http.HandlerFunc(handler.getMaxSet)))
 	mux.Handle("GET /exercise-types/{id}/last", authenticationWrapper(http.HandlerFunc(handler.getLastSet)))
+	mux.Handle("PUT /exercise-types/{id}", authenticationWrapper(http.HandlerFunc(handler.updateExerciseTypeHandler)))
 }
 
 type handler struct {
@@ -28,7 +29,33 @@ type handler struct {
 
 type getLastMaxSetResponse struct {
 	Weight float64 `json:"weight"`
-	Reps   int `json:"reps"`
+	Reps   int     `json:"reps"`
+}
+
+type updateExerciseTypeRequest struct {
+	Name string `json:"name"`
+}
+
+func (s *handler) updateExerciseTypeHandler(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("sub").(string)
+	exerciseTypeId := r.PathValue("id")
+	decoder := json.NewDecoder(r.Body)
+	var t updateExerciseTypeRequest
+	err := decoder.Decode(&t)
+	if err != nil {
+		slog.Error("Failed to decode request body", "error", err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	err = s.service.UpdateById(r.Context(), exerciseTypeId, t, userId)
+	if err != nil {
+		slog.Warn("Failed to update exercise type", "error", err, "exerciseTypeId", exerciseTypeId)
+		http.Error(w, "Failed to update exercise type", http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *handler) getLastSet(w http.ResponseWriter, r *http.Request) {

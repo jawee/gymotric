@@ -169,3 +169,30 @@ func (q *Queries) GetMaxWeightRepsByExerciseTypeId(ctx context.Context, arg GetM
 	err := row.Scan(&i.Weight, &i.Repetitions)
 	return i, err
 }
+
+const updateExerciseType = `-- name: UpdateExerciseType :execrows
+UPDATE exercise_types
+SET name = ?1, updated_on = ?2
+WHERE id = ?3
+AND user_id = ?4
+`
+
+type UpdateExerciseTypeParams struct {
+	Name      string `json:"name"`
+	UpdatedOn string `json:"updated_on"`
+	ID        string `json:"id"`
+	UserID    string `json:"user_id"`
+}
+
+func (q *Queries) UpdateExerciseType(ctx context.Context, arg UpdateExerciseTypeParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, updateExerciseType,
+		arg.Name,
+		arg.UpdatedOn,
+		arg.ID,
+		arg.UserID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}

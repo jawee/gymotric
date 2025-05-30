@@ -37,6 +37,10 @@ func (s *serviceMock) GetMaxWeightRepsByExerciseTypeId(context context.Context, 
 	args := s.Called(context, exerciseTypeId, userId)
 	return args.Get(0).(MaxLastWeightReps), args.Error(1)
 }
+func (s *serviceMock) UpdateById(context context.Context, exerciseTypeId string, updateExerciseTypeRequest updateExerciseTypeRequest, userId string) error {
+	args := s.Called(context, exerciseTypeId, updateExerciseTypeRequest, userId)
+	return args.Error(0)
+}
 
 func populateContextWithSub(req *http.Request, userId string) *http.Request {
 	ctx := req.Context()
@@ -482,6 +486,49 @@ func TestGetMaxSetSqlErr(t *testing.T) {
 	if rr.Body.String() != "\n" {
 		t.Errorf("handler returned unexpected body: got '%v' want '%v'",
 			rr.Body.String(), "\n")
+	}
+
+	serviceMock.AssertExpectations(t)
+}
+
+func TestUpdateExerciseTypeByIdHandler(t *testing.T) {
+	userId := "userId"
+	exerciseTypeId := "exerciseTypeId"
+
+	reqBodyObj := updateExerciseTypeRequest{
+		Name: "exerciseName",
+	}
+
+	reqBody, err := json.Marshal(reqBodyObj)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req, err := http.NewRequest("PUT", "/exercise-types/"+exerciseTypeId, bytes.NewBuffer(reqBody))
+	req.SetPathValue("id", exerciseTypeId)
+
+	req = populateContextWithSub(req, userId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serviceMock := serviceMock{}
+	serviceMock.On("UpdateById", req.Context(), exerciseTypeId, mock.MatchedBy(func(input updateExerciseTypeRequest) bool {
+		return input.Name == "exerciseName"
+	}), userId).
+		Return(nil).
+		Once()
+
+	rr := httptest.NewRecorder()
+	s := handler{service: &serviceMock}
+	handler := http.HandlerFunc(s.updateExerciseTypeHandler)
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusNoContent {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
 	serviceMock.AssertExpectations(t)
