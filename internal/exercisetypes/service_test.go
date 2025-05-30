@@ -38,6 +38,11 @@ func (m *repoMock) GetMaxWeightRepsByExerciseTypeId(ctx context.Context, arg rep
 	return args.Get(0).(MaxLastWeightReps), args.Error(1)
 }
 
+func (m *repoMock) UpdateById(ctx context.Context, arg repository.UpdateExerciseTypeParams) error {
+	args := m.Called(ctx, arg)
+	return args.Error(0)
+}
+
 func TestGetAll(t *testing.T) {
 	userId := "userid"
 
@@ -99,3 +104,4 @@ func TestCreateAndReturnId(t *testing.T) {
 	assert.Nil(t, err)
 	repoMock.AssertExpectations(t)
 }
+

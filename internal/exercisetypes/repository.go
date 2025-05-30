@@ -2,6 +2,7 @@ package exercisetypes
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"weight-tracker/internal/repository"
 )
@@ -22,6 +23,20 @@ type ExerciseTypeRepository interface {
 	GetAll(context context.Context, userId string) ([]ExerciseType, error)
 	GetLastWeightRepsByExerciseTypeId(ctx context.Context, arg repository.GetLastWeightRepsByExerciseTypeIdParams) (MaxLastWeightReps, error)
 	GetMaxWeightRepsByExerciseTypeId(ctx context.Context, arg repository.GetMaxWeightRepsByExerciseTypeIdParams) (MaxLastWeightReps, error)
+	UpdateById(ctx context.Context, arg repository.UpdateExerciseTypeParams) error
+}
+
+func (e exerciseTypeRepository) UpdateById(ctx context.Context, arg repository.UpdateExerciseTypeParams) error {
+	rows, err := e.repo.UpdateExerciseType(ctx, arg)
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		slog.Warn("Tried to update exercise type that did not exist", "exerciseTypeId", arg.ID)
+		return errors.New("exercise type not found")
+	}
+	return nil
 }
 
 func (e exerciseTypeRepository) GetLastWeightRepsByExerciseTypeId(ctx context.Context, arg repository.GetLastWeightRepsByExerciseTypeIdParams) (MaxLastWeightReps, error) {

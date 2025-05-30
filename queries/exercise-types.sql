@@ -39,3 +39,9 @@ AND s.user_id = sqlc.arg(user_id)
 AND w.completed_on IS NOT NULL
 ORDER BY s.id desc LIMIT 1;
 
+
+-- name: UpdateExerciseType :execrows
+UPDATE exercise_types
+SET name = sqlc.arg(name), updated_on = sqlc.arg(updated_on)
+WHERE id = sqlc.arg(id)
+AND user_id = sqlc.arg(user_id);
