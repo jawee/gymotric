@@ -1,5 +1,5 @@
 import { Input } from "@/components/ui/input";
-import { useEffect, useState } from "react";
+import { Dispatch, useEffect, useState } from "react";
 import { Workout } from "../models/workout";
 import { Exercise } from "../models/exercise";
 import { Set } from "../models/set";
@@ -26,7 +26,7 @@ type EditableExerciseProps = {
   deleteExerciseFunc: (exerciseId: string) => Promise<void>;
 };
 
-const fetchSets = async (wId: string, eId: string, setSets: React.Dispatch<React.SetStateAction<Set[]>>) => {
+const fetchSets = async (wId: string, eId: string, setSets: Dispatch<React.SetStateAction<Set[]>>) => {
   const res = await ApiService.fetchSets(wId, eId);
 
   if (res.status === 200) {
@@ -71,17 +71,35 @@ const ExerciseComponent = (props: ExerciseProps) => {
   );
 };
 
-const EditableExercise = (props: EditableExerciseProps) => {
-  const [ex] = useState<Exercise>(props.exercise);
+const EditableExercise = ({ exercise, deleteExerciseFunc }: EditableExerciseProps) => {
   const [sets, setSets] = useState<Set[]>([]);
   const [lastWeight, setLastWeight] = useState<number | null>(null);
   const [lastReps, setLastReps] = useState<number | null>(null);
   const [maxWeight, setMaxWeight] = useState<number | null>(null);
   const [maxReps, setMaxReps] = useState<number | null>(null);
+  const [formData, setFormData] = useState<{ weight: string | null, reps: number | null }>({ weight: null, reps: null });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+
+    localStorage.setItem("form-data-" + exercise.workout_id + "-" + exercise.id, JSON.stringify({
+      ...formData,
+      [name]: value,
+    }));
+  };
 
   useEffect(() => {
+    const storedFormData = localStorage.getItem("form-data-" + exercise.workout_id + "-" + exercise.id);
+    if (storedFormData) {
+      setFormData(JSON.parse(storedFormData));
+    }
+
     const fetchMaxWeightAndReps = async () => {
-      const res = await ApiService.fetchMaxWeightAndReps(ex.exercise_type_id);
+      const res = await ApiService.fetchMaxWeightAndReps(exercise.exercise_type_id);
 
       if (res.status === 200) {
         const resObj = await res.json();
@@ -91,7 +109,7 @@ const EditableExercise = (props: EditableExerciseProps) => {
     };
 
     const fetchLastWeightAndReps = async () => {
-      const res = await ApiService.fetchLastWeightAndReps(ex.exercise_type_id);
+      const res = await ApiService.fetchLastWeightAndReps(exercise.exercise_type_id);
 
       if (res.status === 200) {
         const resObj = await res.json();
@@ -102,18 +120,18 @@ const EditableExercise = (props: EditableExerciseProps) => {
 
     fetchMaxWeightAndReps();
     fetchLastWeightAndReps();
-  }, [ex]);
+  }, [exercise]);
 
   useEffect(() => {
-    fetchSets(ex.workout_id, ex.id, setSets);
-  }, [ex]);
+    fetchSets(exercise.workout_id, exercise.id, setSets);
+  }, [exercise]);
 
   const deleteSet = async (setId: string) => {
     const confirmRes = confirm("Are you sure you want to delete this set?");
     if (!confirmRes) {
       return;
     }
-    const res = await ApiService.deleteSet(ex.workout_id, ex.id, setId);
+    const res = await ApiService.deleteSet(exercise.workout_id, exercise.id, setId);
 
     if (res.status !== 204) {
       console.log("Error");
@@ -133,7 +151,7 @@ const EditableExercise = (props: EditableExerciseProps) => {
     const weight = +target.weight.value.replace(",", ".");
     const reps = +target.reps.value;
 
-    const res = await ApiService.createSet(ex.workout_id, ex.id, reps, weight);
+    const res = await ApiService.createSet(exercise.workout_id, exercise.id, reps, weight);
 
     if (res.status !== 201) {
       console.log("Error");
@@ -141,7 +159,7 @@ const EditableExercise = (props: EditableExerciseProps) => {
     }
 
     const obj = await res.json();
-    setSets([...sets, { id: obj.id, weight: weight, repetitions: reps, exercise_id: ex.id }]);
+    setSets([...sets, { id: obj.id, weight: weight, repetitions: reps, exercise_id: exercise.id }]);
   };
 
   const deleteExercise = async () => {
@@ -150,13 +168,13 @@ const EditableExercise = (props: EditableExerciseProps) => {
       return;
     }
 
-    await props.deleteExerciseFunc(ex.id);
+    await deleteExerciseFunc(exercise.id);
   };
 
   return (
     <div className="border-2 border-black p-2 mt-2 mb-2">
-      <li key={ex.id}>
-        <p className="text-xl">{ex.name}
+      <li key={exercise.id}>
+        <p className="text-xl">{exercise.name}
           <Button
             onClick={deleteExercise}
             className={
@@ -180,7 +198,7 @@ const EditableExercise = (props: EditableExerciseProps) => {
           <TableBody>
             {sets.map((set, i) => {
               return (
-                <TableRow key={ex.id + "" + i}>
+                <TableRow key={exercise.id + "" + i}>
                   <TableCell>{set.weight}kg</TableCell>
                   <TableCell>{set.repetitions}</TableCell>
                   <TableCell className="text-right">
@@ -204,16 +222,16 @@ const EditableExercise = (props: EditableExerciseProps) => {
         <p className="mt-2">Add set</p>
         <div className="w-full">
           <form onSubmit={addSet} className="flex w-full max-w-md items-center space-x-2">
-            <Input className="" id="weight" inputMode="decimal" type="text" pattern="^\d+([.,](00|0|25|50|5|75))?$" />
+            <Input id="weight" name="weight" inputMode="decimal" type="text" pattern="^\d+([.,](00|0|25|50|5|75))?$" value={formData.weight ?? ""} onChange={handleChange} />
             <span className="flex-none mr-1">kg for</span>
-            <Input className="" id="reps" inputMode="numeric" type="number" />
+            <Input id="reps" name="reps" inputMode="numeric" type="number" value={formData.reps ?? ""} onChange={handleChange} />
             <span className="mr-1">reps</span>
-            <Button className="" type="submit"><Plus />Add</Button>
+            <Button type="submit"><Plus />Add</Button>
           </form>
         </div>
         <p className="font-bold">Last set: {lastWeight}kg for {lastReps}reps</p>
         <p className="font-bold">Max set: {maxWeight}kg for {maxReps}reps</p>
-      </li >
+      </li>
     </div>
   );
 };
@@ -433,6 +451,13 @@ const WorkoutComponent = () => {
     if (res.status !== 204) {
       console.log("Error", res.status, res.statusText);
       return;
+    }
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith("form-data-" +workout.id + "-")) {
+        localStorage.removeItem(key);
+      }
     }
 
     navigate("/app");
