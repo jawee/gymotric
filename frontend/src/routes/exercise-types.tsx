@@ -22,8 +22,11 @@ const ExerciseTypes = () => {
   const exerciseNameId = useId();
   const [exerciseName, setExerciseName] = useState<string>("");
 
+  const [addDialogOpen, setAddDialogOpen] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
   const fetchExerciseTypes = async () => {
-    const res = await ApiService.fetchExerciseTypes(); 
+    const res = await ApiService.fetchExerciseTypes();
     if (res.status === 200) {
       const resObj = await res.json();
       setIsLoading(false);
@@ -35,29 +38,34 @@ const ExerciseTypes = () => {
     fetchExerciseTypes();
   }, []);
 
-  const addExercise = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const addExercise = async () => {
+    setError(null);
     if (exerciseName === "") {
-      console.log("exerciseName empty");
+      setError("Exercise name is required");
       return;
     }
 
     if (exerciseTypes.filter(et => et.name === exerciseName).length > 0) {
-      console.log("Already exists");
+      setError("Exercise already exists");
       return;
     }
 
     const exerciseTypeRes = await ApiService.createExerciseType(exerciseName);
 
     if (exerciseTypeRes.status !== 201) {
-      console.log("Error");
+      setError("Error creating exercise type");
       return;
     }
 
     const obj = await exerciseTypeRes.json();
-    setExerciseTypes([...exerciseTypes, { id: obj.id, name: exerciseName }]);
+
+    const updatedExerciseTypes = [...exerciseTypes, { id: obj.id, name: exerciseName }];
+
+    updatedExerciseTypes.sort((a, b) => a.name.localeCompare(b.name));
+
+    setExerciseTypes(updatedExerciseTypes);
     setExerciseName("");
+    setAddDialogOpen(false);
   };
 
   if (isLoading) {
@@ -67,11 +75,19 @@ const ExerciseTypes = () => {
   return (
     <>
       <h1 className="text-xl">Exercises</h1>
-      <form onSubmit={addExercise}>
-        Add new:
-        <Input id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
-        <Button className="mt-2 mb-2" type="submit"><Plus />Add</Button>
-      </form>
+      <WtDialog
+        openButtonTitle={<><Plus /> Add new exercise</>}
+        form={
+          <>
+            <Input id={exerciseNameId} value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" />
+            {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+          </>
+        }
+        shouldUseDefaultSubmit={false}
+        dialogProps={{ open: addDialogOpen, onOpenChange: setAddDialogOpen }}
+        onSubmitButtonClick={addExercise}
+        onSubmitButtonTitle="Add"
+        title="Add new" />
       <Table>
         <TableHeader>
           <TableRow>
@@ -82,9 +98,9 @@ const ExerciseTypes = () => {
         <TableBody>
           {exerciseTypes.map((et) => {
             return (
-              <ExerciseTypeRow 
-                key={et.id} 
-                exerciseType={et} 
+              <ExerciseTypeRow
+                key={et.id}
+                exerciseType={et}
                 setExerciseTypes={setExerciseTypes}
               />
             );
@@ -95,7 +111,7 @@ const ExerciseTypes = () => {
   );
 };
 
-const ExerciseTypeRow = ({ exerciseType, setExerciseTypes }: { exerciseType: ExerciseType, setExerciseTypes: React.Dispatch<React.SetStateAction<ExerciseType[]>>  }) => {
+const ExerciseTypeRow = ({ exerciseType, setExerciseTypes }: { exerciseType: ExerciseType, setExerciseTypes: React.Dispatch<React.SetStateAction<ExerciseType[]>> }) => {
   const [exerciseName, setExerciseName] = useState<string>(exerciseType.name);
   const [exerciseTypeName, setExerciseTypeName] = useState<string>(exerciseType.name);
 
@@ -133,11 +149,11 @@ const ExerciseTypeRow = ({ exerciseType, setExerciseTypes }: { exerciseType: Exe
     <TableRow>
       <TableCell>{exerciseTypeName}</TableCell>
       <TableCell className="text-right">
-        <WtDialog 
-          openButtonTitle={<Pencil />} 
-          form={<Input value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" placeholder="Name" />} 
-          onSubmitButtonClick={() => handleNameChange()} 
-          onSubmitButtonTitle="Save" 
+        <WtDialog
+          openButtonTitle={<Pencil />}
+          form={<Input value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" placeholder="Name" />}
+          onSubmitButtonClick={() => handleNameChange()}
+          onSubmitButtonTitle="Save"
           title="Change name" />
         <Button className={
           cn(

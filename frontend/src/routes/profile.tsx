@@ -92,7 +92,7 @@ const Profile = () => {
       <h1 className="text-2xl">Profile for {user.username}</h1>
       <p>Member since: {new Date(user.created_on).toDateString()}</p>
       <p>Registered email: {user.email}</p>
-      <h2 className="text-xl mb-2">Statistics</h2>
+      <h2 className="text-xl mb-2 mt-4">Statistics</h2>
       <StatisticsComponent />
       <div className="mt-2">
         <WtDialog

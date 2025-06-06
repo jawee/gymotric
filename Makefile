@@ -61,6 +61,11 @@ db-create:
 	go run cmd/goose/main.go
 	go run cmd/seed/main.go
 
+db-recreate:
+	rm .env
+	rm -rf db
+	make db-create
+
 db-create-docker:
 	cp .default.env .env
 	mkdir db

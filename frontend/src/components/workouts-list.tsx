@@ -53,14 +53,13 @@ const WorkoutsList = () => {
     return <Loading />
   }
 
-
   return (
     <div className="flex flex-col gap-4">
-      <WtDialog 
-        openButtonTitle={<><Dumbbell /> Create workout</>} 
-        form={<Input id={nameId} value={name} onChange={e => setName(e.target.value)} type="text" placeholder="Name of workout" />} 
-        onSubmitButtonClick={createWorkout} 
-        onSubmitButtonTitle="Create workout" 
+      <WtDialog
+        openButtonTitle={<><Dumbbell /> Start workout</>}
+        form={<Input id={nameId} value={name} onChange={e => setName(e.target.value)} type="text" placeholder="Name of workout" />}
+        onSubmitButtonClick={createWorkout}
+        onSubmitButtonTitle="Create workout"
         title="Create workout" />
       {workouts.map(workout => {
         return (
