@@ -152,8 +152,9 @@ const ExerciseTypeRow = ({ exerciseType, setExerciseTypes }: { exerciseType: Exe
         <WtDialog
           openButtonTitle={<Pencil />}
           form={<Input value={exerciseName} onChange={e => setExerciseName(e.target.value)} type="text" placeholder="Name" />}
-          onSubmitButtonClick={() => handleNameChange()}
+          onSubmitButtonClick={handleNameChange}
           onSubmitButtonTitle="Save"
+          onOpenAutoFocus={(e) => { e.preventDefault(); }}
           title="Change name" />
         <Button className={
           cn(
