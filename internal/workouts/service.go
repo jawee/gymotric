@@ -2,6 +2,7 @@ package workouts
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"time"
 	"weight-tracker/internal/exercises"
@@ -29,7 +30,7 @@ type workoutsService struct {
 func (w *workoutsService) UpdateWorkoutById(context context.Context, workoutId string, t updateWorkoutRequest, userId string) error {
 	_, err := w.GetById(context, workoutId, userId)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get workout by id: %w", err)
 	}
 
 	arg := repository.UpdateWorkoutByIdParams{
@@ -41,7 +42,7 @@ func (w *workoutsService) UpdateWorkoutById(context context.Context, workoutId s
 
 	err = w.repo.UpdateById(context, arg)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to update workout: %w", err)
 	}
 
 	return nil
@@ -50,7 +51,7 @@ func (w *workoutsService) UpdateWorkoutById(context context.Context, workoutId s
 func (w *workoutsService) CloneByIdAndReturnId(context context.Context, workoutId string, userId string) (string, error) {
 	workout, err := w.GetById(context, workoutId, userId)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to get workout by id: %w", err)
 	}
 
 	cloneId, err := w.CreateAndReturnId(context, createWorkoutRequest{
@@ -58,7 +59,7 @@ func (w *workoutsService) CloneByIdAndReturnId(context context.Context, workoutI
 	}, userId)
 
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to create cloned workout: %w", err)
 	}
 
 	exercises, err := w.exerciseRepo.GetByWorkoutId(context, repository.GetExercisesByWorkoutIdParams{UserID: userId, WorkoutID: workoutId})
@@ -66,7 +67,7 @@ func (w *workoutsService) CloneByIdAndReturnId(context context.Context, workoutI
 	for _, exercise := range exercises {
 		uuid, err := uuid.NewV7()
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("failed to generate UUID for exercise: %w", err)
 		}
 
 		_, err = w.exerciseRepo.CreateAndReturnId(context, repository.CreateExerciseAndReturnIdParams{
@@ -80,7 +81,7 @@ func (w *workoutsService) CloneByIdAndReturnId(context context.Context, workoutI
 		})
 
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("failed to create cloned exercise: %w", err)
 		}
 	}
 
@@ -103,14 +104,17 @@ func (w *workoutsService) CompleteById(context context.Context, workoutId string
 	}
 
 	_, err := w.repo.CompleteById(context, completeParams)
+	if err != nil {
+		return fmt.Errorf("failed to complete workout: %w", err)
+	}
 
-	return err
+	return nil
 }
 
 func (w *workoutsService) CreateAndReturnId(context context.Context, t createWorkoutRequest, userId string) (string, error) {
 	uuid, err := uuid.NewV7()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to generate UUID: %w", err)
 	}
 
 	workout := repository.CreateWorkoutAndReturnIdParams{
@@ -123,13 +127,17 @@ func (w *workoutsService) CreateAndReturnId(context context.Context, t createWor
 
 	id, err := w.repo.CreateAndReturnId(context, workout)
 
-	return id, err
+	if err != nil {
+		return "", fmt.Errorf("failed to create workout: %w", err)
+	}
+
+	return id, nil
 }
 
 func (w *workoutsService) GetAllCount(context context.Context, userId string) (int, error) {
 	count, err := w.repo.GetAllCount(context, userId)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to get all workouts count: %w", err)
 	}
 
 	return int(count), nil
@@ -152,7 +160,7 @@ func (w *workoutsService) GetAll(context context.Context, userId string, page in
 	workouts, err := w.repo.GetAll(context, arg)
 
 	if err != nil {
-		return []Workout{}, err
+		return []Workout{}, fmt.Errorf("failed to get all workouts: %w", err)
 	}
 
 	sort.Slice(workouts, func(i, j int) bool {

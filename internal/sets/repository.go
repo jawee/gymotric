@@ -2,6 +2,7 @@ package sets
 
 import (
 	"context"
+	"fmt"
 	"weight-tracker/internal/repository"
 )
 
@@ -35,7 +36,7 @@ func (s *setsRepository) DeleteById(ctx context.Context, arg repository.DeleteSe
 func (s *setsRepository) GetAll(ctx context.Context, userId string) ([]Set, error) {
 	sets, err := s.repo.GetAllSets(ctx, userId)
 	if err != nil {
-		return []Set{}, err
+		return []Set{}, fmt.Errorf("failed to get all sets: %w", err)
 	}
 
 	result := []Set{}
@@ -60,7 +61,7 @@ func newSet(v repository.Set) Set {
 func (s *setsRepository) GetById(ctx context.Context, arg repository.GetSetByIdParams) (Set, error) {
 	set, err := s.repo.GetSetById(ctx, arg)
 	if err != nil {
-		return Set{}, err
+		return Set{}, fmt.Errorf("failed to get set by id: %w", err)
 	}
 
 	result := newSet(set)
@@ -71,7 +72,7 @@ func (s *setsRepository) GetById(ctx context.Context, arg repository.GetSetByIdP
 func (s *setsRepository) GetByExerciseId(ctx context.Context, arg repository.GetSetsByExerciseIdParams) ([]Set, error) {
 	sets, err := s.repo.GetSetsByExerciseId(ctx, arg)
 	if err != nil {
-		return []Set{}, err
+		return []Set{}, fmt.Errorf("failed to get sets by exercise id: %w", err)
 	}
 
 	result := []Set{}

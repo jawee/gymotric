@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -428,7 +429,7 @@ func createRefreshToken(userId string) (string, error) {
 	tokenExpiration, err := strconv.Atoi(os.Getenv(utils.EnvJwtRefreshExpireMinutes))
 	if err != nil {
 		slog.Error("Failed to convert JWT_EXPIRATION to int", "error", err)
-		return "", err
+		return "", fmt.Errorf("Failed to convert JWT_EXPIRATION to int: %w", err)
 	}
 
 	mySigningKey := []byte(signingKey)
@@ -469,14 +470,14 @@ func getSubjectFromCookie(cookieName string, signingKey string, cookies []*http.
 
 		if err != nil {
 			slog.Error("Cookie: refresh token error", "error", err)
-			return "", err
+			return "", fmt.Errorf("Cookie: refresh token error: %w", err)
 		}
 
 		if claims, ok := cookieToken.Claims.(jwt.MapClaims); ok {
 			sub, err := claims.GetSubject()
 			if err != nil {
 				slog.Error("Cookie: GetSubject", "error", err)
-				return "", err
+				return "", fmt.Errorf("Cookie: GetSubject error: %w", err)
 			}
 			return sub, nil
 		}
@@ -495,14 +496,14 @@ func (s *handler) createTokenResponse(w http.ResponseWriter, sub string) error {
 	if err != nil {
 		slog.Error("Failed to convert JWT_EXPIRE_MINUTES to int", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
-		return err
+		return fmt.Errorf("Failed to convert JWT_EXPIRE_MINUTES to int: %w", err)
 	}
 
 	_, err = s.service.GetByUserId(context.Background(), sub)
 	if err != nil {
 		slog.Error("Failed to get user", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
-		return err
+		return fmt.Errorf("Failed to get user: %w", err)
 	}
 
 	newToken, err := s.service.CreateToken(sub)
@@ -510,7 +511,7 @@ func (s *handler) createTokenResponse(w http.ResponseWriter, sub string) error {
 	if err != nil {
 		slog.Error("Failed to create new token", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
-		return err
+		return fmt.Errorf("Failed to create new token: %w", err)
 	}
 
 	cookie := createCookie(utils.AccessTokenCookieName, newToken, time.Now().Add(time.Minute*time.Duration(tokenExpiration)))
@@ -519,7 +520,7 @@ func (s *handler) createTokenResponse(w http.ResponseWriter, sub string) error {
 	if err != nil {
 		slog.Error("Failed to create refresh token", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
-		return err
+		return fmt.Errorf("Failed to create refresh token: %w", err)
 	}
 
 	refresh_cookie := createCookie(utils.RefreshTokenCookieName, refresh_token, time.Now().Add(time.Hour*24))
@@ -531,7 +532,7 @@ func (s *handler) createTokenResponse(w http.ResponseWriter, sub string) error {
 	if err != nil {
 		slog.Error("Failed to marshal response", "error", err)
 		http.Error(w, "", http.StatusBadRequest)
-		return err
+		return fmt.Errorf("Failed to marshal response: %w", err)
 	}
 
 	utils.ReturnJson(w, jsonResp)

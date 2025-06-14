@@ -48,7 +48,7 @@ type Service interface {
 func (s *usersService) ConfirmAccount(context context.Context, userId string) error {
 	user, err := s.repo.GetByUserId(context, userId)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get user by ID: %w", err)
 	}
 
 	err = s.repo.UpdateUser(context, repository.UpdateUserParams{ 
@@ -60,7 +60,7 @@ func (s *usersService) ConfirmAccount(context context.Context, userId string) er
 	})
 
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to update user: %w", err)
 	}
 
 	return nil
@@ -73,12 +73,12 @@ type usersService struct {
 func (u *usersService) Register(ctx context.Context, arg registrationRequest) (string, error) {
 	uuid, err := uuid.NewV7()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to generate UUID: %w", err)
 	}
 
 	pwBytes, err := bcrypt.GenerateFromPassword([]byte(arg.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to hash password: %w", err)
 	}
 
 	user := repository.CreateUserAndReturnIdParams{
@@ -101,11 +101,11 @@ func (u *usersService) Register(ctx context.Context, arg registrationRequest) (s
 func (u *usersService) ResetPassword(ctx context.Context, userId string, newPassword string) error {
 	user, err := u.repo.GetByUserId(ctx, userId)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get user by ID: %w", err)
 	}
 	newPasswordBytes, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to hash new password: %w", err)
 	}
 	err = u.repo.UpdateUser(ctx, repository.UpdateUserParams{
 		ID:        user.ID,
@@ -115,13 +115,18 @@ func (u *usersService) ResetPassword(ctx context.Context, userId string, newPass
 		IsVerified: user.IsVerified,
 	})
 
-	return err
+	if err != nil {
+		slog.Error("Failed to update user password", "error", err)
+		return fmt.Errorf("failed to update user password: %w", err)
+	}
+
+	return nil
 }
 
 func (s *usersService) GetByEmail(ctx context.Context, email string) (getMeResponse, error) {
 	user, err := s.repo.GetByEmail(ctx, email)
 	if err != nil {
-		return getMeResponse{}, err
+		return getMeResponse{}, fmt.Errorf("failed to get user by email: %w", err)
 	}
 	return getMeResponse{
 		ID:        user.ID,
@@ -135,12 +140,12 @@ func (s *usersService) GetByEmail(ctx context.Context, email string) (getMeRespo
 func (s *usersService) ConfirmEmail(ctx context.Context, userId string, email string) error {
 	user, err := s.repo.GetByUserId(ctx, userId)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get user by ID: %w", err)
 	}
 
 	emailExists, err := s.repo.EmailExists(ctx, email)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to check if email exists: %w", err)
 	}
 	if emailExists {
 		return fmt.Errorf("email already exists")
@@ -155,7 +160,7 @@ func (s *usersService) ConfirmEmail(ctx context.Context, userId string, email st
 	})
 
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to update user email: %w", err)
 	}
 
 	return nil
@@ -164,17 +169,17 @@ func (s *usersService) ConfirmEmail(ctx context.Context, userId string, email st
 func (s *usersService) ChangePassword(ctx context.Context, request changePasswordRequest, userId string) error {
 	user, err := s.repo.GetByUserId(ctx, userId)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get user by ID: %w", err)
 	}
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.OldPassword))
 	if err != nil {
-		return err
+		return fmt.Errorf("old password does not match: %w", err)
 	}
 
 	newPasswordBytes, err := bcrypt.GenerateFromPassword([]byte(request.NewPassword), bcrypt.DefaultCost)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to hash new password: %w", err)
 	}
 
 	err = s.repo.UpdateUser(ctx, repository.UpdateUserParams{
@@ -186,7 +191,7 @@ func (s *usersService) ChangePassword(ctx context.Context, request changePasswor
 	})
 
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to update user password: %w", err)
 	}
 
 	return nil
@@ -195,7 +200,7 @@ func (s *usersService) ChangePassword(ctx context.Context, request changePasswor
 func (u *usersService) GetByUserId(ctx context.Context, userId string) (getMeResponse, error) {
 	user, err := u.repo.GetByUserId(ctx, userId)
 	if err != nil {
-		return getMeResponse{}, err
+		return getMeResponse{}, fmt.Errorf("failed to get user by ID: %w", err)
 	}
 
 	return getMeResponse{
@@ -212,7 +217,7 @@ func (u *usersService) CreateToken(userId string) (string, error) {
 	tokenExpiration, err := strconv.Atoi(os.Getenv(utils.EnvJwtExpireMinutes))
 	if err != nil {
 		slog.Error("Failed to convert JWT_EXPIRATION to int", "error", err)
-		return "", err
+		return "", fmt.Errorf("failed to convert JWT_EXPIRATION to int: %w", err)
 	}
 
 	mySigningKey := []byte(signingKey)
@@ -273,7 +278,7 @@ func (u *usersService) CreateAccountConfirmationToken(ctx context.Context, userI
 func (u *usersService) CreateConfirmationToken(ctx context.Context, userId string, email string) (string, error) {
 	emailExists, err := u.repo.EmailExists(ctx, email)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to check if email exists: %w", err)
 	}
 	if emailExists {
 		return "", fmt.Errorf("email already exists")
@@ -298,12 +303,12 @@ func (u *usersService) CreateConfirmationToken(ctx context.Context, userId strin
 func (u *usersService) CreateAndReturnId(ctx context.Context, arg createUserAndReturnIdRequest) (string, error) {
 	uuid, err := uuid.NewV7()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to generate UUID: %w", err)
 	}
 
 	pwBytes, err := bcrypt.GenerateFromPassword([]byte(arg.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to hash password: %w", err)
 	}
 
 	user := repository.CreateUserAndReturnIdParams{
@@ -322,13 +327,13 @@ func (u *usersService) Login(ctx context.Context, arg loginRequest) (loginRespon
 	tokenExpiration, err := strconv.Atoi(os.Getenv(utils.EnvJwtExpireMinutes))
 	if err != nil {
 		slog.Error("Failed to convert JWT_EXPIRATION to int", "error", err)
-		return loginResponse{}, err
+		return loginResponse{}, fmt.Errorf("failed to convert JWT_EXPIRATION to int: %w", err)
 	}
 
 	mySigningKey := []byte(signingKey)
 	user, err := u.repo.GetByUsername(ctx, arg.Username)
 	if err != nil {
-		return loginResponse{}, err
+		return loginResponse{}, fmt.Errorf("failed to get user by username: %w", err)
 	}
 
 	if user.IsVerified == false {
@@ -337,7 +342,7 @@ func (u *usersService) Login(ctx context.Context, arg loginRequest) (loginRespon
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(arg.Password))
 	if err != nil {
-		return loginResponse{}, err
+		return loginResponse{}, fmt.Errorf("password does not match: %w", err)
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
@@ -349,7 +354,7 @@ func (u *usersService) Login(ctx context.Context, arg loginRequest) (loginRespon
 
 	signedToken, err := token.SignedString(mySigningKey)
 	if err != nil {
-		return loginResponse{}, err
+		return loginResponse{}, fmt.Errorf("failed to sign token: %w", err)
 	}
 
 	return loginResponse{Token: signedToken, UserId: user.ID}, nil

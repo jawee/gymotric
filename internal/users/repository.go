@@ -33,7 +33,7 @@ func (u *usersRepository) GetByEmail(ctx context.Context, email string) (User, e
 	user, err := u.repo.GetByEmail(ctx, email)
 
 	if err != nil {
-		return User{}, err
+		return User{}, fmt.Errorf("failed to get user by email: %w", err)
 	}
 
 	return newUser(user), nil
@@ -42,7 +42,7 @@ func (u *usersRepository) GetByEmail(ctx context.Context, email string) (User, e
 func (u *usersRepository) EmailExists(ctx context.Context, email string) (bool, error) {
 	exists, err := u.repo.EmailExists(ctx, email)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to check if email exists: %w", err)
 	}
 
 	return exists > 0, nil
@@ -51,7 +51,7 @@ func (u *usersRepository) EmailExists(ctx context.Context, email string) (bool, 
 func (u *usersRepository) UpdateUser(ctx context.Context, arg repository.UpdateUserParams) error {
 	rows, err := u.repo.UpdateUser(ctx, arg)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to update user: %w", err)
 	}
 
 	if rows == 0 {
@@ -65,7 +65,7 @@ func (u *usersRepository) GetByUserId(ctx context.Context, userId string) (User,
 	user, err := u.repo.GetByUserId(ctx, userId)
 
 	if err != nil {
-		return User{}, err
+		return User{}, fmt.Errorf("failed to get user by ID: %w", err)
 	}
 
 	return newUser(user), nil
@@ -75,7 +75,7 @@ func (u *usersRepository) CreateAndReturnId(ctx context.Context, arg repository.
 	id, err := u.repo.CreateUserAndReturnId(ctx, arg)
 
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to create user: %w", err)
 	}
 
 	return id, nil
@@ -85,7 +85,7 @@ func (u *usersRepository) GetByUsername(ctx context.Context, username string) (U
 	user, err := u.repo.GetByUsername(ctx, username)
 
 	if err != nil {
-		return User{}, err
+		return User{}, fmt.Errorf("failed to get user by username: %w", err)
 	}
 
 	return newUser(user), nil
