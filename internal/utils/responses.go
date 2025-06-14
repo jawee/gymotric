@@ -32,17 +32,6 @@ func CreatePaginatedResponse[T any](items []T, page int, pageSize int, totalCoun
 	return json.Marshal(resp)
 }
 
-func CreateTokenResponse(token string, refreshToken string, tokenExpiration int) ([]byte, error) {
-	resp := map[string]any{
-		"access_token":  token,
-		"token_type":    "Bearer",
-		"expires_in":    tokenExpiration * 60,
-		"refresh_token": refreshToken,
-	}
-
-	return json.Marshal(resp)
-}
-
 func ReturnJson(w http.ResponseWriter, data []byte) {
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := w.Write(data); err != nil {

@@ -23,6 +23,14 @@ type ExerciseType struct {
 	UserID    string `json:"user_id"`
 }
 
+type ExpiredToken struct {
+	ID        int64  `json:"id"`
+	Token     string `json:"token"`
+	TokenType string `json:"token_type"`
+	CreatedOn string `json:"created_on"`
+	RemoveOn  string `json:"remove_on"`
+}
+
 type Set struct {
 	ID          string      `json:"id"`
 	Repetitions int64       `json:"repetitions"`

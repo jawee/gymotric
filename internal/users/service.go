@@ -32,6 +32,7 @@ type getMeResponse struct {
 type Service interface {
 	CreateAndReturnId(ctx context.Context, arg createUserAndReturnIdRequest) (string, error)
 	Login(ctx context.Context, arg loginRequest) (loginResponse, error)
+	Logout(ctx context.Context, accessToken string, refreshToken string) error
 	CreateToken(userId string) (string, error)
 	GetByUserId(ctx context.Context, userId string) (getMeResponse, error)
 	ChangePassword(ctx context.Context, request changePasswordRequest, userId string) error
@@ -43,6 +44,42 @@ type Service interface {
 	Register(ctx context.Context, arg registrationRequest) (string, error)
 	CreateAccountConfirmationToken(ctx context.Context, userId string) (string, error)
 	ConfirmAccount(context context.Context, userId string) error
+	IsTokenValid(context context.Context, token, tokenType string) bool
+}
+
+func (s *usersService) IsTokenValid(context context.Context, cookieTokenStr, tokenType string) bool {
+	panic("not implemented") // TODO: Implement this function
+}
+
+func (s *usersService) Logout(context context.Context, userToken string, refreshToken string) error {
+	accessTokenExpiratation, _ := strconv.Atoi(os.Getenv(utils.EnvJwtExpireMinutes))
+	refreshTokenExpiration, _ := strconv.Atoi(os.Getenv(utils.EnvJwtRefreshExpireMinutes))
+
+	if userToken != "" {
+		err := s.repo.InvalidateToken(context, repository.CreateExpiredTokenParams{
+			Token:     userToken,
+			TokenType: "access_token",
+			CreatedOn: time.Now().UTC().Format(time.RFC3339),
+			RemoveOn:  time.Now().UTC().Add(time.Minute * time.Duration(accessTokenExpiratation)).Format(time.RFC3339),
+		})
+
+		if err != nil {
+			slog.Error("Failed to invalidate access token", "error", err)
+		}
+	}
+
+	if refreshToken != "" {
+		err := s.repo.InvalidateToken(context, repository.CreateExpiredTokenParams{
+			Token:     refreshToken,
+			TokenType: "refresh_token",
+			CreatedOn: time.Now().UTC().Format(time.RFC3339),
+			RemoveOn:  time.Now().UTC().Add(time.Minute * time.Duration(refreshTokenExpiration)).Format(time.RFC3339),
+		})
+		if err != nil {
+			slog.Error("Failed to invalidate refresh token", "error", err)
+		}
+	}
+	return nil
 }
 
 func (s *usersService) ConfirmAccount(context context.Context, userId string) error {
@@ -51,12 +88,12 @@ func (s *usersService) ConfirmAccount(context context.Context, userId string) er
 		return err
 	}
 
-	err = s.repo.UpdateUser(context, repository.UpdateUserParams{ 
-		ID:        user.ID,
-		Email:     user.Email,
-		Password:  user.Password,
+	err = s.repo.UpdateUser(context, repository.UpdateUserParams{
+		ID:         user.ID,
+		Email:      user.Email,
+		Password:   user.Password,
 		IsVerified: true,
-		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
+		UpdatedOn:  time.Now().UTC().Format(time.RFC3339),
 	})
 
 	if err != nil {
@@ -108,10 +145,10 @@ func (u *usersService) ResetPassword(ctx context.Context, userId string, newPass
 		return err
 	}
 	err = u.repo.UpdateUser(ctx, repository.UpdateUserParams{
-		ID:        user.ID,
-		Email:     user.Email,
-		Password:  string(newPasswordBytes),
-		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
+		ID:         user.ID,
+		Email:      user.Email,
+		Password:   string(newPasswordBytes),
+		UpdatedOn:  time.Now().UTC().Format(time.RFC3339),
 		IsVerified: user.IsVerified,
 	})
 
@@ -147,10 +184,10 @@ func (s *usersService) ConfirmEmail(ctx context.Context, userId string, email st
 	}
 
 	err = s.repo.UpdateUser(ctx, repository.UpdateUserParams{
-		ID:        user.ID,
-		Email:     email,
-		Password:  user.Password,
-		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
+		ID:         user.ID,
+		Email:      email,
+		Password:   user.Password,
+		UpdatedOn:  time.Now().UTC().Format(time.RFC3339),
 		IsVerified: user.IsVerified,
 	})
 
@@ -178,10 +215,10 @@ func (s *usersService) ChangePassword(ctx context.Context, request changePasswor
 	}
 
 	err = s.repo.UpdateUser(ctx, repository.UpdateUserParams{
-		ID:        user.ID,
-		Email:     user.Email,
-		Password:  string(newPasswordBytes),
-		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
+		ID:         user.ID,
+		Email:      user.Email,
+		Password:   string(newPasswordBytes),
+		UpdatedOn:  time.Now().UTC().Format(time.RFC3339),
 		IsVerified: user.IsVerified,
 	})
 

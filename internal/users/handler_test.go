@@ -46,6 +46,11 @@ func (m *serviceMock) Login(ctx context.Context, arg loginRequest) (loginRespons
 	return args.Get(0).(loginResponse), args.Error(1)
 }
 
+func (m *serviceMock) Logout(ctx context.Context, accessToken string, refreshToken string) error {
+	args := m.Called(ctx, accessToken, refreshToken)
+	return args.Error(0)
+}
+
 func (m *serviceMock) CreateToken(userId string) (string, error) {
 	args := m.Called(userId)
 	return args.String(0), args.Error(1)
@@ -86,9 +91,22 @@ func (m *serviceMock) ResetPassword(ctx context.Context, userId string, newPassw
 	return args.Error(0)
 }
 
+func (m *serviceMock) IsTokenValid(ctx context.Context, token string, tokenType string) bool {
+	args := m.Called(ctx, token, tokenType)
+	return args.Bool(0)
+}
+
 func populateContextWithSub(req *http.Request, userId string) *http.Request {
 	ctx := req.Context()
 	ctx = context.WithValue(ctx, "sub", userId)
+	return req.WithContext(ctx)
+}
+
+func populateContextWithSubAndTokens(req *http.Request, userId string, accessToken string, refreshToken string) *http.Request {
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, "sub", userId)
+	ctx = context.WithValue(ctx, "access_token", accessToken)
+	ctx = context.WithValue(ctx, "refresh_token", refreshToken)
 	return req.WithContext(ctx)
 }
 
@@ -234,24 +252,6 @@ func TestLoginHandler(t *testing.T) {
 		return false
 	}, "handler did not set access cookie")
 
-	var response map[string]any
-	json.Unmarshal(rr.Body.Bytes(), &response)
-
-	if response["access_token"] != "asdf" {
-		t.Errorf("handler returned unexpected access_token: got %v want %v", response["access_token"], "asdf")
-	}
-	if response["token_type"] != "Bearer" {
-		t.Errorf("handler returned unexpected token_type: got %v want %v", response["token_type"], "Bearer")
-	}
-
-	if val, ok := response["expires_in"].(float64); !ok || val != 600 {
-		t.Errorf("handler returned unexpected expires_in: got %v want %v", val, 600)
-	}
-
-	if _, ok := response["refresh_token"]; !ok {
-		t.Errorf("handler returned unexpected refresh_token: got %v want %v", response["refresh_token"], "asdf")
-	}
-
 	serviceMock.AssertExpectations(t)
 }
 
@@ -352,7 +352,11 @@ func TestGetSubjectFromCookie(t *testing.T) {
 			Value: signedToken,
 		},
 	}
-	sub, err := getSubjectFromCookie(utils.AccessTokenCookieName, "testsigningkey", cookies)
+	serviceMock := serviceMock{}
+	serviceMock.On("IsTokenValid", mock.Anything, signedToken, utils.AccessTokenCookieName).Return(true).Once()
+	s := handler{service: &serviceMock}
+
+	sub, err := s.getSubjectFromCookie(context.Background(), utils.AccessTokenCookieName, "testsigningkey", cookies)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, sub)
@@ -361,7 +365,9 @@ func TestGetSubjectFromCookie(t *testing.T) {
 
 func TestGetSubjectFromCookieNoCookieFound(t *testing.T) {
 	cookies := []*http.Cookie{}
-	sub, err := getSubjectFromCookie(utils.AccessTokenCookieName, "testsigningkey", cookies)
+	serviceMock := serviceMock{}
+	s := handler{service: &serviceMock}
+	sub, err := s.getSubjectFromCookie(context.Background(), utils.AccessTokenCookieName, "testsigningkey", cookies)
 
 	assert.NotNil(t, err)
 	assert.ErrorIs(t, err, NoTokenFoundError)
@@ -425,13 +431,17 @@ func TestMeHandlerServiceErr(t *testing.T) {
 
 func TestLogoutHandler(t *testing.T) {
 	userId := "testuserId"
+	accessToken := "testAccessToken"
+	refreshToken := "testRefreshToken"
+
 	req, err := http.NewRequest("GET", "/users/logout", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req = populateContextWithSub(req, userId)
+	req = populateContextWithSubAndTokens(req, userId, accessToken, refreshToken)
 
 	serviceMock := serviceMock{}
+	serviceMock.On("Logout", req.Context(), accessToken, refreshToken).Return(nil).Once()
 
 	rr := httptest.NewRecorder()
 	s := handler{service: &serviceMock}

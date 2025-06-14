@@ -23,10 +23,24 @@ type UsersRepository interface {
 	UpdateUser(ctx context.Context, arg repository.UpdateUserParams) error
 	EmailExists(ctx context.Context, email string) (bool, error)
 	GetByEmail(ctx context.Context, email string) (User, error)
+	InvalidateToken(ctx context.Context, arg repository.CreateExpiredTokenParams) error
 }
 
 type usersRepository struct {
 	repo repository.Querier
+}
+
+func (u *usersRepository) InvalidateToken(ctx context.Context, arg repository.CreateExpiredTokenParams) error {
+	rows, err := u.repo.CreateExpiredToken(ctx, arg)
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("token not created")
+	}
+
+	return nil
 }
 
 func (u *usersRepository) GetByEmail(ctx context.Context, email string) (User, error) {
@@ -93,12 +107,12 @@ func (u *usersRepository) GetByUsername(ctx context.Context, username string) (U
 
 func newUser(v repository.User) User {
 	user := User{
-		ID:        v.ID,
-		Username:  v.Username,
-		Email:     v.Email,
-		Password:  v.Password,
-		CreatedOn: v.CreatedOn,
-		UpdatedOn: v.UpdatedOn,
+		ID:         v.ID,
+		Username:   v.Username,
+		Email:      v.Email,
+		Password:   v.Password,
+		CreatedOn:  v.CreatedOn,
+		UpdatedOn:  v.UpdatedOn,
 		IsVerified: v.IsVerified,
 	}
 

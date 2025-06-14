@@ -11,8 +11,28 @@ import (
 
 func (s *Server) RegisterJobs() {
 	go s.cleanupUnverifiedUsers()
+	go s.cleanupExpiredTokens()
 }
 
+func (s *Server) cleanupExpiredTokens() {
+	for {
+		time.Sleep(time.Minute)
+		slog.Info("Starting cleanup of expired tokens")
+
+		context := context.Background()
+		rows, err := s.db.GetRepository().DeleteExpiredTokens(context, time.Now().UTC().Format(time.RFC3339))
+		if err != nil {
+			slog.Error("Failed to cleanup expired tokens", "error", err)
+			continue
+		}
+
+		if rows == 0 {
+			slog.Info("No expired tokens found to cleanup")
+		}
+
+		slog.Info("Expired tokens cleanup completed successfully")
+	}
+}
 func (s *Server) cleanupUnverifiedUsers() {
 	first := true
 	for {
