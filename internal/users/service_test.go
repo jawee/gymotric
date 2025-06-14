@@ -2,7 +2,6 @@ package users
 
 import (
 	"context"
-	"errors"
 	"os"
 	"testing"
 	"weight-tracker/internal/repository"
@@ -97,7 +96,7 @@ func TestLoginAndReturnToken(t *testing.T) {
 func TestLoginUserNotFoundReturnsEmptyAndErr(t *testing.T) {
 	ctx := context.Background()
 	repoMock := repoMock{}
-	repoMock.On("GetByUsername", ctx, "testusername").Return(User{}, errors.New("testerror")).Once()
+	repoMock.On("GetByUsername", ctx, "testusername").Return(User{}, testError).Once()
 
 	service := NewService(&repoMock)
 	token, err := service.Login(context.Background(), loginRequest{
@@ -105,7 +104,7 @@ func TestLoginUserNotFoundReturnsEmptyAndErr(t *testing.T) {
 
 	assert.NotNil(t, err)
 	assert.Empty(t, token)
-	assert.Equal(t, "testerror", err.Error())
+	assert.ErrorIs(t, err, testError)
 	repoMock.AssertExpectations(t)
 }
 
@@ -132,7 +131,7 @@ func TestLoginPasswordNotMatchReturnsEmptyAndErr(t *testing.T) {
 
 	assert.NotNil(t, err)
 	assert.Empty(t, token)
-	assert.Equal(t, bcrypt.ErrMismatchedHashAndPassword.Error(), err.Error())
+	assert.ErrorIs(t, err, bcrypt.ErrMismatchedHashAndPassword)
 	repoMock.AssertExpectations(t)
 }
 
@@ -178,11 +177,11 @@ func TestGetUserByIdErr(t *testing.T) {
 	ctx := context.Background()
 	userId, _ := uuid.NewV7()
 	repoMock := repoMock{}
-	repoMock.On("GetByUserId", ctx, userId.String()).Return(User{}, errors.New("testerror")).Once()
+	repoMock.On("GetByUserId", ctx, userId.String()).Return(User{}, testError).Once()
 	service := NewService(&repoMock)
 	user, err := service.GetByUserId(ctx, userId.String())
 	assert.NotNil(t, err)
-	assert.Equal(t, "testerror", err.Error())
+	assert.ErrorIs(t, err, testError)
 	assert.Empty(t, user)
 	repoMock.AssertExpectations(t)
 }
@@ -218,13 +217,13 @@ func TestChangePasswordUserNotFoundErr(t *testing.T) {
 	ctx := context.Background()
 	userId, _ := uuid.NewV7()
 	repoMock := repoMock{}
-	repoMock.On("GetByUserId", ctx, userId.String()).Return(User{}, errors.New("testerror")).Once()
+	repoMock.On("GetByUserId", ctx, userId.String()).Return(User{}, testError).Once()
 	service := NewService(&repoMock)
 	err := service.ChangePassword(ctx, changePasswordRequest{
 		NewPassword: "newpassword",
 		OldPassword: "test"}, userId.String())
 	assert.NotNil(t, err)
-	assert.Equal(t, "testerror", err.Error())
+	assert.ErrorIs(t, err, testError)
 	repoMock.AssertExpectations(t)
 }
 
@@ -246,6 +245,7 @@ func TestChangePasswordWrongPasswordErr(t *testing.T) {
 		NewPassword: "newpassword",
 		OldPassword: "wrongpassword"}, userId.String())
 	assert.NotNil(t, err)
+	assert.ErrorIs(t, err, bcrypt.ErrMismatchedHashAndPassword)
 	repoMock.AssertExpectations(t)
 }
 
@@ -262,7 +262,7 @@ func TestChangePasswordUpdateUserFailsErr(t *testing.T) {
 		UpdatedOn: "2024-09-05T19:22:00Z",
 	}, nil).Once()
 
-	repoMock.On("UpdateUser", ctx, mock.Anything).Return(errors.New("testerror")).Once()
+	repoMock.On("UpdateUser", ctx, mock.Anything).Return(testError).Once()
 
 	service := NewService(&repoMock)
 	err := service.ChangePassword(ctx, changePasswordRequest{
@@ -270,7 +270,7 @@ func TestChangePasswordUpdateUserFailsErr(t *testing.T) {
 		OldPassword: "test",
 	}, userId.String())
 	assert.NotNil(t, err)
-	assert.Equal(t, "testerror", err.Error())
+	assert.ErrorIs(t, err, testError)
 	repoMock.AssertExpectations(t)
 }
 
@@ -307,14 +307,14 @@ func TestCreateConfirmationTokenRepoErr(t *testing.T) {
 	ctx := context.Background()
 	userId, _ := uuid.NewV7()
 	repoMock := repoMock{}
-	repoMock.On("EmailExists", ctx, "test@test.se").Return(false, errors.New("testerror")).Once()
+	repoMock.On("EmailExists", ctx, "test@test.se").Return(false, testError).Once()
 
 	service := NewService(&repoMock)
 	token, err := service.CreateConfirmationToken(ctx, userId.String(), "test@test.se")
 
 	assert.NotNil(t, err)
 	assert.Empty(t, token)
-	assert.Equal(t, "testerror", err.Error())
+	assert.ErrorIs(t, err, testError)
 	repoMock.AssertExpectations(t)
 }
 
@@ -364,13 +364,14 @@ func TestConfirmEmailUserNotFound(t *testing.T) {
 	email := "test@test.se"
 
 	repoMock := repoMock{}
-	repoMock.On("GetByUserId", ctx, userId.String()).Return(User{}, errors.New("not found")).Once()
+	repoMock.On("GetByUserId", ctx, userId.String()).Return(User{}, testError).Once()
 
 	service := NewService(&repoMock)
 
 	err := service.ConfirmEmail(ctx, userId.String(), email)
 
 	assert.NotNil(t, err)
+	assert.ErrorIs(t, err, testError)
 	repoMock.AssertExpectations(t)
 }
 
@@ -414,12 +415,13 @@ func TestConfirmEmailEmailExistsErr(t *testing.T) {
 		UpdatedOn: "2024-09-05T19:22:00Z",
 		Email:     email,
 	}, nil).Once()
-	repoMock.On("EmailExists", ctx, email).Return(false, errors.New("testerror")).Once()
+	repoMock.On("EmailExists", ctx, email).Return(false, testError).Once()
 	service := NewService(&repoMock)
 
 	err := service.ConfirmEmail(ctx, userId.String(), email)
 
 	assert.NotNil(t, err)
+	assert.ErrorIs(t, err, testError)
 	repoMock.AssertExpectations(t)
 }
 
@@ -442,12 +444,13 @@ func TestConfirmEmailUpdateErr(t *testing.T) {
 	repoMock.On("EmailExists", ctx, email).Return(false, nil).Once()
 	repoMock.On("UpdateUser", ctx, mock.MatchedBy(func(input repository.UpdateUserParams) bool {
 		return input.ID == userId.String() && input.Email == email && input.IsVerified == true && input.UpdatedOn != "2024-09-05T19:22:00Z"
-	})).Return(errors.New("testerror")).Once()
+	})).Return(testError).Once()
 	service := NewService(&repoMock)
 
 	err := service.ConfirmEmail(ctx, userId.String(), email)
 
 	assert.NotNil(t, err)
+	assert.ErrorIs(t, err, testError)
 	repoMock.AssertExpectations(t)
 }
 
@@ -479,12 +482,13 @@ func TestResetPasswordUserNotFound(t *testing.T) {
 	userId, _ := uuid.NewV7()
 
 	repoMock := repoMock{}
-	repoMock.On("GetByUserId", ctx, userId.String()).Return(User{}, errors.New("not found")).Once()
+	repoMock.On("GetByUserId", ctx, userId.String()).Return(User{}, testError).Once()
 
 	service := NewService(&repoMock)
 	err := service.ResetPassword(ctx, userId.String(), "newpassword")
 
 	assert.NotNil(t, err)
+	assert.ErrorIs(t, err, testError)
 	repoMock.AssertExpectations(t)
 }
 
@@ -516,12 +520,12 @@ func TestGetByEmailNotFoundReturnsEmptyWithErr(t *testing.T) {
 	ctx := context.Background()
 	email := "testemail@example.com"
 	repoMock := repoMock{}
-	repoMock.On("GetByEmail", ctx, email).Return(User{}, errors.New("User not found")).Once()
+	repoMock.On("GetByEmail", ctx, email).Return(User{}, testError).Once()
 
 	service := NewService(&repoMock)
 	user, err := service.GetByEmail(ctx, email)
 	assert.NotNil(t, err)
-	assert.Equal(t, "User not found", err.Error())
+	assert.ErrorIs(t, err, testError)
 	assert.Empty(t, user)
 	repoMock.AssertExpectations(t)
 }

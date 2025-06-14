@@ -3,6 +3,7 @@ package exercisetypes
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"weight-tracker/internal/repository"
 )
@@ -29,7 +30,7 @@ type ExerciseTypeRepository interface {
 func (e exerciseTypeRepository) UpdateById(ctx context.Context, arg repository.UpdateExerciseTypeParams) error {
 	rows, err := e.repo.UpdateExerciseType(ctx, arg)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to update exercise type: %w", err)
 	}
 
 	if rows == 0 {
@@ -42,7 +43,7 @@ func (e exerciseTypeRepository) UpdateById(ctx context.Context, arg repository.U
 func (e exerciseTypeRepository) GetLastWeightRepsByExerciseTypeId(ctx context.Context, arg repository.GetLastWeightRepsByExerciseTypeIdParams) (MaxLastWeightReps, error) {
 	a, err := e.repo.GetLastWeightRepsByExerciseTypeId(ctx, arg)
 	if err != nil {
-		return MaxLastWeightReps{}, err
+		return MaxLastWeightReps{}, fmt.Errorf("failed to get last weight reps by exercise type id: %w", err)
 	}
 
 	return MaxLastWeightReps{ a.Weight, int(a.Repetitions) }, nil
@@ -51,7 +52,7 @@ func (e exerciseTypeRepository) GetLastWeightRepsByExerciseTypeId(ctx context.Co
 func (e exerciseTypeRepository) GetMaxWeightRepsByExerciseTypeId(ctx context.Context, arg repository.GetMaxWeightRepsByExerciseTypeIdParams) (MaxLastWeightReps, error) {
 	a, err := e.repo.GetMaxWeightRepsByExerciseTypeId(ctx, arg)
 	if err != nil {
-		return MaxLastWeightReps{}, err
+		return MaxLastWeightReps{}, fmt.Errorf("failed to get max weight reps by exercise type id: %w", err)
 	}
 
 	weight := a.Weight
@@ -62,7 +63,7 @@ func (e exerciseTypeRepository) GetMaxWeightRepsByExerciseTypeId(ctx context.Con
 func (e exerciseTypeRepository) GetAll(context context.Context, userId string) ([]ExerciseType, error) {
 	exerciseTypes, err := e.repo.GetAllExerciseTypes(context, userId)
 	if err != nil {
-		return []ExerciseType{}, err
+		return []ExerciseType{}, fmt.Errorf("failed to get all exercise types: %w", err)
 	}
 
 	result := []ExerciseType{}
@@ -82,7 +83,7 @@ func newExerciseType(v repository.ExerciseType) ExerciseType {
 func (e exerciseTypeRepository) DeleteById(context context.Context, arg repository.DeleteExerciseTypeByIdParams) error {
 	rows, err := e.repo.DeleteExerciseTypeById(context, arg)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to delete exercise type: %w", err)
 	}
 
 	if rows == 0 {

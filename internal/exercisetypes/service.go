@@ -2,6 +2,7 @@ package exercisetypes
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"time"
 	"weight-tracker/internal/repository"
@@ -32,7 +33,7 @@ func (s *exerciseTypeService) UpdateById(context context.Context, exerciseTypeId
 
 	err := s.repo.UpdateById(context, arg)
 
-	return err
+	return fmt.Errorf("failed to update exercise type: %w", err) 
 }
 
 func (s *exerciseTypeService) GetLastWeightRepsByExerciseTypeId(context context.Context, exerciseTypeId string, userId string) (MaxLastWeightReps, error) {
@@ -56,7 +57,7 @@ func (s *exerciseTypeService) GetMaxWeightRepsByExerciseTypeId(context context.C
 func (s *exerciseTypeService) CreateAndReturnId(context context.Context, exerciseType createExerciseTypeRequest, userId string) (string, error) {
 	uuid, err := uuid.NewV7()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to generate UUID: %w", err)
 	}
 
 	toCreate := repository.CreateExerciseTypeAndReturnIdParams{
@@ -69,7 +70,7 @@ func (s *exerciseTypeService) CreateAndReturnId(context context.Context, exercis
 
 	id, err := s.repo.CreateAndReturnId(context, toCreate)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to create exercise type: %w", err)
 	}
 	return id, nil
 }
@@ -85,7 +86,7 @@ func (s *exerciseTypeService) DeleteById(context context.Context, exerciseTypeId
 func (s *exerciseTypeService) GetAll(context context.Context, userId string) ([]ExerciseType, error) {
 	exerciseTypes, err := s.repo.GetAll(context, userId)
 	if err != nil {
-		return []ExerciseType{}, err
+		return []ExerciseType{}, fmt.Errorf("failed to get all exercise types: %w", err)
 	}
 
 	sort.Slice(exerciseTypes, func(i, j int) bool {

@@ -2,6 +2,7 @@ package exercises
 
 import (
 	"context"
+	"fmt"
 	"time"
 	"weight-tracker/internal/repository"
 
@@ -26,12 +27,12 @@ func (e *exerciseService) CreateAndReturnId(context context.Context, exercise cr
 	exerciseType, err := e.repo.GetExerciseTypeById(context, arg)
 
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to get exercise type by id: %w", err)
 	}
 
 	uuid, err := uuid.NewV7()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to generate UUID: %w", err)
 	}
 
 	toCreate := repository.CreateExerciseAndReturnIdParams{
@@ -46,7 +47,7 @@ func (e *exerciseService) CreateAndReturnId(context context.Context, exercise cr
 
 	id, err := e.repo.CreateAndReturnId(context, toCreate)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to create exercise: %w", err)
 	}
 
 	return id, nil

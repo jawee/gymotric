@@ -2,6 +2,7 @@ package statistics
 
 import (
 	"context"
+	"fmt"
 	"time"
 	"weight-tracker/internal/repository"
 )
@@ -30,7 +31,7 @@ func (s *statisticsRepository) GetStatistics(context context.Context, userId str
 	})
 
 	if err != nil {
-		return Statistics{}, err
+		return Statistics{}, fmt.Errorf("failed to get statistics for week: %w", err)
 	}
 
 	previousWeek, err := s.repo.GetStatisticsBetweenDates(context, repository.GetStatisticsBetweenDatesParams{
@@ -39,7 +40,7 @@ func (s *statisticsRepository) GetStatistics(context context.Context, userId str
 		EndDate:   weekStartDate(time.Now()),
 	})
 	if err != nil {
-		return Statistics{}, err
+		return Statistics{}, fmt.Errorf("failed to get statistics for previous week: %w", err)
 	}
 
 	month, err := s.repo.GetStatisticsSinceDate(context, repository.GetStatisticsSinceDateParams{
@@ -48,7 +49,7 @@ func (s *statisticsRepository) GetStatistics(context context.Context, userId str
 	})
 
 	if err != nil {
-		return Statistics{}, err
+		return Statistics{}, fmt.Errorf("failed to get statistics for month: %w", err)
 	}
 
 	previousMonth, err := s.repo.GetStatisticsBetweenDates(context, repository.GetStatisticsBetweenDatesParams{
@@ -58,7 +59,7 @@ func (s *statisticsRepository) GetStatistics(context context.Context, userId str
 	})
 
 	if err != nil {
-		return Statistics{}, err
+		return Statistics{}, fmt.Errorf("failed to get statistics for previous month: %w", err)
 	}
 
 	year, err := s.repo.GetStatisticsSinceDate(context, repository.GetStatisticsSinceDateParams{
@@ -67,7 +68,7 @@ func (s *statisticsRepository) GetStatistics(context context.Context, userId str
 	})
 
 	if err != nil {
-		return Statistics{}, err
+		return Statistics{}, fmt.Errorf("failed to get statistics for year: %w", err)
 	}
 
 	previousYear, err := s.repo.GetStatisticsBetweenDates(context, repository.GetStatisticsBetweenDatesParams{
@@ -77,7 +78,7 @@ func (s *statisticsRepository) GetStatistics(context context.Context, userId str
 	})
 
 	if err != nil {
-		return Statistics{}, err
+		return Statistics{}, fmt.Errorf("failed to get statistics for previous year: %w", err)
 	}
 
 	return Statistics{

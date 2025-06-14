@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+var testError = errors.New("Testerror")
 type serviceMock struct {
 	mock.Mock
 }
@@ -123,7 +124,7 @@ func TestCreateExerciseTypeHandlerErr(t *testing.T) {
 	serviceMock.On("CreateAndReturnId", req.Context(), mock.MatchedBy(func(input createExerciseTypeRequest) bool {
 		return true
 	}), userId).
-		Return("", errors.New("Failed")).
+		Return("", testError).
 		Once()
 
 	rr := httptest.NewRecorder()
@@ -196,7 +197,7 @@ func TestGetAllExerciseTypesHandlerErr(t *testing.T) {
 
 	serviceMock := serviceMock{}
 	serviceMock.On("GetAll", req.Context(), userId).
-		Return([]ExerciseType{}, errors.New("Err")).
+		Return([]ExerciseType{}, testError).
 		Once()
 
 	rr := httptest.NewRecorder()
@@ -259,7 +260,7 @@ func TestDeleteExerciseTypeByIdHandlerErr(t *testing.T) {
 
 	serviceMock := serviceMock{}
 	serviceMock.On("DeleteById", req.Context(), exerciseTypeId, userId).
-		Return(errors.New("Failed")).
+		Return(testError).
 		Once()
 
 	rr := httptest.NewRecorder()
@@ -330,7 +331,7 @@ func TestGetLastSetErr(t *testing.T) {
 
 	serviceMock := serviceMock{}
 	serviceMock.On("GetLastWeightRepsByExerciseTypeId", req.Context(), exerciseTypeId, userId).
-		Return(MaxLastWeightReps{}, errors.New("Failed")).
+		Return(MaxLastWeightReps{}, testError).
 		Once()
 
 	rr := httptest.NewRecorder()
@@ -436,7 +437,7 @@ func TestGetMaxSetErr(t *testing.T) {
 
 	serviceMock := serviceMock{}
 	serviceMock.On("GetMaxWeightRepsByExerciseTypeId", req.Context(), exerciseTypeId, userId).
-		Return(MaxLastWeightReps{}, errors.New("Failed")).
+		Return(MaxLastWeightReps{}, testError).
 		Once()
 
 	rr := httptest.NewRecorder()
