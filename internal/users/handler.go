@@ -463,7 +463,7 @@ func createCookie(name string, value string, expiration time.Time) http.Cookie {
 }
 
 // TODO: currently only used for refresh token, investigate.
-func (s *handler) getSubjectFromCookie(ctx context.Context, cookieName string, signingKey string, cookies []*http.Cookie) (string, error) {
+func (s *handler) getSubjectFromCookie(ctx context.Context, cookieName, signingKey, tokenType string, cookies []*http.Cookie) (string, error) {
 	cookieTokenStr := ""
 	for _, cookie := range cookies {
 		if cookie.Name == cookieName {
@@ -472,9 +472,9 @@ func (s *handler) getSubjectFromCookie(ctx context.Context, cookieName string, s
 	}
 
 	if cookieTokenStr != "" {
-		valid := s.service.IsTokenValid(ctx, cookieTokenStr, cookieName) 
+		valid := s.service.IsTokenValid(ctx, cookieTokenStr, tokenType) 
 		if !valid {
-			slog.Error("Cookie: Token is invalid", "token", cookieTokenStr)
+			slog.Error("Cookie: Token is invalid", "cookieName", cookieName, "token", cookieTokenStr)
 			return "", errors.New("token is invalid")
 		}
 		cookieToken, err := jwt.Parse(cookieTokenStr, func(token *jwt.Token) (any, error) {
@@ -546,7 +546,7 @@ func (s *handler) createTokenResponse(w http.ResponseWriter, sub string) error {
 func (s *handler) refreshHandler(w http.ResponseWriter, r *http.Request) {
 	signingKey := os.Getenv(utils.EnvJwtRefreshSignKey)
 
-	cookieSub, err := s.getSubjectFromCookie(r.Context(), utils.RefreshTokenCookieName, signingKey, r.Cookies())
+	cookieSub, err := s.getSubjectFromCookie(r.Context(), utils.RefreshTokenCookieName, signingKey, "refresh_token", r.Cookies())
 	if err == nil {
 		err = s.createTokenResponse(w, cookieSub)
 

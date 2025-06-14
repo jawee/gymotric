@@ -353,10 +353,10 @@ func TestGetSubjectFromCookie(t *testing.T) {
 		},
 	}
 	serviceMock := serviceMock{}
-	serviceMock.On("IsTokenValid", mock.Anything, signedToken, utils.AccessTokenCookieName).Return(true).Once()
+	serviceMock.On("IsTokenValid", mock.Anything, signedToken, "access_token").Return(true).Once()
 	s := handler{service: &serviceMock}
 
-	sub, err := s.getSubjectFromCookie(context.Background(), utils.AccessTokenCookieName, "testsigningkey", cookies)
+	sub, err := s.getSubjectFromCookie(context.Background(), utils.AccessTokenCookieName, "testsigningkey", "access_token", cookies) 
 
 	assert.Nil(t, err)
 	assert.NotNil(t, sub)
@@ -367,7 +367,7 @@ func TestGetSubjectFromCookieNoCookieFound(t *testing.T) {
 	cookies := []*http.Cookie{}
 	serviceMock := serviceMock{}
 	s := handler{service: &serviceMock}
-	sub, err := s.getSubjectFromCookie(context.Background(), utils.AccessTokenCookieName, "testsigningkey", cookies)
+	sub, err := s.getSubjectFromCookie(context.Background(), utils.AccessTokenCookieName, "testsigningkey", "access_token", cookies)
 
 	assert.NotNil(t, err)
 	assert.ErrorIs(t, err, NoTokenFoundError)

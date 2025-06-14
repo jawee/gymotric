@@ -18,6 +18,11 @@ type repoMock struct {
 	mock.Mock
 }
 
+func (u *repoMock) CheckIfTokenExists(ctx context.Context, arg repository.CheckIfTokenExistsParams) (int64, error) {
+	args := u.Called(ctx, arg)
+	return args.Get(0).(int64), args.Error(1)
+}
+
 func (u *repoMock) GetByEmail(ctx context.Context, email string) (User, error) {
 	args := u.Called(ctx, email)
 	return args.Get(0).(User), args.Error(1)

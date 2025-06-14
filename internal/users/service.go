@@ -2,6 +2,8 @@ package users
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -48,7 +50,28 @@ type Service interface {
 }
 
 func (s *usersService) IsTokenValid(context context.Context, cookieTokenStr, tokenType string) bool {
-	panic("not implemented") // TODO: Implement this function
+	res, err := s.repo.CheckIfTokenExists(context, repository.CheckIfTokenExistsParams{
+		Token:     cookieTokenStr,
+		TokenType: tokenType,
+	})
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			slog.Info("Token not found in expired tokens", "token", cookieTokenStr)
+			// Token not found, proceed with authentication
+			return true
+		}
+		slog.Error("Failed to check if token exists", "error", err)
+		return false
+	}
+	if res == 0 {
+		slog.Info("Token not found in expired tokens", "token", cookieTokenStr)
+		// Token not found, proceed with authentication
+		return true
+	}
+
+	slog.Info("Token found in expired tokens", "token", cookieTokenStr)
+	return false
 }
 
 func (s *usersService) Logout(context context.Context, userToken string, refreshToken string) error {

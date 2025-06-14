@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"weight-tracker/internal/repository"
 )
@@ -24,10 +25,23 @@ type UsersRepository interface {
 	EmailExists(ctx context.Context, email string) (bool, error)
 	GetByEmail(ctx context.Context, email string) (User, error)
 	InvalidateToken(ctx context.Context, arg repository.CreateExpiredTokenParams) error
+	CheckIfTokenExists(ctx context.Context, arg repository.CheckIfTokenExistsParams) (int64, error)
 }
 
 type usersRepository struct {
 	repo repository.Querier
+}
+
+func (u *usersRepository) CheckIfTokenExists(ctx context.Context, arg repository.CheckIfTokenExistsParams) (int64, error) {
+	exists, err := u.repo.CheckIfTokenExists(ctx, arg)
+	if err != nil {
+		return 0, fmt.Errorf("error checking if token exists: %w", err)
+	}
+	if exists == 0 {
+		return 0, sql.ErrNoRows
+	}
+
+	return exists, nil
 }
 
 func (u *usersRepository) InvalidateToken(ctx context.Context, arg repository.CreateExpiredTokenParams) error {
