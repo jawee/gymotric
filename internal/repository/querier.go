@@ -9,14 +9,17 @@ import (
 )
 
 type Querier interface {
+	CheckIfTokenExists(ctx context.Context, arg CheckIfTokenExistsParams) (int64, error)
 	CompleteWorkoutById(ctx context.Context, arg CompleteWorkoutByIdParams) (int64, error)
 	CreateExerciseAndReturnId(ctx context.Context, arg CreateExerciseAndReturnIdParams) (string, error)
 	CreateExerciseTypeAndReturnId(ctx context.Context, arg CreateExerciseTypeAndReturnIdParams) (string, error)
+	CreateExpiredToken(ctx context.Context, arg CreateExpiredTokenParams) (int64, error)
 	CreateSetAndReturnId(ctx context.Context, arg CreateSetAndReturnIdParams) (string, error)
 	CreateUserAndReturnId(ctx context.Context, arg CreateUserAndReturnIdParams) (string, error)
 	CreateWorkoutAndReturnId(ctx context.Context, arg CreateWorkoutAndReturnIdParams) (string, error)
 	DeleteExerciseById(ctx context.Context, arg DeleteExerciseByIdParams) (int64, error)
 	DeleteExerciseTypeById(ctx context.Context, arg DeleteExerciseTypeByIdParams) (int64, error)
+	DeleteExpiredTokens(ctx context.Context, currTime string) (int64, error)
 	DeleteSetById(ctx context.Context, arg DeleteSetByIdParams) (int64, error)
 	DeleteUser(ctx context.Context, id string) (int64, error)
 	DeleteWorkoutById(ctx context.Context, arg DeleteWorkoutByIdParams) (int64, error)

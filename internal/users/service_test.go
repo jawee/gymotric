@@ -17,6 +17,11 @@ type repoMock struct {
 	mock.Mock
 }
 
+func (u *repoMock) CheckIfTokenExists(ctx context.Context, arg repository.CheckIfTokenExistsParams) (int64, error) {
+	args := u.Called(ctx, arg)
+	return args.Get(0).(int64), args.Error(1)
+}
+
 func (u *repoMock) GetByEmail(ctx context.Context, email string) (User, error) {
 	args := u.Called(ctx, email)
 	return args.Get(0).(User), args.Error(1)
@@ -45,6 +50,11 @@ func (r *repoMock) GetByUsername(ctx context.Context, arg string) (User, error) 
 func (r *repoMock) GetByUserId(ctx context.Context, arg string) (User, error) {
 	args := r.Called(ctx, arg)
 	return args.Get(0).(User), args.Error(1)
+}
+
+func (r *repoMock) InvalidateToken(ctx context.Context, arg repository.CreateExpiredTokenParams) error {
+	args := r.Called(ctx, arg)
+	return args.Error(0)
 }
 
 func TestCreateAndReturnId(t *testing.T) {

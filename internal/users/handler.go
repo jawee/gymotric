@@ -416,6 +416,14 @@ func (s *handler) meHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *handler) logoutHandler(w http.ResponseWriter, r *http.Request) {
+	userToken := r.Context().Value("access_token").(string)
+	refreshToken := r.Context().Value("refresh_token").(string)
+
+	err := s.service.Logout(r.Context(), userToken, refreshToken) 
+	if err != nil {
+		slog.Error("Failed to logout", "error", err)
+	}
+
 	cookie := createCookie(utils.AccessTokenCookieName, "", time.Now())
 	refresh_cookie := createCookie(utils.RefreshTokenCookieName, "", time.Now())
 
@@ -455,7 +463,8 @@ func createCookie(name string, value string, expiration time.Time) http.Cookie {
 	}
 }
 
-func getSubjectFromCookie(cookieName string, signingKey string, cookies []*http.Cookie) (string, error) {
+// TODO: currently only used for refresh token, investigate.
+func (s *handler) getSubjectFromCookie(ctx context.Context, cookieName, signingKey, tokenType string, cookies []*http.Cookie) (string, error) {
 	cookieTokenStr := ""
 	for _, cookie := range cookies {
 		if cookie.Name == cookieName {
@@ -464,6 +473,11 @@ func getSubjectFromCookie(cookieName string, signingKey string, cookies []*http.
 	}
 
 	if cookieTokenStr != "" {
+		valid := s.service.IsTokenValid(ctx, cookieTokenStr, tokenType) 
+		if !valid {
+			slog.Error("Cookie: Token is invalid", "cookieName", cookieName, "token", cookieTokenStr)
+			return "", errors.New("token is invalid")
+		}
 		cookieToken, err := jwt.Parse(cookieTokenStr, func(token *jwt.Token) (any, error) {
 			return []byte(signingKey), nil
 		})
@@ -527,22 +541,13 @@ func (s *handler) createTokenResponse(w http.ResponseWriter, sub string) error {
 
 	http.SetCookie(w, &cookie)
 	http.SetCookie(w, &refresh_cookie)
-
-	jsonResp, err := utils.CreateTokenResponse(newToken, refresh_token, tokenExpiration)
-	if err != nil {
-		slog.Error("Failed to marshal response", "error", err)
-		http.Error(w, "", http.StatusBadRequest)
-		return fmt.Errorf("Failed to marshal response: %w", err)
-	}
-
-	utils.ReturnJson(w, jsonResp)
 	return nil
 }
 
 func (s *handler) refreshHandler(w http.ResponseWriter, r *http.Request) {
 	signingKey := os.Getenv(utils.EnvJwtRefreshSignKey)
 
-	cookieSub, err := getSubjectFromCookie(utils.RefreshTokenCookieName, signingKey, r.Cookies())
+	cookieSub, err := s.getSubjectFromCookie(r.Context(), utils.RefreshTokenCookieName, signingKey, "refresh_token", r.Cookies())
 	if err == nil {
 		err = s.createTokenResponse(w, cookieSub)
 
@@ -555,44 +560,6 @@ func (s *handler) refreshHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	slog.Error("Cookie: Failed to get subject from refresh token", "error", err)
-	slog.Debug("Cookie failed. Trying query parameter token")
-
-	//body
-	refreshToken := r.URL.Query().Get("refresh_token")
-	if refreshToken == "" {
-		slog.Error("No refresh token found")
-		http.Error(w, "", http.StatusUnauthorized)
-		return
-	}
-
-	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (any, error) {
-		return []byte(signingKey), nil
-	})
-
-	if err != nil {
-		slog.Error("request failed authentication", "error", err)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	if claims, ok := token.Claims.(jwt.MapClaims); ok {
-		sub, err := claims.GetSubject()
-		if err != nil {
-			slog.Error("Couldn't get sub claim from token", "error", err)
-			http.Error(w, "", http.StatusUnauthorized)
-			return
-		}
-		slog.Debug("Success", "sub", sub)
-
-		err = s.createTokenResponse(w, sub)
-
-		if err != nil {
-			slog.Error("request failed authentication", "error", err)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		return
-	}
 	slog.Error("error getting claims", "error", err)
 	w.WriteHeader(http.StatusUnauthorized)
 	return
@@ -638,15 +605,7 @@ func (s *handler) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, &cookie)
 	http.SetCookie(w, &refresh_cookie)
-
-	jsonResp, err := utils.CreateTokenResponse(loginResponse.Token, refreshToken, tokenExpiration)
-	if err != nil {
-		slog.Error("Failed to marshal response", "error", err)
-		http.Error(w, "", http.StatusBadRequest)
-		return
-	}
-
-	utils.ReturnJson(w, jsonResp)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *handler) createUserHandler(w http.ResponseWriter, r *http.Request) {

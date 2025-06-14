@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"weight-tracker/internal/repository"
 )
@@ -23,10 +24,37 @@ type UsersRepository interface {
 	UpdateUser(ctx context.Context, arg repository.UpdateUserParams) error
 	EmailExists(ctx context.Context, email string) (bool, error)
 	GetByEmail(ctx context.Context, email string) (User, error)
+	InvalidateToken(ctx context.Context, arg repository.CreateExpiredTokenParams) error
+	CheckIfTokenExists(ctx context.Context, arg repository.CheckIfTokenExistsParams) (int64, error)
 }
 
 type usersRepository struct {
 	repo repository.Querier
+}
+
+func (u *usersRepository) CheckIfTokenExists(ctx context.Context, arg repository.CheckIfTokenExistsParams) (int64, error) {
+	exists, err := u.repo.CheckIfTokenExists(ctx, arg)
+	if err != nil {
+		return 0, fmt.Errorf("error checking if token exists: %w", err)
+	}
+	if exists == 0 {
+		return 0, sql.ErrNoRows
+	}
+
+	return exists, nil
+}
+
+func (u *usersRepository) InvalidateToken(ctx context.Context, arg repository.CreateExpiredTokenParams) error {
+	rows, err := u.repo.CreateExpiredToken(ctx, arg)
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("token not created")
+	}
+
+	return nil
 }
 
 func (u *usersRepository) GetByEmail(ctx context.Context, email string) (User, error) {
@@ -93,12 +121,12 @@ func (u *usersRepository) GetByUsername(ctx context.Context, username string) (U
 
 func newUser(v repository.User) User {
 	user := User{
-		ID:        v.ID,
-		Username:  v.Username,
-		Email:     v.Email,
-		Password:  v.Password,
-		CreatedOn: v.CreatedOn,
-		UpdatedOn: v.UpdatedOn,
+		ID:         v.ID,
+		Username:   v.Username,
+		Email:      v.Email,
+		Password:   v.Password,
+		CreatedOn:  v.CreatedOn,
+		UpdatedOn:  v.UpdatedOn,
 		IsVerified: v.IsVerified,
 	}
 

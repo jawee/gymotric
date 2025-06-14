@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"log/slog"
 	"net"
@@ -11,6 +12,7 @@ import (
 	"weight-tracker/internal/exercises"
 	"weight-tracker/internal/exercisetypes"
 	"weight-tracker/internal/ratelimiter"
+	"weight-tracker/internal/repository"
 	"weight-tracker/internal/sets"
 	"weight-tracker/internal/statistics"
 	"weight-tracker/internal/users"
@@ -18,12 +20,11 @@ import (
 	"weight-tracker/internal/workouts"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/golang-jwt/jwt/v5/request"
 	_ "github.com/joho/godotenv/autoload"
 )
 
 func (s *Server) RegisterRoutes() http.Handler {
-	rateLimiter := ratelimiter.NewRateLimiter(1*time.Minute, 5)
+	rateLimiter := ratelimiter.NewRateLimiter(1*time.Minute, 500)
 	mux := http.NewServeMux()
 
 	mux.Handle("GET /health", http.HandlerFunc(s.healthHandler))
@@ -56,57 +57,63 @@ func (s *Server) AuthenticatedMiddleware(next http.Handler) http.Handler {
 		}
 
 		if cookieTokenStr != "" {
+			args := repository.CheckIfTokenExistsParams{
+				Token: cookieTokenStr,
+				TokenType: "access_token",
+
+			}
+			slog.Info("Cookie: CheckIfTokenExists", "token", cookieTokenStr)
+			id, err := s.db.GetRepository().CheckIfTokenExists(r.Context(), args)
+			if err != nil {
+				if err == sql.ErrNoRows {
+					slog.Info("Cookie: Token not found in expired tokens", "token", cookieTokenStr)
+					// Token not found, proceed with authentication
+				} else {
+					slog.Error("Cookie: CheckIfTokenExists failed", "error", err)
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+			}
+
+			if id > 0 {
+				slog.Info("Cookie: Token is expired", "token", cookieTokenStr)
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+
+			refreshTokenStr := ""
+			for _, cookie := range r.Cookies() {
+				if cookie.Name == utils.RefreshTokenCookieName {
+					refreshTokenStr = cookie.Value
+				}
+			}
+
 			cookieToken, err := jwt.Parse(cookieTokenStr, func(token *jwt.Token) (any, error) {
 				return []byte(signingKey), nil
 			})
 
 			if err != nil {
 				slog.Error("Cookie: request failed authentication", "error", err)
-			}
-
-			if err == nil {
-				if claims, ok := cookieToken.Claims.(jwt.MapClaims); ok {
-					sub, err := claims.GetSubject()
-					if err != nil {
-						slog.Error("Cookie: GetSubject", "error", err)
-						return
-					}
-					claimsCtx := context.WithValue(r.Context(), "sub", sub)
-					r = r.WithContext(claimsCtx)
-					slog.Debug("Cookie: Success", "sub", sub)
-					next.ServeHTTP(w, r)
-					return
-				} else {
-					slog.Error("Cookie: error getting claims", "error", err)
-				}
-			}
-		}
-
-		slog.Debug("Cookie failed. Trying header token")
-
-		//header token
-		extractor := request.AuthorizationHeaderExtractor
-		token, err := request.ParseFromRequest(r, extractor, func(token *jwt.Token) (any, error) {
-			return []byte(signingKey), nil
-		})
-
-		if err != nil {
-			slog.Error("request failed authentication", "error", err)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			sub, err := claims.GetSubject()
-			if err != nil {
-				slog.Error("GetSubject", "error", err)
+				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
-			claimsCtx := context.WithValue(r.Context(), "sub", sub)
-			r = r.WithContext(claimsCtx)
-			slog.Debug("Success", "sub", sub)
-		} else {
-			slog.Error("error getting claims", "error", err)
+
+			if claims, ok := cookieToken.Claims.(jwt.MapClaims); ok {
+				sub, err := claims.GetSubject()
+				if err != nil {
+					slog.Error("Cookie: GetSubject", "error", err)
+					return
+				}
+				claimsCtx := context.WithValue(r.Context(), "sub", sub)
+				claimsCtx = context.WithValue(claimsCtx, "access_token", cookieTokenStr)
+				claimsCtx = context.WithValue(claimsCtx, "refresh_token", refreshTokenStr)
+				r = r.WithContext(claimsCtx)
+				slog.Debug("Cookie: Success", "sub", sub)
+				next.ServeHTTP(w, r)
+				return
+			} else {
+				slog.Error("Cookie: error getting claims", "error", err)
+			}
 		}
 
 		next.ServeHTTP(w, r)
