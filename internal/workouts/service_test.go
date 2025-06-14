@@ -148,7 +148,7 @@ func TestGetAllRepoErr(t *testing.T) {
 	result, err := service.GetAll(ctx, userId, 1, 10)
 
 	assert.NotNil(t, err)
-	assert.True(t, errors.Is(err, testError))
+	assert.ErrorIs(t, err, testError)
 	assert.Len(t, result, 0)
 	repoMock.AssertExpectations(t)
 }

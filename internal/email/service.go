@@ -38,13 +38,13 @@ func SendPasswordReset(recipient string, data ResetPasswordEmailData) error {
 	html, err := embedEmails.ReadFile("emails/reset-password.html")
 	if err != nil {
 		slog.Error("Failed to read HTML file", "error", err)
-		return err
+		return fmt.Errorf("Failed to read reset password HTML file: %w", err)
 	}
 
 	err = sendEmail(string(html), recipient, "Password Reset", data)
 	if err != nil {
 		slog.Error("Failed to send email", "error", err)
-		return err
+		return fmt.Errorf("Failed to send reset password email: %w", err)
 	}
 
 	return nil
@@ -54,13 +54,13 @@ func SendEmailConfirmation(recipient string, data SendEmailConfirmationData) err
 	html, err := embedEmails.ReadFile("emails/confirm-email.html")
 	if err != nil {
 		slog.Error("Failed to read HTML file", "error", err)
-		return err
+		return fmt.Errorf("Failed to read email confirmation HTML file: %w", err)
 	}
 
 	err = sendEmail(string(html), recipient, "Email Confirmation", data)
 	if err != nil {
 		slog.Error("Failed to send email", "error", err)
-		return err
+		return fmt.Errorf("Failed to send email confirmation email: %w", err)
 	}
 
 	return nil
@@ -70,13 +70,13 @@ func SendAccountConfirmation(recipient string, data SendAccountConfirmationData)
 	html, err := embedEmails.ReadFile("emails/confirm-registration.html")
 	if err != nil {
 		slog.Error("Failed to read HTML file", "error", err)
-		return err
+		return fmt.Errorf("Failed to read account confirmation HTML file: %w", err)
 	}
 
 	err = sendEmail(string(html), recipient, "Confirm Account", data)
 	if err != nil {
 		slog.Error("Failed to send email", "error", err)
-		return err
+		return fmt.Errorf("Failed to send account confirmation email: %w", err)
 	}
 
 	return nil
@@ -93,13 +93,13 @@ func sendEmail(html string, recipient string, subject string, data any) error {
 	tmpl, err := template.New("email").Parse(string(html))
 	if err != nil {
 		slog.Error("Failed to parse HTML template", "error", err)
-		return err
+		return fmt.Errorf("Failed to parse HTML template: %w", err)
 	}
 
 	var emailContent bytes.Buffer
 	if err := tmpl.Execute(&emailContent, data); err != nil {
 		slog.Error("Failed to execute template", "error", err)
-		return err
+		return fmt.Errorf("Failed to execute template: %w", err)
 	}
 
 	client := &http.Client{}
@@ -128,7 +128,7 @@ func sendEmail(html string, recipient string, subject string, data any) error {
 
 	emailRequestBody, err := json.Marshal(emailRequestBodyObj)
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to marshal email request body: %w", err)
 	}
 
 	req, err := http.NewRequest("POST", "https://api.sendgrid.com/v3/mail/send", bytes.NewBuffer(emailRequestBody))
@@ -137,14 +137,14 @@ func sendEmail(html string, recipient string, subject string, data any) error {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to send email request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusAccepted {
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return err
+			return fmt.Errorf("Failed to read response body: %w", err)
 		}
 		return fmt.Errorf("Failed to send email. Status code: %d. Message: %s", resp.StatusCode, string(bodyBytes))
 	}

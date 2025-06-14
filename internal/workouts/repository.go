@@ -33,7 +33,7 @@ type workoutsRepository struct {
 func (w *workoutsRepository) GetAllCount(ctx context.Context, userId string) (int64, error) {
 	count, err := w.repo.GetAllWorkoutsCount(ctx, userId)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to get workouts count: %w", err)
 	}
 
 	return count, nil
@@ -42,7 +42,7 @@ func (w *workoutsRepository) GetAllCount(ctx context.Context, userId string) (in
 func (w *workoutsRepository) UpdateById(ctx context.Context, arg repository.UpdateWorkoutByIdParams) error {
 	rows, err := w.repo.UpdateWorkoutById(ctx, arg)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to update workout: %w", err)
 	}
 
 	if rows == 0 {
@@ -54,7 +54,7 @@ func (w *workoutsRepository) UpdateById(ctx context.Context, arg repository.Upda
 func (w *workoutsRepository) DeleteById(ctx context.Context, arg repository.DeleteWorkoutByIdParams) error {
 	rows, err := w.repo.DeleteWorkoutById(ctx, arg)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to delete workout: %w", err)
 	}
 
 	if rows == 0 {
@@ -74,7 +74,7 @@ func (w *workoutsRepository) CreateAndReturnId(ctx context.Context, arg reposito
 func (w *workoutsRepository) GetAll(ctx context.Context, arg repository.GetAllWorkoutsParams) ([]Workout, error) {
 	workouts, err := w.repo.GetAllWorkouts(ctx, arg)
 	if err != nil {
-		return []Workout{}, err
+		return []Workout{}, fmt.Errorf("failed to get all workouts: %w", err)
 	}
 
 	result := []Workout{}
@@ -104,7 +104,7 @@ func newWorkout(v repository.Workout) Workout {
 func (w *workoutsRepository) GetById(ctx context.Context, arg repository.GetWorkoutByIdParams) (Workout, error) {
 	workout, err := w.repo.GetWorkoutById(ctx, arg)
 	if err != nil {
-		return Workout{}, err
+		return Workout{}, fmt.Errorf("failed to get workout by ID: %w", err)
 	}
 
 	result := newWorkout(workout)

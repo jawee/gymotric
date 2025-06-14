@@ -2,6 +2,7 @@ package exercises
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"weight-tracker/internal/exercisetypes"
 	"weight-tracker/internal/repository"
@@ -34,7 +35,7 @@ func (e exerciseRepository) CreateAndReturnId(context context.Context, exercise 
 	id, err := e.repo.CreateExerciseAndReturnId(context, exercise)
 
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to create exercise: %w", err)
 	}
 
 	return id, nil
@@ -44,7 +45,7 @@ func (e exerciseRepository) GetExerciseTypeById(context context.Context, arg rep
 	exerciseType, err := e.repo.GetExerciseTypeById(context, arg)
 	if err != nil {
 		slog.Warn("Failed GetExerciseTypeById", "error", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to get exercise type by id: %w", err)
 	}
 
 	return &exercisetypes.ExerciseType{ID: exerciseType.ID, Name: exerciseType.Name}, nil
@@ -54,7 +55,7 @@ func (e exerciseRepository) DeleteById(context context.Context, arg repository.D
 	rows, err := e.repo.DeleteExerciseById(context, arg)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to delete exercise: %w", err)
 	}
 
 	if rows == 0 {
@@ -68,7 +69,7 @@ func (e exerciseRepository) GetAll(context context.Context, userId string) ([]Ex
 	exercises, err := e.repo.GetAllExercises(context, userId)
 
 	if err != nil {
-		return []Exercise{}, err
+		return []Exercise{}, fmt.Errorf("failed to get all exercises: %w", err)
 	}
 
 	result := []Exercise{}
@@ -95,7 +96,7 @@ func (e exerciseRepository) GetByWorkoutId(context context.Context, arg reposito
 	slog.Debug("GetExercisesByWorkoutId returns", "exercises", exercises)
 
 	if err != nil {
-		return []Exercise{}, err
+		return []Exercise{}, fmt.Errorf("failed to get exercises by workout id: %w", err)
 	}
 
 	result := []Exercise{}

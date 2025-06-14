@@ -2,6 +2,7 @@ package sets
 
 import (
 	"context"
+	"fmt"
 	"time"
 	"weight-tracker/internal/repository"
 
@@ -28,13 +29,17 @@ func (s *setsService) DeleteById(context context.Context, setId string, userId s
 		UserID: userId,
 	}
 	_, err := s.repo.DeleteById(context, arg)
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to delete set: %w", err)
+	}
+
+	return nil
 }
 
 func (s *setsService) CreateAndReturnId(context context.Context, t createSetRequest, exerciseId string, userId string) (string, error) {
 	uuid, err := uuid.NewV7()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to generate UUID: %w", err)
 	}
 
 	set := repository.CreateSetAndReturnIdParams{

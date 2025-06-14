@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+var testError = errors.New("Testerror")
+
 type serviceMock struct {
 	mock.Mock
 }
@@ -87,7 +89,7 @@ func TestDeleteSetByIdHandlerErr(t *testing.T) {
 
 	serviceMock := serviceMock{}
 	serviceMock.On("DeleteById", req.Context(), setId, userId).
-		Return(errors.New("Failed")).
+		Return(testError).
 		Once()
 
 	rr := httptest.NewRecorder()
@@ -187,7 +189,7 @@ func TestGetSetsByExerciseIdHandlerServiceErr(t *testing.T) {
 
 	serviceMock := serviceMock{}
 	serviceMock.On("GetByExerciseId", req.Context(), exerciseId, userId).
-		Return([]Set{}, errors.New("Failed")).
+		Return([]Set{}, testError).
 		Once()
 
 	rr := httptest.NewRecorder()
@@ -285,7 +287,7 @@ func TestCreateSetHandlerErr(t *testing.T) {
 	serviceMock.On("CreateAndReturnId", req.Context(), mock.MatchedBy(func(input createSetRequest) bool {
 		return input.Repetitions == 10 && input.Weight == 100
 	}), exerciseId, userId).
-		Return("", errors.New("Failed")).
+		Return("", testError).
 		Once()
 
 	rr := httptest.NewRecorder()
