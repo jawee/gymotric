@@ -58,9 +58,8 @@ func (s *Server) AuthenticatedMiddleware(next http.Handler) http.Handler {
 
 		if cookieTokenStr != "" {
 			args := repository.CheckIfTokenExistsParams{
-				Token: cookieTokenStr,
+				Token:     cookieTokenStr,
 				TokenType: "access_token",
-
 			}
 			slog.Debug("Cookie: CheckIfTokenExists", "token", cookieTokenStr)
 			id, err := s.db.GetRepository().CheckIfTokenExists(r.Context(), args)
@@ -102,6 +101,7 @@ func (s *Server) AuthenticatedMiddleware(next http.Handler) http.Handler {
 				sub, err := claims.GetSubject()
 				if err != nil {
 					slog.Error("Cookie: GetSubject", "error", err)
+					w.WriteHeader(http.StatusUnauthorized)
 					return
 				}
 				claimsCtx := context.WithValue(r.Context(), "sub", sub)
@@ -111,12 +111,13 @@ func (s *Server) AuthenticatedMiddleware(next http.Handler) http.Handler {
 				slog.Debug("Cookie: Success", "sub", sub)
 				next.ServeHTTP(w, r)
 				return
-			} else {
-				slog.Error("Cookie: error getting claims", "error", err)
 			}
+
+			slog.Error("Cookie: error getting claims", "error", err)
 		}
 
-		next.ServeHTTP(w, r)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
 	})
 }
 
