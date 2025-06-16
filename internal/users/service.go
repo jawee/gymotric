@@ -57,7 +57,7 @@ func (s *usersService) IsTokenValid(context context.Context, cookieTokenStr, tok
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			slog.Info("Token not found in expired tokens", "token", cookieTokenStr)
+			slog.Debug("Token not found in expired tokens", "token", cookieTokenStr)
 			// Token not found, proceed with authentication
 			return true
 		}
@@ -65,7 +65,7 @@ func (s *usersService) IsTokenValid(context context.Context, cookieTokenStr, tok
 		return false
 	}
 	if res == 0 {
-		slog.Info("Token not found in expired tokens", "token", cookieTokenStr)
+		slog.Debug("Token not found in expired tokens", "token", cookieTokenStr)
 		// Token not found, proceed with authentication
 		return true
 	}

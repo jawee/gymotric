@@ -62,11 +62,11 @@ func (s *Server) AuthenticatedMiddleware(next http.Handler) http.Handler {
 				TokenType: "access_token",
 
 			}
-			slog.Info("Cookie: CheckIfTokenExists", "token", cookieTokenStr)
+			slog.Debug("Cookie: CheckIfTokenExists", "token", cookieTokenStr)
 			id, err := s.db.GetRepository().CheckIfTokenExists(r.Context(), args)
 			if err != nil {
 				if err == sql.ErrNoRows {
-					slog.Info("Cookie: Token not found in expired tokens", "token", cookieTokenStr)
+					slog.Debug("Cookie: Token not found in expired tokens", "token", cookieTokenStr)
 					// Token not found, proceed with authentication
 				} else {
 					slog.Error("Cookie: CheckIfTokenExists failed", "error", err)
