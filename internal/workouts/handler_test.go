@@ -22,6 +22,11 @@ type serviceMock struct {
 	mock.Mock
 }
 
+func (s *serviceMock) ReopenById(context context.Context, workoutId string, userId string) error {
+	args := s.Called(context, workoutId, userId)
+	return args.Error(0)
+}
+
 func (s *serviceMock) GetAll(context context.Context, userId string, page int, pageSize int) ([]Workout, error) {
 	args := s.Called(context, userId, page, pageSize)
 	return args.Get(0).([]Workout), args.Error(1)
@@ -51,7 +56,7 @@ func (s *serviceMock) CloneByIdAndReturnId(context context.Context, workoutId st
 	args := s.Called(context, workoutId, userId)
 	return args.String(0), args.Error(1)
 }
-func (s *serviceMock) UpdateWorkoutById(context context.Context, workoutId string, t updateWorkoutRequest, userId string) error {
+func (s *serviceMock) UpdateById(context context.Context, workoutId string, t updateWorkoutRequest, userId string) error {
 	args := s.Called(context, workoutId, t, userId)
 	return args.Error(0)
 }
@@ -401,7 +406,7 @@ func TestCompleteWorkoutByIdHandlerServiceErr(t *testing.T) {
 	serviceMock.AssertExpectations(t)
 }
 
-func TestUpdateWorkoutByIdHandler(t *testing.T) {
+func TestUpdateByIdHandler(t *testing.T) {
 	userId := "userId"
 	workoutId := "workoutId"
 
@@ -425,7 +430,7 @@ func TestUpdateWorkoutByIdHandler(t *testing.T) {
 	}
 
 	serviceMock := serviceMock{}
-	serviceMock.On("UpdateWorkoutById", req.Context(), workoutId, mock.MatchedBy(func(input updateWorkoutRequest) bool {
+	serviceMock.On("UpdateById", req.Context(), workoutId, mock.MatchedBy(func(input updateWorkoutRequest) bool {
 		return input.Note == reqBodyObj.Note
 	}), userId).Return(nil).Once()
 
@@ -443,7 +448,7 @@ func TestUpdateWorkoutByIdHandler(t *testing.T) {
 
 var invalidJsonBytes = []byte("{invalidJson}")
 
-func TestUpdateWorkoutByIdHandlerJsonErr(t *testing.T) {
+func TestWorkoutByIdHandlerJsonErr(t *testing.T) {
 	userId := "userId"
 	workoutId := "workoutId"
 
@@ -468,7 +473,7 @@ func TestUpdateWorkoutByIdHandlerJsonErr(t *testing.T) {
 	}
 }
 
-func TestUpdateWorkoutByIdHandlerServiceErr(t *testing.T) {
+func TestWorkoutByIdHandlerServiceErr(t *testing.T) {
 	userId := "userId"
 	workoutId := "workoutId"
 
@@ -492,7 +497,7 @@ func TestUpdateWorkoutByIdHandlerServiceErr(t *testing.T) {
 	}
 
 	serviceMock := serviceMock{}
-	serviceMock.On("UpdateWorkoutById", req.Context(), workoutId, mock.Anything, userId).Return(testError).Once()
+	serviceMock.On("UpdateById", req.Context(), workoutId, mock.Anything, userId).Return(testError).Once()
 
 	rr := httptest.NewRecorder()
 	s := handler{service: &serviceMock}

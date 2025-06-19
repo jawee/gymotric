@@ -24,6 +24,7 @@ type WorkoutsRepository interface {
 	GetById(ctx context.Context, arg repository.GetWorkoutByIdParams) (Workout, error)
 	DeleteById(ctx context.Context, arg repository.DeleteWorkoutByIdParams) error
 	UpdateById(context context.Context, arg repository.UpdateWorkoutByIdParams) error
+	ReopenWorkoutById(ctx context.Context, arg repository.ReopenWorkoutByIdParams) error
 }
 
 type workoutsRepository struct {
@@ -65,6 +66,18 @@ func (w *workoutsRepository) DeleteById(ctx context.Context, arg repository.Dele
 
 func (w *workoutsRepository) CompleteById(ctx context.Context, arg repository.CompleteWorkoutByIdParams) (int64, error) {
 	return w.repo.CompleteWorkoutById(ctx, arg)
+}
+
+func (w *workoutsRepository) ReopenWorkoutById(ctx context.Context, arg repository.ReopenWorkoutByIdParams) error {
+	rows, err := w.repo.ReopenWorkoutById(ctx, arg)
+	if err != nil {
+		return fmt.Errorf("failed to reopen workout: %w", err)
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("workout not found")
+	}
+	return nil
 }
 
 func (w *workoutsRepository) CreateAndReturnId(ctx context.Context, arg repository.CreateWorkoutAndReturnIdParams) (string, error) {

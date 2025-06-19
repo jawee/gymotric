@@ -19,7 +19,8 @@ type Service interface {
 	CompleteById(context context.Context, workoutId string, userId string) error
 	DeleteById(context context.Context, workoutId string, userId string) error
 	CloneByIdAndReturnId(context context.Context, workoutId string, userId string) (string, error)
-	UpdateWorkoutById(context context.Context, workoutId string, t updateWorkoutRequest, userId string) error
+	UpdateById(context context.Context, workoutId string, t updateWorkoutRequest, userId string) error
+	ReopenById(context context.Context, workoutId string, userId string) error
 }
 
 type workoutsService struct {
@@ -27,7 +28,25 @@ type workoutsService struct {
 	exerciseRepo exercises.ExerciseRepository
 }
 
-func (w *workoutsService) UpdateWorkoutById(context context.Context, workoutId string, t updateWorkoutRequest, userId string) error {
+func (w *workoutsService) ReopenById(context context.Context, workoutId string, userId string) error {
+	_, err := w.GetById(context, workoutId, userId)
+	if err != nil {
+		return fmt.Errorf("failed to get workout by id: %w", err)
+	}
+
+	arg := repository.ReopenWorkoutByIdParams{
+		ID:        workoutId,
+		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
+		UserID:    userId,
+	}
+	err = w.repo.ReopenWorkoutById(context, arg)
+	if err != nil {
+		return fmt.Errorf("failed to reopen workout: %w", err)
+	}
+	return nil
+}
+
+func (w *workoutsService) UpdateById(context context.Context, workoutId string, t updateWorkoutRequest, userId string) error {
 	_, err := w.GetById(context, workoutId, userId)
 	if err != nil {
 		return fmt.Errorf("failed to get workout by id: %w", err)

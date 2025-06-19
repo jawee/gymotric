@@ -167,6 +167,27 @@ func (q *Queries) GetWorkoutById(ctx context.Context, arg GetWorkoutByIdParams) 
 	return i, err
 }
 
+const reopenWorkoutById = `-- name: ReopenWorkoutById :execrows
+UPDATE workouts
+SET completed_on = NULL, updated_on = ?1
+WHERE id = ?2
+AND user_id = ?3
+`
+
+type ReopenWorkoutByIdParams struct {
+	UpdatedOn string `json:"updated_on"`
+	ID        string `json:"id"`
+	UserID    string `json:"user_id"`
+}
+
+func (q *Queries) ReopenWorkoutById(ctx context.Context, arg ReopenWorkoutByIdParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, reopenWorkoutById, arg.UpdatedOn, arg.ID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const updateWorkoutById = `-- name: UpdateWorkoutById :execrows
 UPDATE workouts
 SET note = ?1, updated_on = ?2

@@ -37,3 +37,9 @@ UPDATE workouts
 SET note = sqlc.arg(note), updated_on = sqlc.arg(updated_on)
 WHERE id = sqlc.arg(id)
 AND user_id = sqlc.arg(user_id);
+
+-- name: ReopenWorkoutById :execrows
+UPDATE workouts
+SET completed_on = NULL, updated_on = sqlc.arg(updated_on)
+WHERE id = sqlc.arg(id)
+AND user_id = sqlc.arg(user_id);
