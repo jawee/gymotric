@@ -27,8 +27,23 @@ func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper 
 	mux.Handle("GET /workouts/{id}", authenticationWrapper(http.HandlerFunc(handler.getWorkoutByIdHandler)))
 	mux.Handle("PUT /workouts/{id}", authenticationWrapper(http.HandlerFunc(handler.updateWorkoutByIdHandler)))
 	mux.Handle("PUT /workouts/{id}/complete", authenticationWrapper(http.HandlerFunc(handler.completeWorkoutById)))
+	mux.Handle("PUT /workouts/{id}/reopen", authenticationWrapper(http.HandlerFunc(handler.ReopenById)))
 	mux.Handle("POST /workouts/{id}/clone", authenticationWrapper(http.HandlerFunc(handler.cloneWorkoutById)))
 	mux.Handle("DELETE /workouts/{id}", authenticationWrapper(http.HandlerFunc(handler.deleteWorkoutByIdHandler)))
+}
+
+func (s *handler) ReopenById(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("sub").(string)
+	id := r.PathValue("id")
+	err := s.service.ReopenById(r.Context(), id, userId)
+	if err != nil {
+		slog.Error("Failed to reopen workout", "error", err)
+		http.Error(w, "Failed to reopen workout", http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+	w.Header().Set("Content-Type", "application/json")
+	slog.Debug("Workout reopened successfully", "id", id)
 }
 
 func (s *handler) updateWorkoutByIdHandler(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +61,7 @@ func (s *handler) updateWorkoutByIdHandler(w http.ResponseWriter, r *http.Reques
 
 	slog.Debug("Updating workout", "id", id, "note", t.Note)
 
-	err = s.service.UpdateWorkoutById(r.Context(), id, t, userId)
+	err = s.service.UpdateById(r.Context(), id, t, userId)
 
 	if err != nil {
 		slog.Error("Failed to update workout", "error", err)

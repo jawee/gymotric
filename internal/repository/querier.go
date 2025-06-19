@@ -43,6 +43,7 @@ type Querier interface {
 	GetStatisticsSinceDate(ctx context.Context, arg GetStatisticsSinceDateParams) (int64, error)
 	GetUnverifiedUsers(ctx context.Context) ([]User, error)
 	GetWorkoutById(ctx context.Context, arg GetWorkoutByIdParams) (Workout, error)
+	ReopenWorkoutById(ctx context.Context, arg ReopenWorkoutByIdParams) (int64, error)
 	UpdateExerciseType(ctx context.Context, arg UpdateExerciseTypeParams) (int64, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (int64, error)
 	UpdateWorkoutById(ctx context.Context, arg UpdateWorkoutByIdParams) (int64, error)

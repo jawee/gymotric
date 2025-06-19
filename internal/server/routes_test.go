@@ -207,9 +207,14 @@ type querierMock struct {
 	mock.Mock
 }
 
+
 func (m *querierMock) CheckIfTokenExists(ctx context.Context, arg repository.CheckIfTokenExistsParams) (int64, error) {
 	args := m.Called()
 	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *querierMock) ReopenWorkoutById(ctx context.Context, arg repository.ReopenWorkoutByIdParams) (int64, error) {
+	panic("not implemented")
 }
 
 func (m *querierMock) CompleteWorkoutById(ctx context.Context, arg repository.CompleteWorkoutByIdParams) (int64, error) {

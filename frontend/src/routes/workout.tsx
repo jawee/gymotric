@@ -12,7 +12,7 @@ import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import React from "react";
 import WtDialog from "../components/wt-dialog";
-import { Check, Copy, Plus, Trash2 } from "lucide-react";
+import { Check, Copy, Key, Plus, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Loading from "../components/loading";
 import { Textarea } from "@/components/ui/textarea";
@@ -319,6 +319,19 @@ const WorkoutComponent = () => {
     fetchExercises();
   }, [workout, id]);
 
+  const reopen = async () => {
+    if (id === undefined) {
+      return;
+    }
+
+    const res = await ApiService.reopenWorkout(id); 
+    if (res.status !== 204) {
+      console.log("Error", res.status, res.statusText);
+      return;
+    }
+
+    navigate("/app/workouts/" + id);
+  };
   const cloneWorkout = async () => {
     if (id === undefined) {
       return;
@@ -362,6 +375,7 @@ const WorkoutComponent = () => {
         <h1 className="text-2xl">Workout {workout.name}</h1>
         <h2 className="text-l font-bold">{new Date(workout.created_on).toDateString()}</h2>
         <Button onClick={cloneWorkout}><Copy />Clone</Button>
+        <Button onClick={reopen}><Key />Reopen</Button>
         <h3 className="text-2xl mt-3">Exercises</h3>
         <ul>
           {exercises.map(e => {

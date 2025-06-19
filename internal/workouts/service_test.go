@@ -44,6 +44,11 @@ type repoMock struct {
 	mock.Mock
 }
 
+func (r *repoMock) ReopenWorkoutById(ctx context.Context, arg repository.ReopenWorkoutByIdParams) error {
+	args := r.Called(ctx, arg)
+	return args.Error(0)
+}
+
 func (r *repoMock) UpdateById(ctx context.Context, arg repository.UpdateWorkoutByIdParams) error {
 	args := r.Called(ctx, arg)
 	return args.Error(0)
@@ -268,7 +273,7 @@ func TestUpdateById(t *testing.T) {
 
 	service := NewService(&repoMock, nil)
 
-	err := service.UpdateWorkoutById(ctx, workoutId, request, userId)
+	err := service.UpdateById(ctx, workoutId, request, userId)
 
 	assert.Nil(t, err)
 	repoMock.AssertExpectations(t)
@@ -290,7 +295,7 @@ func TestUpdateByIdNotFound(t *testing.T) {
 
 	service := NewService(&repoMock, nil)
 
-	err := service.UpdateWorkoutById(ctx, workoutId, request, userId)
+	err := service.UpdateById(ctx, workoutId, request, userId)
 
 	assert.NotNil(t, err)
 	assert.ErrorIs(t, err, testError)
@@ -320,7 +325,7 @@ func TestUpdateByIdUpdateErr(t *testing.T) {
 
 	service := NewService(&repoMock, nil)
 
-	err := service.UpdateWorkoutById(ctx, workoutId, request, userId)
+	err := service.UpdateById(ctx, workoutId, request, userId)
 
 	assert.NotNil(t, err)
 	assert.ErrorIs(t, err, testError)
