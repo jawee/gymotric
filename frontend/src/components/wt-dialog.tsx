@@ -27,7 +27,7 @@ const WtDialog = ({ openButtonTitle, openButtonClassName, form, title, descripti
 
   return (
     <Dialog {...dialogProps} >
-      {openButtonTitle !== null ? <DialogTrigger className={openButtonClassName}>{openButtonTitle}</DialogTrigger> : <></>}
+      {openButtonTitle !== null && openButtonTitle !== undefined ? <DialogTrigger className={openButtonClassName}>{openButtonTitle}</DialogTrigger> : <></>}
       <DialogContent className={topPosition} onOpenAutoFocus={onOpenAutoFocus}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
