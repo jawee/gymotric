@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 
 type WtDialogProps = {
   openButtonTitle?: React.ReactNode;
+  openButtonClassName?: string;
   form: React.ReactNode;
   onSubmitButtonClick: () => void;
   onSubmitButtonTitle: React.ReactNode;
@@ -14,15 +15,19 @@ type WtDialogProps = {
   topPercentage?: string;
   onOpenAutoFocus?: (e: Event) => void;
 };
-const WtDialog = ({ openButtonTitle, form, title, description, onSubmitButtonTitle, onSubmitButtonClick, shouldUseDefaultSubmit = true, topPercentage = "20", onOpenAutoFocus, dialogProps }: WtDialogProps) => {
+const WtDialog = ({ openButtonTitle, openButtonClassName, form, title, description, onSubmitButtonTitle, onSubmitButtonClick, shouldUseDefaultSubmit = true, topPercentage = "20", onOpenAutoFocus, dialogProps }: WtDialogProps) => {
   let topPosition = "max-md:top-[20%]";
   if (topPercentage == "25") {
     topPosition = "max-md:top-[25%]";
   }
 
+  if (openButtonClassName === null || openButtonClassName === undefined) {
+    openButtonClassName = buttonVariants({ variant: "default" });
+  }
+
   return (
     <Dialog {...dialogProps} >
-      {openButtonTitle === null ? <DialogTrigger className={buttonVariants({ variant: "default" })}>{openButtonTitle}</DialogTrigger> : <></>}
+      {openButtonTitle !== null ? <DialogTrigger className={openButtonClassName}>{openButtonTitle}</DialogTrigger> : <></>}
       <DialogContent className={topPosition} onOpenAutoFocus={onOpenAutoFocus}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
