@@ -127,10 +127,6 @@ const EditableExercise = ({ exercise, deleteExerciseFunc }: EditableExerciseProp
   }, [exercise]);
 
   const deleteSet = async (setId: string) => {
-    const confirmRes = confirm("Are you sure you want to delete this set?");
-    if (!confirmRes) {
-      return;
-    }
     const res = await ApiService.deleteSet(exercise.workout_id, exercise.id, setId);
 
     if (res.status !== 204) {
@@ -163,11 +159,6 @@ const EditableExercise = ({ exercise, deleteExerciseFunc }: EditableExerciseProp
   };
 
   const deleteExercise = async () => {
-    const res = confirm("Are you sure you want to delete this exercise?");
-    if (!res) {
-      return;
-    }
-
     await deleteExerciseFunc(exercise.id);
   };
 
@@ -175,17 +166,16 @@ const EditableExercise = ({ exercise, deleteExerciseFunc }: EditableExerciseProp
     <div className="border-2 border-black p-2 mt-2 mb-2">
       <li key={exercise.id}>
         <p className="text-xl">{exercise.name}
-          <Button
-            onClick={deleteExercise}
-            className={
-              cn(buttonVariants({ variant: "default" }),
-                "bg-red-500",
-                "hover:bg-red-700",
-                "ml-1",
-              )
-            }>
-            <Trash2 />
-          </Button>
+          <WtDialog openButtonTitle={<Trash2 />}
+            openButtonClassName={cn(buttonVariants({ variant: "default" }),
+              "bg-red-500",
+              "hover:bg-red-700",
+              "ml-1",
+            )
+            } onSubmitButtonClick={() => deleteExercise()} title="Delete Set"
+            form={<p>Are you sure you want to delete this exercise?</p>}
+            onSubmitButtonTitle="Delete"
+          />
         </p>
         <Table>
           <TableHeader>
@@ -202,17 +192,15 @@ const EditableExercise = ({ exercise, deleteExerciseFunc }: EditableExerciseProp
                   <TableCell>{set.weight}kg</TableCell>
                   <TableCell>{set.repetitions}</TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      onClick={() => deleteSet(set.id)}
-                      className={
-                        cn(buttonVariants({ variant: "default" }),
-                          "bg-red-500",
-                          "hover:bg-red-700",
-                          "ml-1",
-                        )
-                      }>
-                      <Trash2 />
-                    </Button>
+                    <WtDialog openButtonTitle={<Trash2 />} openButtonClassName={cn(buttonVariants({ variant: "default" }),
+                      "bg-red-500",
+                      "hover:bg-red-700",
+                      "ml-1",
+                    )
+                    } onSubmitButtonClick={() => deleteSet(set.id)} title="Delete Set"
+                      form={<p>Are you sure you want to delete this set?</p>}
+                      onSubmitButtonTitle="Delete"
+                    />
                   </TableCell>
                 </TableRow>
               );
@@ -242,6 +230,8 @@ const WorkoutComponent = () => {
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([]);
+
+  const [finishDialogOpen, setFinishDialogOpen] = useState<boolean>(false);
 
   const [note, setNote] = useState<string>("");
 
@@ -289,11 +279,6 @@ const WorkoutComponent = () => {
       return;
     }
 
-    const confirmRes = confirm("Are you sure you want to delete this workout?");
-    if (!confirmRes) {
-      return;
-    }
-
     const res = await ApiService.deleteWorkout(workout.id);
     if (res.status !== 204) {
       console.log("Error", res.status, res.statusText);
@@ -324,7 +309,7 @@ const WorkoutComponent = () => {
       return;
     }
 
-    const res = await ApiService.reopenWorkout(id); 
+    const res = await ApiService.reopenWorkout(id);
     if (res.status !== 204) {
       console.log("Error", res.status, res.statusText);
       return;
@@ -375,7 +360,7 @@ const WorkoutComponent = () => {
         <h1 className="text-2xl">Workout {workout.name}</h1>
         <h2 className="text-l font-bold">{new Date(workout.created_on).toDateString()}</h2>
         <Button onClick={cloneWorkout}><Copy />Clone</Button>
-        <Button onClick={reopen}><Key />Reopen</Button>
+        <Button onClick={reopen} className="ml-1"><Key />Reopen</Button>
         <h3 className="text-2xl mt-3">Exercises</h3>
         <ul>
           {exercises.map(e => {
@@ -385,17 +370,15 @@ const WorkoutComponent = () => {
           })}
         </ul>
         <div className="mt-2">
-          <Button
-            onClick={deleteWorkout}
-            className={
-              cn(buttonVariants({ variant: "default" }),
-                "bg-red-500",
-                "hover:bg-red-700"
-              )
-            }>
-            <Trash2 />
-            Delete workout
-          </Button>
+          <WtDialog openButtonTitle={<><Trash2 /> Delete workout</>}
+            openButtonClassName={cn(buttonVariants({ variant: "default" }),
+              "bg-red-500",
+              "hover:bg-red-700",
+            )
+            } onSubmitButtonClick={() => deleteWorkout()} title="Delete Workout"
+            form={<p>Are you sure you want to delete this Workout?</p>}
+            onSubmitButtonTitle="Delete"
+          />
         </div>
         <h3>Note</h3>
         <Textarea className="border-2" value={workout.note} disabled />
@@ -455,11 +438,6 @@ const WorkoutComponent = () => {
   }
 
   const finishWorkout = async () => {
-    const confirmRes = confirm("Are you sure you want to finish this workout?");
-    if (!confirmRes) {
-      return;
-    }
-
     const res = await ApiService.finishWorkout(workout.id);
 
     if (res.status !== 204) {
@@ -467,9 +445,11 @@ const WorkoutComponent = () => {
       return;
     }
 
+    setFinishDialogOpen(false);
+
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && key.startsWith("form-data-" +workout.id + "-")) {
+      if (key && key.startsWith("form-data-" + workout.id + "-")) {
         localStorage.removeItem(key);
       }
     }
@@ -489,7 +469,7 @@ const WorkoutComponent = () => {
     <>
       <h1 className="text-2xl">Workout {workout.name}</h1>
       <h2 className="text-l font-bold">{new Date(workout.created_on).toDateString()}</h2>
-      <div className="mt-2"><Button onClick={finishWorkout}><Check />Finish workout</Button></div>
+      <div className="mt-2"><Button onClick={() => setFinishDialogOpen(true)}><Check />Finish workout</Button></div>
       <h3 className="text-2xl mt-3">Exercises</h3>
       <ul>
         {exercises.map(e => {
@@ -502,20 +482,24 @@ const WorkoutComponent = () => {
         </>
       } onSubmitButtonClick={addExercise} onSubmitButtonTitle="Add exercise" title="Add Exercise" />
       <div className="mt-2">
-        <Button
-          onClick={deleteWorkout}
-          className={
-            cn(buttonVariants({ variant: "default" }),
-              "bg-red-500",
-              "hover:bg-red-700"
-            )
-          }>
-          <Trash2 />
-          Delete workout
-        </Button>
+        <WtDialog openButtonTitle={<><Trash2 /> Delete workout</>}
+          openButtonClassName={cn(buttonVariants({ variant: "default" }),
+            "bg-red-500",
+            "hover:bg-red-700",
+            "ml-1",
+          )
+          } onSubmitButtonClick={() => deleteWorkout()} title="Delete Workout"
+          form={<p>Are you sure you want to delete this Workout?</p>}
+          onSubmitButtonTitle="Delete"
+        />
       </div>
       <h3>Note</h3>
       <Textarea className="border-2" value={note} onChange={(e) => setNote(e.currentTarget.value)} onBlur={() => updateNote()} />
+      <WtDialog onSubmitButtonClick={finishWorkout} title="Finish Workout" form={
+        <p>Are you sure you want to finish this workout? You won't be able to add more exercises or sets.</p>
+      } onSubmitButtonTitle="Finish Workout"
+        dialogProps={{ open: finishDialogOpen, onOpenChange: setFinishDialogOpen }}
+      />
     </>
   );
 };

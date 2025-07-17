@@ -2,7 +2,6 @@ import { Input } from "@/components/ui/input";
 import { useEffect, useId, useState } from "react";
 import { ExerciseType } from "../models/exercise-type";
 import ApiService from "../services/api-service";
-import { Button, buttonVariants } from "@/components/ui/button";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import {
   Table,
@@ -12,9 +11,10 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
 import Loading from "@/components/loading";
 import WtDialog from "@/components/wt-dialog";
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 
 const ExerciseTypes = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -114,6 +114,7 @@ const ExerciseTypes = () => {
 const ExerciseTypeRow = ({ exerciseType, setExerciseTypes }: { exerciseType: ExerciseType, setExerciseTypes: React.Dispatch<React.SetStateAction<ExerciseType[]>> }) => {
   const [exerciseName, setExerciseName] = useState<string>(exerciseType.name);
   const [exerciseTypeName, setExerciseTypeName] = useState<string>(exerciseType.name);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
 
   const handleNameChange = async () => {
     if (exerciseName === exerciseTypeName) {
@@ -130,11 +131,6 @@ const ExerciseTypeRow = ({ exerciseType, setExerciseTypes }: { exerciseType: Exe
   };
 
   const deleteExerciseType = async (id: string) => {
-    const confirm = window.confirm("Are you sure you want to delete this exercise?");
-    if (!confirm) {
-      return;
-    }
-
     const res = await ApiService.deleteExerciseType(id);
 
     if (res.status !== 204) {
@@ -144,6 +140,12 @@ const ExerciseTypeRow = ({ exerciseType, setExerciseTypes }: { exerciseType: Exe
     setExerciseTypes(l => l.filter(item => item.id !== id));
   };
 
+  const deleteButtonClasses = cn(
+    buttonVariants({ variant: "default" }),
+    "ml-1",
+    "bg-red-500",
+    "hover:bg-red-700"
+  );
 
   return (
     <TableRow>
@@ -156,16 +158,11 @@ const ExerciseTypeRow = ({ exerciseType, setExerciseTypes }: { exerciseType: Exe
           onSubmitButtonTitle="Save"
           onOpenAutoFocus={(e) => { e.preventDefault(); }}
           title="Change name" />
-        <Button className={
-          cn(
-            buttonVariants({ variant: "default" }),
-            "ml-1",
-            "bg-red-500",
-            "hover:bg-red-700"
-          )
-        } onClick={() => deleteExerciseType(exerciseType.id)}>
-          <Trash2 />
-        </Button>
+        <WtDialog openButtonTitle={<Trash2 />} openButtonClassName={deleteButtonClasses} onSubmitButtonClick={() => deleteExerciseType(exerciseType.id)} title="Delete Exercise"
+          form={<p>Are you sure you want to finish this workout? You won't be able to add more exercises or sets.</p>}
+          onSubmitButtonTitle="Delete"
+          dialogProps={{ open: deleteDialogOpen, onOpenChange: setDeleteDialogOpen }}
+        />
       </TableCell>
     </TableRow>
   );
