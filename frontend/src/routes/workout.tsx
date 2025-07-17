@@ -243,6 +243,8 @@ const WorkoutComponent = () => {
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([]);
 
+  const [finishDialogOpen, setFinishDialogOpen] = useState<boolean>(false);
+
   const [note, setNote] = useState<string>("");
 
   const location = useLocation();
@@ -455,17 +457,14 @@ const WorkoutComponent = () => {
   }
 
   const finishWorkout = async () => {
-    const confirmRes = confirm("Are you sure you want to finish this workout?");
-    if (!confirmRes) {
-      return;
-    }
-
     const res = await ApiService.finishWorkout(workout.id);
 
     if (res.status !== 204) {
       console.log("Error", res.status, res.statusText);
       return;
     }
+
+    setFinishDialogOpen(false);
 
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
@@ -489,7 +488,7 @@ const WorkoutComponent = () => {
     <>
       <h1 className="text-2xl">Workout {workout.name}</h1>
       <h2 className="text-l font-bold">{new Date(workout.created_on).toDateString()}</h2>
-      <div className="mt-2"><Button onClick={finishWorkout}><Check />Finish workout</Button></div>
+      <div className="mt-2"><Button onClick={() => setFinishDialogOpen(true)}><Check />Finish workout</Button></div>
       <h3 className="text-2xl mt-3">Exercises</h3>
       <ul>
         {exercises.map(e => {
@@ -516,6 +515,11 @@ const WorkoutComponent = () => {
       </div>
       <h3>Note</h3>
       <Textarea className="border-2" value={note} onChange={(e) => setNote(e.currentTarget.value)} onBlur={() => updateNote()} />
+      <WtDialog onSubmitButtonClick={finishWorkout}  title="Finish Workout" form={
+        <p>Are you sure you want to finish this workout? You won't be able to add more exercises or sets.</p>
+      } onSubmitButtonTitle="Finish Workout" 
+        dialogProps={{ open: finishDialogOpen, onOpenChange: setFinishDialogOpen }}
+      />
     </>
   );
 };
