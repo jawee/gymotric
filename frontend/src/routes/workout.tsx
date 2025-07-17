@@ -127,10 +127,6 @@ const EditableExercise = ({ exercise, deleteExerciseFunc }: EditableExerciseProp
   }, [exercise]);
 
   const deleteSet = async (setId: string) => {
-    const confirmRes = confirm("Are you sure you want to delete this set?");
-    if (!confirmRes) {
-      return;
-    }
     const res = await ApiService.deleteSet(exercise.workout_id, exercise.id, setId);
 
     if (res.status !== 204) {
@@ -202,17 +198,15 @@ const EditableExercise = ({ exercise, deleteExerciseFunc }: EditableExerciseProp
                   <TableCell>{set.weight}kg</TableCell>
                   <TableCell>{set.repetitions}</TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      onClick={() => deleteSet(set.id)}
-                      className={
-                        cn(buttonVariants({ variant: "default" }),
-                          "bg-red-500",
-                          "hover:bg-red-700",
-                          "ml-1",
-                        )
-                      }>
-                      <Trash2 />
-                    </Button>
+                    <WtDialog openButtonTitle={<Trash2 />} openButtonClassName={cn(buttonVariants({ variant: "default" }),
+                      "bg-red-500",
+                      "hover:bg-red-700",
+                      "ml-1",
+                    )
+                    } onSubmitButtonClick={() => deleteSet(set.id)} title="Delete Set"
+                      form={<p>Are you sure you want to delete this set?</p>}
+                      onSubmitButtonTitle="Delete"
+                    />
                   </TableCell>
                 </TableRow>
               );
@@ -326,7 +320,7 @@ const WorkoutComponent = () => {
       return;
     }
 
-    const res = await ApiService.reopenWorkout(id); 
+    const res = await ApiService.reopenWorkout(id);
     if (res.status !== 204) {
       console.log("Error", res.status, res.statusText);
       return;
@@ -468,7 +462,7 @@ const WorkoutComponent = () => {
 
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && key.startsWith("form-data-" +workout.id + "-")) {
+      if (key && key.startsWith("form-data-" + workout.id + "-")) {
         localStorage.removeItem(key);
       }
     }
@@ -515,9 +509,9 @@ const WorkoutComponent = () => {
       </div>
       <h3>Note</h3>
       <Textarea className="border-2" value={note} onChange={(e) => setNote(e.currentTarget.value)} onBlur={() => updateNote()} />
-      <WtDialog onSubmitButtonClick={finishWorkout}  title="Finish Workout" form={
+      <WtDialog onSubmitButtonClick={finishWorkout} title="Finish Workout" form={
         <p>Are you sure you want to finish this workout? You won't be able to add more exercises or sets.</p>
-      } onSubmitButtonTitle="Finish Workout" 
+      } onSubmitButtonTitle="Finish Workout"
         dialogProps={{ open: finishDialogOpen, onOpenChange: setFinishDialogOpen }}
       />
     </>
