@@ -159,11 +159,6 @@ const EditableExercise = ({ exercise, deleteExerciseFunc }: EditableExerciseProp
   };
 
   const deleteExercise = async () => {
-    const res = confirm("Are you sure you want to delete this exercise?");
-    if (!res) {
-      return;
-    }
-
     await deleteExerciseFunc(exercise.id);
   };
 
@@ -171,17 +166,15 @@ const EditableExercise = ({ exercise, deleteExerciseFunc }: EditableExerciseProp
     <div className="border-2 border-black p-2 mt-2 mb-2">
       <li key={exercise.id}>
         <p className="text-xl">{exercise.name}
-          <Button
-            onClick={deleteExercise}
-            className={
-              cn(buttonVariants({ variant: "default" }),
-                "bg-red-500",
-                "hover:bg-red-700",
-                "ml-1",
-              )
-            }>
-            <Trash2 />
-          </Button>
+          <WtDialog openButtonTitle={<Trash2 />} openButtonClassName={cn(buttonVariants({ variant: "default" }),
+            "bg-red-500",
+            "hover:bg-red-700",
+            "ml-1",
+          )
+          } onSubmitButtonClick={() => deleteExercise()} title="Delete Set"
+            form={<p>Are you sure you want to delete this exercise?</p>}
+            onSubmitButtonTitle="Delete"
+          />
         </p>
         <Table>
           <TableHeader>
