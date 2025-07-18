@@ -83,13 +83,6 @@ func SendAccountConfirmation(recipient string, data SendAccountConfirmationData)
 }
 
 func sendEmail(html string, recipient string, subject string, data any) error {
-	SGKEY := os.Getenv(utils.EnvSendGridApiKey)
-
-	if SGKEY == "" {
-		slog.Error("SendGrid API key not set", "SGKEY", "")
-		return errors.New("SendGrid API key not set")
-	}
-
 	tmpl, err := template.New("email").Parse(string(html))
 	if err != nil {
 		slog.Error("Failed to parse HTML template", "error", err)
@@ -100,6 +93,30 @@ func sendEmail(html string, recipient string, subject string, data any) error {
 	if err := tmpl.Execute(&emailContent, data); err != nil {
 		slog.Error("Failed to execute template", "error", err)
 		return fmt.Errorf("Failed to execute template: %w", err)
+	}
+
+	SGKEY := os.Getenv(utils.EnvSendGridApiKey)
+	if SGKEY != "" {
+		res := sendSendGridEmail(emailContent, recipient, subject, SGKEY)
+		if res != nil {
+			return fmt.Errorf("Failed to send sendgrid email: %w", err)
+		}
+	}
+
+	BREVOKEY := os.Getenv(utils.EnvBrevoApiKey)
+	if BREVOKEY != "" {
+		res := sendBrevoEmail(emailContent, recipient, subject, BREVOKEY)
+		if res != nil {
+			return fmt.Errorf("Failed to send brevo email: %w", err)
+		}
+	}
+	return nil
+}
+
+func sendSendGridEmail(emailContent bytes.Buffer, recipient string, subject string, apiKey string) error {
+	if apiKey == "" {
+		slog.Error("SendGrid API key not set", "SGKEY", "")
+		return errors.New("SendGrid API key not set")
 	}
 
 	client := &http.Client{}
@@ -128,25 +145,77 @@ func sendEmail(html string, recipient string, subject string, data any) error {
 
 	emailRequestBody, err := json.Marshal(emailRequestBodyObj)
 	if err != nil {
-		return fmt.Errorf("Failed to marshal email request body: %w", err)
+		return fmt.Errorf("Failed to marshal sendgrid email request body: %w", err)
 	}
 
 	req, err := http.NewRequest("POST", "https://api.sendgrid.com/v3/mail/send", bytes.NewBuffer(emailRequestBody))
-	req.Header.Set("Authorization", "Bearer "+SGKEY)
+	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("Failed to send email request: %w", err)
+		return fmt.Errorf("Failed to send sendgrid email request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusAccepted {
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return fmt.Errorf("Failed to read response body: %w", err)
+			return fmt.Errorf("Failed to read sendgrid response body: %w", err)
 		}
-		return fmt.Errorf("Failed to send email. Status code: %d. Message: %s", resp.StatusCode, string(bodyBytes))
+		return fmt.Errorf("Failed to send sendgrid email. Status code: %d. Message: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	return nil
+}
+
+func sendBrevoEmail(emailContent bytes.Buffer, recipient string, subject string, apiKey string) error {
+	if apiKey == "" {
+		slog.Error("Brevo API key not set", "Brevo API key", "")
+		return errors.New("Brevo API key not set")
+	}
+
+	client := &http.Client{}
+	emailRequestBodyObj := &brevoRequest{
+		Sender: brevoSender{
+			Name:  "Gymotric",
+			Email: "noreply@gymotric.anol.se",
+		},
+		To: []brevoTo{
+			{
+				Name: recipient,
+				Email: recipient,
+			},
+		},
+		Subject:     subject + " - Gymotric",
+		HTMLContent: emailContent.String(),
+	}
+
+	emailRequestBody, err := json.Marshal(emailRequestBodyObj)
+	if err != nil {
+		return fmt.Errorf("Failed to marshal brevo email request body: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", "https://api.brevo.com/v3/smtp/email", bytes.NewBuffer(emailRequestBody))
+	req.Header.Set("api-key", apiKey)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		slog.Error("Failed to send brevo email request", "error", err)
+		return fmt.Errorf("Failed to send brevo email request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			slog.Error("Failed to read brevo response body", "error", err)
+			return fmt.Errorf("Failed to read brevo response body: %w", err)
+		}
+		slog.Error("Failed to send brevo email", "status_code", resp.StatusCode, "message", string(bodyBytes))
+		return fmt.Errorf("Failed to send brevo email. Status code: %d. Message: %s", resp.StatusCode, string(bodyBytes))
 	}
 	return nil
 }
@@ -170,4 +239,19 @@ type from struct {
 
 type personalization struct {
 	To []from `json:"to"`
+}
+
+type brevoRequest struct {
+	Sender      brevoSender `json:"sender"`
+	To          []brevoTo   `json:"to"`
+	Subject     string      `json:"subject"`
+	HTMLContent string      `json:"htmlContent"`
+}
+type brevoSender struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+type brevoTo struct {
+	Email string `json:"email"`
+	Name  string `json:"name"`
 }
