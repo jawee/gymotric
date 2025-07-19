@@ -11,25 +11,31 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import ApiService from "@/services/api-service"
 import { Link } from "react-router"
+import { useState } from "react"
 
 type loginFormProps = {
   message?: string;
 };
 const LoginForm = ({ message }: loginFormProps) => {
+  const [error, setError] = useState<string | null>(null);
   const login = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setError(null);
     const target = event.target as typeof event.target & {
       username: { value: string };
       password: { value: string };
     };
-    const username = target.username.value; // typechecks!
-    const password = target.password.value; // typechecks!
+    const username = target.username.value;
+    const password = target.password.value;
 
     const res = await ApiService.login(username, password);
     if (res.status === 200) {
       window.location.href = "/app";
       return;
     }
+
+    setError("Invalid username or password");
+    return;
   };
 
   return (
@@ -60,6 +66,11 @@ const LoginForm = ({ message }: loginFormProps) => {
                   </div>
                   <Input id="password" type="password" placeholder="password" required />
                 </div>
+                {error && (
+                  <div className="text-red-500 text-sm">
+                    {error}
+                  </div>
+                )}
                 <Button type="submit" className="w-full">
                   Login
                 </Button>
