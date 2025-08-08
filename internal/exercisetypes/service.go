@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 	"weight-tracker/internal/repository"
 
@@ -62,7 +63,7 @@ func (s *exerciseTypeService) CreateAndReturnId(context context.Context, exercis
 
 	toCreate := repository.CreateExerciseTypeAndReturnIdParams{
 		ID:        uuid.String(),
-		Name:      exerciseType.Name,
+		Name:      strings.TrimSpace(exerciseType.Name),
 		CreatedOn: time.Now().UTC().Format(time.RFC3339),
 		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
 		UserID:    userId,

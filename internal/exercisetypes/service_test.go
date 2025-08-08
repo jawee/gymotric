@@ -105,3 +105,22 @@ func TestCreateAndReturnId(t *testing.T) {
 	repoMock.AssertExpectations(t)
 }
 
+func TestCreateTrimWhitespaceAndReturnId(t *testing.T) {
+	userId := "userid"
+	exerciseTypeName := " exerciseTypeId "
+	ctx := context.Background()
+
+	repoMock := repoMock{}
+	repoMock.On("CreateAndReturnId", ctx, mock.MatchedBy(func(input repository.CreateExerciseTypeAndReturnIdParams) bool {
+		return input.Name == "exerciseTypeId" && input.CreatedOn != "" && input.UpdatedOn != "" && input.UserID == userId
+	})).Return("asdf", nil).Once()
+
+	service := NewService(&repoMock)
+	_, err := service.CreateAndReturnId(context.Background(), createExerciseTypeRequest{
+		Name: exerciseTypeName,
+	}, userId)
+
+	assert.Nil(t, err)
+	repoMock.AssertExpectations(t)
+}
+
