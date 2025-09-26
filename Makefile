@@ -73,10 +73,16 @@ db-create-docker:
 	docker run --rm --env-file .env -v ./db:/app/db goose
 
 db-up:
-	goose up
+	go run cmd/goose/main.go
 
 db-reset:
-	goose reset
+	go run cmd/goose/main.go -down
+
+db-down-one:
+	go run cmd/goose/main.go -downone
+
+db-up-one:
+	go run cmd/goose/main.go -upone
 
 db-create-migration:
 	goose create a sql
