@@ -4,8 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/mock"
 	"weight-tracker/internal/repository"
+
+	"github.com/stretchr/testify/mock"
 )
 
 type repositoryMock struct {

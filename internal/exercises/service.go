@@ -18,8 +18,8 @@ type Service interface {
 }
 
 type exerciseService struct {
-	repo                   ExerciseRepository
-	exerciseItemsService   exerciseitems.Service
+	repo                 ExerciseRepository
+	exerciseItemsService exerciseitems.Service
 }
 
 func (e *exerciseService) CreateAndReturnId(context context.Context, exercise createExerciseRequest, workoutId string, userId string) (string, error) {
