@@ -120,9 +120,11 @@ func TestCreateExerciseHandler(t *testing.T) {
 	userId := "userId"
 	workoutId := "workoutId"
 	exerciseTypeId := "exerciseTypeId"
+	exerciseItemId := "exerciseItemId"
 
 	reqBodyObj := createExerciseRequest{
 		ExerciseTypeID: exerciseTypeId,
+		ExerciseItemID: exerciseItemId,
 	}
 
 	reqBody, err := json.Marshal(reqBodyObj)
@@ -144,7 +146,7 @@ func TestCreateExerciseHandler(t *testing.T) {
 
 	serviceMock := serviceMock{}
 	serviceMock.On("CreateAndReturnId", ctx, mock.MatchedBy(func(input createExerciseRequest) bool {
-		return input.ExerciseTypeID == exerciseTypeId
+		return input.ExerciseTypeID == exerciseTypeId && input.ExerciseItemID == exerciseItemId
 	}), workoutId, userId).
 		Return("abc", nil).
 		Once()

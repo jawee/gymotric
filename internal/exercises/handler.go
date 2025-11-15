@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"net/http"
 	"weight-tracker/internal/database"
-	"weight-tracker/internal/exerciseitems"
 	"weight-tracker/internal/utils"
 )
 
@@ -14,9 +13,8 @@ type handler struct {
 }
 
 func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper func(next http.Handler) http.Handler) {
-	exerciseItemsService := exerciseitems.NewService(exerciseitems.NewExerciseItemRepository(s.GetRepository()))
 	handler := handler{
-		service: NewService(NewExerciseRepository(s.GetRepository()), exerciseItemsService),
+		service: NewService(NewExerciseRepository(s.GetRepository())),
 	}
 
 	mux.Handle("GET /workouts/{id}/exercises", authenticationWrapper(http.HandlerFunc(handler.getExercisesByWorkoutIdHandler)))
@@ -59,6 +57,12 @@ func (s *handler) createExerciseHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	if t.ExerciseItemID == "" {
+		slog.Error("Missing required field", "field", "exercise_item_id")
+		http.Error(w, "exercise_item_id is required", http.StatusBadRequest)
+		return
+	}
+
 	workoutId := r.PathValue("id")
 
 	id, err := s.service.CreateAndReturnId(r.Context(), t, workoutId, userId)
@@ -98,4 +102,5 @@ func (s *handler) deleteExerciseByIdHandler(w http.ResponseWriter, r *http.Reque
 
 type createExerciseRequest struct {
 	ExerciseTypeID string `json:"exercise_type_id"`
+	ExerciseItemID string `json:"exercise_item_id"`
 }

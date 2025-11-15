@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"time"
-	"weight-tracker/internal/exerciseitems"
 	"weight-tracker/internal/repository"
 
 	"github.com/google/uuid"
@@ -18,8 +17,7 @@ type Service interface {
 }
 
 type exerciseService struct {
-	repo                 ExerciseRepository
-	exerciseItemsService exerciseitems.Service
+	repo ExerciseRepository
 }
 
 func (e *exerciseService) CreateAndReturnId(context context.Context, exercise createExerciseRequest, workoutId string, userId string) (string, error) {
@@ -31,12 +29,6 @@ func (e *exerciseService) CreateAndReturnId(context context.Context, exercise cr
 
 	if err != nil {
 		return "", fmt.Errorf("failed to get exercise type by id: %w", err)
-	}
-
-	// Create exercise_item first
-	exerciseItemId, err := e.exerciseItemsService.CreateAndReturnId(context, "exercise", workoutId, userId)
-	if err != nil {
-		return "", fmt.Errorf("failed to create exercise item: %w", err)
 	}
 
 	// Create exercise
@@ -51,7 +43,7 @@ func (e *exerciseService) CreateAndReturnId(context context.Context, exercise cr
 		Name:           exerciseType.Name,
 		WorkoutID:      workoutId,
 		ExerciseTypeID: exerciseType.ID,
-		ExerciseItemID: exerciseItemId,
+		ExerciseItemID: exercise.ExerciseItemID,
 		CreatedOn:      now,
 		UpdatedOn:      now,
 		UserID:         userId,
@@ -85,6 +77,6 @@ func (e *exerciseService) DeleteById(context context.Context, id string, userId 
 	return e.repo.DeleteById(context, arg)
 }
 
-func NewService(repo ExerciseRepository, exerciseItemsService exerciseitems.Service) Service {
-	return &exerciseService{repo, exerciseItemsService}
+func NewService(repo ExerciseRepository) Service {
+	return &exerciseService{repo}
 }
