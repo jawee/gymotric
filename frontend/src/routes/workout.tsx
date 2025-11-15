@@ -392,7 +392,17 @@ const WorkoutComponent = () => {
 
       if (exerciseTypeMatch.length === 1) {
         const exerciseType = exerciseTypeMatch[0];
-        const res = await ApiService.createExercise(workout.id, exerciseType.id);
+        
+        // Create exercise_item first
+        const exerciseItemRes = await ApiService.createExerciseItem(workout.id);
+        if (exerciseItemRes.status !== 201) {
+          console.log("Error creating exercise item");
+          return
+        }
+        const exerciseItemObj = await exerciseItemRes.json();
+        
+        // Then create exercise with the exercise_item_id
+        const res = await ApiService.createExercise(workout.id, exerciseType.id, exerciseItemObj.id);
 
         if (res.status !== 201) {
           console.log("Error");
@@ -420,7 +430,16 @@ const WorkoutComponent = () => {
       let obj = await exerciseTypeRes.json();
       setExerciseTypes([...exerciseTypes, { id: obj.id, name: value }]);
 
-      const res = await ApiService.createExercise(workout.id, obj.id);
+      // Create exercise_item first
+      const exerciseItemRes = await ApiService.createExerciseItem(workout.id);
+      if (exerciseItemRes.status !== 201) {
+        console.log("Error creating exercise item");
+        return
+      }
+      const exerciseItemObj = await exerciseItemRes.json();
+
+      // Then create exercise with the exercise_item_id
+      const res = await ApiService.createExercise(workout.id, obj.id, exerciseItemObj.id);
 
       if (res.status !== 201) {
         console.log("Error");

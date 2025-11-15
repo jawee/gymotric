@@ -256,15 +256,28 @@ const fetchExercises = async (workoutId: string, isRetry: boolean = false) => {
   return res;
 };
 
-const createExercise = async (workoutId: string, exerciseTypeId: string, isRetry: boolean = false) => {
-  const res = await fetch("/api/workouts/" + workoutId + "/exercises", {
+const createExerciseItem = async (workoutId: string, isRetry: boolean = false) => {
+  const res = await fetch("/api/workouts/" + workoutId + "/exercise-items", {
     method: "POST",
     credentials: "include",
-    body: JSON.stringify({ exercise_type_id: exerciseTypeId })
+    body: JSON.stringify({ type: "exercise" })
   });
   const shouldRetry = await checkIfUnauthorized(res, isRetry);
   if (shouldRetry && !isRetry) {
-    return await createExercise(workoutId, exerciseTypeId, true);
+    return await createExerciseItem(workoutId, true);
+  }
+  return res;
+};
+
+const createExercise = async (workoutId: string, exerciseTypeId: string, exerciseItemId: string, isRetry: boolean = false) => {
+  const res = await fetch("/api/workouts/" + workoutId + "/exercises", {
+    method: "POST",
+    credentials: "include",
+    body: JSON.stringify({ exercise_type_id: exerciseTypeId, exercise_item_id: exerciseItemId })
+  });
+  const shouldRetry = await checkIfUnauthorized(res, isRetry);
+  if (shouldRetry && !isRetry) {
+    return await createExercise(workoutId, exerciseTypeId, exerciseItemId, true);
   }
   return res;
 };
@@ -413,6 +426,7 @@ const ApiService = {
   deleteExerciseType,
   updateExerciseType,
   fetchExercises,
+  createExerciseItem,
   createExercise,
   deleteExercise,
   fetchMaxWeightAndReps,
