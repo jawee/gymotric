@@ -21,7 +21,7 @@ type exerciseService struct {
 
 func (e *exerciseService) CreateAndReturnId(context context.Context, exercise createExerciseRequest, workoutId string, userId string) (string, error) {
 	arg := repository.GetExerciseTypeByIdParams{
-		ID: exercise.ExerciseTypeID,
+		ID:     exercise.ExerciseTypeID,
 		UserID: userId,
 	}
 	exerciseType, err := e.repo.GetExerciseTypeById(context, arg)
@@ -30,19 +30,42 @@ func (e *exerciseService) CreateAndReturnId(context context.Context, exercise cr
 		return "", fmt.Errorf("failed to get exercise type by id: %w", err)
 	}
 
-	uuid, err := uuid.NewV7()
+	// Create exercise_item first
+	exerciseItemUUID, err := uuid.NewV7()
 	if err != nil {
-		return "", fmt.Errorf("failed to generate UUID: %w", err)
+		return "", fmt.Errorf("failed to generate UUID for exercise item: %w", err)
+	}
+
+	now := time.Now().UTC().Format(time.RFC3339)
+	exerciseItemParams := repository.CreateExerciseItemAndReturnIdParams{
+		ID:        exerciseItemUUID.String(),
+		Type:      "exercise",
+		UserID:    userId,
+		WorkoutID: workoutId,
+		CreatedOn: now,
+		UpdatedOn: now,
+	}
+
+	exerciseItemId, err := e.repo.CreateExerciseItem(context, exerciseItemParams)
+	if err != nil {
+		return "", fmt.Errorf("failed to create exercise item: %w", err)
+	}
+
+	// Create exercise
+	exerciseUUID, err := uuid.NewV7()
+	if err != nil {
+		return "", fmt.Errorf("failed to generate UUID for exercise: %w", err)
 	}
 
 	toCreate := repository.CreateExerciseAndReturnIdParams{
-		ID:             uuid.String(),
+		ID:             exerciseUUID.String(),
 		Name:           exerciseType.Name,
 		WorkoutID:      workoutId,
 		ExerciseTypeID: exerciseType.ID,
-		CreatedOn: time.Now().UTC().Format(time.RFC3339),
-		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
-		UserID: userId,
+		ExerciseItemID: exerciseItemId,
+		CreatedOn:      now,
+		UpdatedOn:      now,
+		UserID:         userId,
 	}
 
 	id, err := e.repo.CreateAndReturnId(context, toCreate)

@@ -12,6 +12,7 @@ type Querier interface {
 	CheckIfTokenExists(ctx context.Context, arg CheckIfTokenExistsParams) (int64, error)
 	CompleteWorkoutById(ctx context.Context, arg CompleteWorkoutByIdParams) (int64, error)
 	CreateExerciseAndReturnId(ctx context.Context, arg CreateExerciseAndReturnIdParams) (string, error)
+	CreateExerciseItemAndReturnId(ctx context.Context, arg CreateExerciseItemAndReturnIdParams) (string, error)
 	CreateExerciseTypeAndReturnId(ctx context.Context, arg CreateExerciseTypeAndReturnIdParams) (string, error)
 	CreateExpiredToken(ctx context.Context, arg CreateExpiredTokenParams) (int64, error)
 	CreateSetAndReturnId(ctx context.Context, arg CreateSetAndReturnIdParams) (string, error)

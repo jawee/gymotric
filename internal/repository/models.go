@@ -5,14 +5,24 @@
 package repository
 
 type Exercise struct {
-	ID             string      `json:"id"`
-	Name           string      `json:"name"`
-	CreatedOn      string      `json:"created_on"`
-	UpdatedOn      string      `json:"updated_on"`
-	UserID         string      `json:"user_id"`
-	WorkoutID      string      `json:"workout_id"`
-	ExerciseTypeID string      `json:"exercise_type_id"`
-	Foreign        interface{} `json:"foreign"`
+	ID             string `json:"id"`
+	Name           string `json:"name"`
+	CreatedOn      string `json:"created_on"`
+	UpdatedOn      string `json:"updated_on"`
+	UserID         string `json:"user_id"`
+	WorkoutID      string `json:"workout_id"`
+	ExerciseTypeID string `json:"exercise_type_id"`
+	ExerciseItemID string `json:"exercise_item_id"`
+}
+
+type ExerciseItem struct {
+	ID        string      `json:"id"`
+	Type      string      `json:"type"`
+	UserID    string      `json:"user_id"`
+	WorkoutID string      `json:"workout_id"`
+	CreatedOn string      `json:"created_on"`
+	UpdatedOn string      `json:"updated_on"`
+	Foreign   interface{} `json:"foreign"`
 }
 
 type ExerciseType struct {

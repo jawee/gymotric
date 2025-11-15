@@ -20,6 +20,7 @@ type ExerciseRepository interface {
 	GetByWorkoutId(context context.Context, arg repository.GetExercisesByWorkoutIdParams) ([]Exercise, error)
 	DeleteById(context context.Context, arg repository.DeleteExerciseByIdParams) error
 	CreateAndReturnId(context context.Context, exercise repository.CreateExerciseAndReturnIdParams) (string, error)
+	CreateExerciseItem(context context.Context, exerciseItem repository.CreateExerciseItemAndReturnIdParams) (string, error)
 	GetExerciseTypeById(context context.Context, arg repository.GetExerciseTypeByIdParams) (*exercisetypes.ExerciseType, error)
 }
 
@@ -36,6 +37,16 @@ func (e exerciseRepository) CreateAndReturnId(context context.Context, exercise 
 
 	if err != nil {
 		return "", fmt.Errorf("failed to create exercise: %w", err)
+	}
+
+	return id, nil
+}
+
+func (e exerciseRepository) CreateExerciseItem(context context.Context, exerciseItem repository.CreateExerciseItemAndReturnIdParams) (string, error) {
+	id, err := e.repo.CreateExerciseItemAndReturnId(context, exerciseItem)
+
+	if err != nil {
+		return "", fmt.Errorf("failed to create exercise item: %w", err)
 	}
 
 	return id, nil

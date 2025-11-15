@@ -11,9 +11,9 @@ import (
 
 const createExerciseAndReturnId = `-- name: CreateExerciseAndReturnId :one
 INSERT INTO exercises (
-  id, name, workout_id, exercise_type_id, created_on, updated_on, user_id
+  id, name, workout_id, exercise_type_id, exercise_item_id, created_on, updated_on, user_id
 ) VALUES (
-  ?1, ?2, ?3, ?4, ?5, ?6, ?7
+  ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8
 )
 RETURNING id
 `
@@ -23,6 +23,7 @@ type CreateExerciseAndReturnIdParams struct {
 	Name           string `json:"name"`
 	WorkoutID      string `json:"workout_id"`
 	ExerciseTypeID string `json:"exercise_type_id"`
+	ExerciseItemID string `json:"exercise_item_id"`
 	CreatedOn      string `json:"created_on"`
 	UpdatedOn      string `json:"updated_on"`
 	UserID         string `json:"user_id"`
@@ -34,9 +35,42 @@ func (q *Queries) CreateExerciseAndReturnId(ctx context.Context, arg CreateExerc
 		arg.Name,
 		arg.WorkoutID,
 		arg.ExerciseTypeID,
+		arg.ExerciseItemID,
 		arg.CreatedOn,
 		arg.UpdatedOn,
 		arg.UserID,
+	)
+	var id string
+	err := row.Scan(&id)
+	return id, err
+}
+
+const createExerciseItemAndReturnId = `-- name: CreateExerciseItemAndReturnId :one
+INSERT INTO exercise_items (
+  id, type, user_id, workout_id, created_on, updated_on
+) VALUES (
+  ?1, ?2, ?3, ?4, ?5, ?6
+)
+RETURNING id
+`
+
+type CreateExerciseItemAndReturnIdParams struct {
+	ID        string `json:"id"`
+	Type      string `json:"type"`
+	UserID    string `json:"user_id"`
+	WorkoutID string `json:"workout_id"`
+	CreatedOn string `json:"created_on"`
+	UpdatedOn string `json:"updated_on"`
+}
+
+func (q *Queries) CreateExerciseItemAndReturnId(ctx context.Context, arg CreateExerciseItemAndReturnIdParams) (string, error) {
+	row := q.db.QueryRowContext(ctx, createExerciseItemAndReturnId,
+		arg.ID,
+		arg.Type,
+		arg.UserID,
+		arg.WorkoutID,
+		arg.CreatedOn,
+		arg.UpdatedOn,
 	)
 	var id string
 	err := row.Scan(&id)
@@ -63,7 +97,7 @@ func (q *Queries) DeleteExerciseById(ctx context.Context, arg DeleteExerciseById
 }
 
 const getAllExercises = `-- name: GetAllExercises :many
-SELECT id, name, created_on, updated_on, user_id, workout_id, exercise_type_id, "foreign" FROM exercises 
+SELECT id, name, created_on, updated_on, user_id, workout_id, exercise_type_id, exercise_item_id FROM exercises 
 WHERE user_id = ?1
 ORDER by id
 `
@@ -85,7 +119,7 @@ func (q *Queries) GetAllExercises(ctx context.Context, userID string) ([]Exercis
 			&i.UserID,
 			&i.WorkoutID,
 			&i.ExerciseTypeID,
-			&i.Foreign,
+			&i.ExerciseItemID,
 		); err != nil {
 			return nil, err
 		}
@@ -101,7 +135,7 @@ func (q *Queries) GetAllExercises(ctx context.Context, userID string) ([]Exercis
 }
 
 const getExerciseById = `-- name: GetExerciseById :one
-SELECT id, name, created_on, updated_on, user_id, workout_id, exercise_type_id, "foreign" FROM exercises 
+SELECT id, name, created_on, updated_on, user_id, workout_id, exercise_type_id, exercise_item_id FROM exercises 
 WHERE id = ?1
 AND user_id = ?2
 `
@@ -122,13 +156,13 @@ func (q *Queries) GetExerciseById(ctx context.Context, arg GetExerciseByIdParams
 		&i.UserID,
 		&i.WorkoutID,
 		&i.ExerciseTypeID,
-		&i.Foreign,
+		&i.ExerciseItemID,
 	)
 	return i, err
 }
 
 const getExercisesByWorkoutId = `-- name: GetExercisesByWorkoutId :many
-SELECT id, name, created_on, updated_on, user_id, workout_id, exercise_type_id, "foreign" FROM exercises
+SELECT id, name, created_on, updated_on, user_id, workout_id, exercise_type_id, exercise_item_id FROM exercises
 WHERE workout_id = ?1
 AND user_id = ?2
 `
@@ -155,7 +189,7 @@ func (q *Queries) GetExercisesByWorkoutId(ctx context.Context, arg GetExercisesB
 			&i.UserID,
 			&i.WorkoutID,
 			&i.ExerciseTypeID,
-			&i.Foreign,
+			&i.ExerciseItemID,
 		); err != nil {
 			return nil, err
 		}
