@@ -45,38 +45,6 @@ func (q *Queries) CreateExerciseAndReturnId(ctx context.Context, arg CreateExerc
 	return id, err
 }
 
-const createExerciseItemAndReturnId = `-- name: CreateExerciseItemAndReturnId :one
-INSERT INTO exercise_items (
-  id, type, user_id, workout_id, created_on, updated_on
-) VALUES (
-  ?1, ?2, ?3, ?4, ?5, ?6
-)
-RETURNING id
-`
-
-type CreateExerciseItemAndReturnIdParams struct {
-	ID        string `json:"id"`
-	Type      string `json:"type"`
-	UserID    string `json:"user_id"`
-	WorkoutID string `json:"workout_id"`
-	CreatedOn string `json:"created_on"`
-	UpdatedOn string `json:"updated_on"`
-}
-
-func (q *Queries) CreateExerciseItemAndReturnId(ctx context.Context, arg CreateExerciseItemAndReturnIdParams) (string, error) {
-	row := q.db.QueryRowContext(ctx, createExerciseItemAndReturnId,
-		arg.ID,
-		arg.Type,
-		arg.UserID,
-		arg.WorkoutID,
-		arg.CreatedOn,
-		arg.UpdatedOn,
-	)
-	var id string
-	err := row.Scan(&id)
-	return id, err
-}
-
 const deleteExerciseById = `-- name: DeleteExerciseById :execrows
 DELETE FROM exercises 
 WHERE id = ?1

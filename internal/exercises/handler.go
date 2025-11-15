@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"weight-tracker/internal/database"
+	"weight-tracker/internal/exerciseitems"
 	"weight-tracker/internal/utils"
 )
 
@@ -13,8 +14,9 @@ type handler struct {
 }
 
 func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper func(next http.Handler) http.Handler) {
+	exerciseItemsService := exerciseitems.NewService(exerciseitems.NewExerciseItemRepository(s.GetRepository()))
 	handler := handler{
-		service: NewService(NewExerciseRepository(s.GetRepository())),
+		service: NewService(NewExerciseRepository(s.GetRepository()), exerciseItemsService),
 	}
 
 	mux.Handle("GET /workouts/{id}/exercises", authenticationWrapper(http.HandlerFunc(handler.getExercisesByWorkoutIdHandler)))
