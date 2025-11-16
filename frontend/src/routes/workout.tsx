@@ -391,11 +391,20 @@ const WorkoutComponent = () => {
         <h3 className="text-2xl mt-3">Exercises</h3>
         <div>
           {exerciseItems.map(item => (
-            <div key={item.id} className="mt-2">
-              {item.exercises.map(e => (
-                <ExerciseComponent key={e.id} exercise={e} />
-              ))}
-            </div>
+            item.type === 'superset' ? (
+              <div key={item.id} className="mt-4 p-3 border-2 border-yellow-500 bg-yellow-50 rounded">
+                <h4 className="font-bold text-lg">🔗 Superset</h4>
+                {item.exercises.map(e => (
+                  <ExerciseComponent key={e.id} exercise={e} />
+                ))}
+              </div>
+            ) : (
+              <div key={item.id} className="mt-2">
+                {item.exercises.map(e => (
+                  <ExerciseComponent key={e.id} exercise={e} />
+                ))}
+              </div>
+            )
           ))}
         </div>
         <div className="mt-2">
