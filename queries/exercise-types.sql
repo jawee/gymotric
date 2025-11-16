@@ -23,12 +23,13 @@ AND user_id = sqlc.arg(user_id);
 
 
 -- name: GetMaxWeightRepsByExerciseTypeId :one
-SELECT s.weight as weight, Max(s.repetitions) as repetitions FROM exercises e
+SELECT COALESCE(s.weight, 0) as weight, COALESCE(Max(s.repetitions), 0) as repetitions FROM exercises e
+LEFT JOIN sets s ON s.exercise_id = e.id
+WHERE e.exercise_type_id = sqlc.arg(id) AND (s.user_id = sqlc.arg(user_id) OR s.id IS NULL)
+AND (s.weight = (SELECT Max(s.weight) as weight FROM exercises e
 JOIN sets s ON s.exercise_id = e.id
-WHERE e.exercise_type_id = sqlc.arg(id) AND s.user_id = sqlc.arg(user_id)
-AND s.weight = (SELECT Max(s.weight) as weight FROM exercises e
-JOIN sets s ON s.exercise_id = e.id
-WHERE e.exercise_type_id = sqlc.arg(id) AND s.user_id = sqlc.arg(user_id));
+WHERE e.exercise_type_id = sqlc.arg(id) AND s.user_id = sqlc.arg(user_id)) OR s.weight IS NULL)
+GROUP BY e.exercise_type_id;
 
 -- name: GetLastWeightRepsByExerciseTypeId :one
 SELECT s.repetitions, s.weight FROM exercises e

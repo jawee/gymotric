@@ -145,12 +145,13 @@ func (q *Queries) GetLastWeightRepsByExerciseTypeId(ctx context.Context, arg Get
 }
 
 const getMaxWeightRepsByExerciseTypeId = `-- name: GetMaxWeightRepsByExerciseTypeId :one
-SELECT s.weight as weight, Max(s.repetitions) as repetitions FROM exercises e
+SELECT COALESCE(s.weight, 0) as weight, COALESCE(Max(s.repetitions), 0) as repetitions FROM exercises e
+LEFT JOIN sets s ON s.exercise_id = e.id
+WHERE e.exercise_type_id = ?1 AND (s.user_id = ?2 OR s.id IS NULL)
+AND (s.weight = (SELECT Max(s.weight) as weight FROM exercises e
 JOIN sets s ON s.exercise_id = e.id
-WHERE e.exercise_type_id = ?1 AND s.user_id = ?2
-AND s.weight = (SELECT Max(s.weight) as weight FROM exercises e
-JOIN sets s ON s.exercise_id = e.id
-WHERE e.exercise_type_id = ?1 AND s.user_id = ?2)
+WHERE e.exercise_type_id = ?1 AND s.user_id = ?2) OR s.weight IS NULL)
+GROUP BY e.exercise_type_id
 `
 
 type GetMaxWeightRepsByExerciseTypeIdParams struct {
