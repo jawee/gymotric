@@ -610,7 +610,7 @@ const WorkoutComponent = () => {
             </>
           } 
           onSubmitButtonClick={addExercise} 
-          onSubmitButtonTitle="Next" 
+          onSubmitButtonTitle={selectedExerciseItemId ? "Add" : "Next"} 
           title="Add Exercise"
           dialogProps={{ open: addExerciseDialogOpen, onOpenChange: setAddExerciseDialogOpen }}
         />
