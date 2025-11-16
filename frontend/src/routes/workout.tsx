@@ -363,7 +363,7 @@ const WorkoutComponent = () => {
       );
       
       if (itemToDelete) {
-        ApiService.deleteExerciseItem(exerciseItemId).catch(err => {
+        ApiService.deleteExerciseItem(id, exerciseItemId).catch(err => {
           console.log("Error deleting empty exercise item:", err);
         });
       }

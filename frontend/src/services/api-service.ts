@@ -280,15 +280,15 @@ const createExerciseItem = async (workoutId: string, type: string = "exercise", 
   return res;
 };
 
-const updateExerciseItemType = async (exerciseItemId: string, type: string, isRetry: boolean = false) => {
-  const res = await fetch("/api/exercise-items/" + exerciseItemId, {
+const updateExerciseItemType = async (workoutId: string, exerciseItemId: string, type: string, isRetry: boolean = false) => {
+  const res = await fetch("/api/workouts/" + workoutId + "/exercise-items/" + exerciseItemId, {
     method: "PUT",
     credentials: "include",
     body: JSON.stringify({ type })
   });
   const shouldRetry = await checkIfUnauthorized(res, isRetry);
   if (shouldRetry && !isRetry) {
-    return await updateExerciseItemType(exerciseItemId, type, true);
+    return await updateExerciseItemType(workoutId, exerciseItemId, type, true);
   }
   return res;
 };
@@ -318,14 +318,14 @@ const deleteExercise = async (workoutId: string, exerciseItemId: string, exercis
   return res;
 };
 
-const deleteExerciseItem = async (exerciseItemId: string, isRetry: boolean = false) => {
-  const res = await fetch("/api/exercise-items/" + exerciseItemId, {
+const deleteExerciseItem = async (workoutId: string, exerciseItemId: string, isRetry: boolean = false) => {
+  const res = await fetch("/api/workouts/" + workoutId + "/exercise-items/" + exerciseItemId, {
     method: "DELETE",
     credentials: "include",
   });
   const shouldRetry = await checkIfUnauthorized(res, isRetry);
   if (shouldRetry && !isRetry) {
-    return await deleteExerciseItem(exerciseItemId, true);
+    return await deleteExerciseItem(workoutId, exerciseItemId, true);
   }
   return res;
 };

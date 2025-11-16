@@ -20,10 +20,10 @@ func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper 
 	}
 
 	mux.Handle("GET /workouts/{workoutId}/exercise-items", authenticationWrapper(http.HandlerFunc(handler.getByWorkoutIdHandler)))
-	mux.Handle("GET /exercise-items/{id}", authenticationWrapper(http.HandlerFunc(handler.getByIdHandler)))
+	mux.Handle("GET /workouts/{workoutId}/exercise-items/{exerciseItemId}", authenticationWrapper(http.HandlerFunc(handler.getByIdHandler)))
 	mux.Handle("POST /workouts/{workoutId}/exercise-items", authenticationWrapper(http.HandlerFunc(handler.createHandler)))
-	mux.Handle("PUT /exercise-items/{id}", authenticationWrapper(http.HandlerFunc(handler.updateHandler)))
-	mux.Handle("DELETE /exercise-items/{id}", authenticationWrapper(http.HandlerFunc(handler.deleteHandler)))
+	mux.Handle("PUT /workouts/{workoutId}/exercise-items/{exerciseItemId}", authenticationWrapper(http.HandlerFunc(handler.updateHandler)))
+	mux.Handle("DELETE /workouts/{workoutId}/exercise-items/{exerciseItemId}", authenticationWrapper(http.HandlerFunc(handler.deleteHandler)))
 }
 
 type handler struct {
@@ -64,7 +64,7 @@ func (h *handler) getByWorkoutIdHandler(w http.ResponseWriter, r *http.Request) 
 
 func (h *handler) getByIdHandler(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value("sub").(string)
-	itemId := r.PathValue("id")
+	itemId := r.PathValue("exerciseItemId")
 
 	arg := repository.GetExerciseItemByIdParams{
 		ID:     itemId,
@@ -116,7 +116,7 @@ func (h *handler) createHandler(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) updateHandler(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value("sub").(string)
-	itemId := r.PathValue("id")
+	itemId := r.PathValue("exerciseItemId")
 
 	var req updateExerciseItemRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -144,7 +144,7 @@ func (h *handler) updateHandler(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value("sub").(string)
-	itemId := r.PathValue("id")
+	itemId := r.PathValue("exerciseItemId")
 
 	arg := repository.DeleteExerciseItemByIdParams{
 		ID:     itemId,
