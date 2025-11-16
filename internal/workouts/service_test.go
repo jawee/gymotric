@@ -27,6 +27,10 @@ func (r *exerciseRepoMock) GetByWorkoutId(context context.Context, arg repositor
 	args := r.Called(context, arg)
 	return args.Get(0).([]exercises.Exercise), args.Error(1)
 }
+func (r *exerciseRepoMock) GetByExerciseItemId(context context.Context, exerciseItemId string, userId string) ([]exercises.Exercise, error) {
+	args := r.Called(context, exerciseItemId, userId)
+	return args.Get(0).([]exercises.Exercise), args.Error(1)
+}
 func (r *exerciseRepoMock) DeleteById(context context.Context, arg repository.DeleteExerciseByIdParams) error {
 	args := r.Called(context, arg)
 	return args.Error(0)
@@ -512,4 +516,3 @@ func TestGetAllCountError(t *testing.T) {
 	assert.Equal(t, 0, count)
 	repoMock.AssertExpectations(t)
 }
-

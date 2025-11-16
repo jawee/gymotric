@@ -290,18 +290,25 @@ const WorkoutComponent = () => {
 
 
   useEffect(() => {
-    const fetchExercises = async () => {
+    const fetchExerciseItems = async () => {
       if (id === undefined) {
         return;
       }
 
-      const res = await ApiService.fetchExercises(id);
+      const res = await ApiService.fetchExerciseItems(id);
       if (res.status === 200) {
         const resObj = await res.json();
-        setExercises(resObj.data);
+        // Flatten exercises from all exercise items
+        const allExercises: Exercise[] = [];
+        resObj.data.forEach((item: any) => {
+          if (item.exercises && Array.isArray(item.exercises)) {
+            allExercises.push(...item.exercises);
+          }
+        });
+        setExercises(allExercises);
       }
     };
-    fetchExercises();
+    fetchExerciseItems();
   }, [workout, id]);
 
   const reopen = async () => {

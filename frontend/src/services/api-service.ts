@@ -245,6 +245,17 @@ const updateExerciseType = async (id: string, name: string, isRetry: boolean = f
   return res;
 };
 
+const fetchExerciseItems = async (workoutId: string, isRetry: boolean = false) => {
+  const res = await fetch("/api/workouts/" + workoutId + "/exercise-items", {
+    credentials: "include",
+  });
+  const shouldRetry = await checkIfUnauthorized(res, isRetry);
+  if (shouldRetry && !isRetry) {
+    return await fetchExerciseItems(workoutId, true);
+  }
+  return res;
+};
+
 const fetchExercises = async (workoutId: string, isRetry: boolean = false) => {
   const res = await fetch("/api/workouts/" + workoutId + "/exercises", {
     credentials: "include",
@@ -425,6 +436,7 @@ const ApiService = {
   createExerciseType,
   deleteExerciseType,
   updateExerciseType,
+  fetchExerciseItems,
   fetchExercises,
   createExerciseItem,
   createExercise,

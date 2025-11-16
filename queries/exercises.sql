@@ -21,6 +21,11 @@ SELECT * FROM exercises
 WHERE workout_id = sqlc.arg(workout_id)
 AND user_id = sqlc.arg(user_id);
 
+-- name: GetExercisesByExerciseItemId :many
+SELECT * FROM exercises
+WHERE exercise_item_id = sqlc.arg(exercise_item_id)
+AND user_id = sqlc.arg(user_id);
+
 -- name: DeleteExerciseById :execrows
 DELETE FROM exercises 
 WHERE id = sqlc.arg(id)

@@ -6,13 +6,17 @@ import (
 	"net/http"
 	"time"
 	"weight-tracker/internal/database"
+	"weight-tracker/internal/exercises"
 	"weight-tracker/internal/repository"
 	"weight-tracker/internal/utils"
 )
 
 func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper func(next http.Handler) http.Handler) {
 	handler := handler{
-		service: NewService(NewExerciseItemRepository(s.GetRepository())),
+		service: NewService(
+			NewExerciseItemRepository(s.GetRepository()),
+			exercises.NewExerciseRepository(s.GetRepository()),
+		),
 	}
 
 	mux.Handle("GET /workouts/{workoutId}/exercise-items", authenticationWrapper(http.HandlerFunc(handler.getByWorkoutIdHandler)))
@@ -42,7 +46,7 @@ func (h *handler) getByWorkoutIdHandler(w http.ResponseWriter, r *http.Request) 
 		WorkoutID: workoutId,
 		UserID:    userId,
 	}
-	items, err := h.service.GetByWorkoutId(r.Context(), arg)
+	items, err := h.service.GetByWorkoutIdWithExercises(r.Context(), arg)
 	if err != nil {
 		slog.Error("Failed to get exercise items by workout", "error", err, "workoutId", workoutId)
 		http.Error(w, "Failed to get exercise items", http.StatusBadRequest)
@@ -66,7 +70,7 @@ func (h *handler) getByIdHandler(w http.ResponseWriter, r *http.Request) {
 		ID:     itemId,
 		UserID: userId,
 	}
-	item, err := h.service.GetById(r.Context(), arg)
+	item, err := h.service.GetByIdWithExercises(r.Context(), arg)
 	if err != nil {
 		slog.Error("Failed to get exercise item", "error", err, "itemId", itemId)
 		http.Error(w, "Failed to get exercise item", http.StatusBadRequest)

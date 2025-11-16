@@ -304,6 +304,9 @@ func (m *querierMock) GetExerciseTypeById(ctx context.Context, arg repository.Ge
 func (m *querierMock) GetExercisesByWorkoutId(ctx context.Context, arg repository.GetExercisesByWorkoutIdParams) ([]repository.Exercise, error) {
 	panic("not implemented")
 }
+func (m *querierMock) GetExercisesByExerciseItemId(ctx context.Context, arg repository.GetExercisesByExerciseItemIdParams) ([]repository.Exercise, error) {
+	panic("not implemented")
+}
 func (m *querierMock) GetLastWeightRepsByExerciseTypeId(ctx context.Context, arg repository.GetLastWeightRepsByExerciseTypeIdParams) (repository.GetLastWeightRepsByExerciseTypeIdRow, error) {
 	panic("not implemented")
 }

@@ -38,6 +38,7 @@ type Querier interface {
 	GetExerciseItemById(ctx context.Context, arg GetExerciseItemByIdParams) (ExerciseItem, error)
 	GetExerciseItemsByWorkoutId(ctx context.Context, arg GetExerciseItemsByWorkoutIdParams) ([]ExerciseItem, error)
 	GetExerciseTypeById(ctx context.Context, arg GetExerciseTypeByIdParams) (ExerciseType, error)
+	GetExercisesByExerciseItemId(ctx context.Context, arg GetExercisesByExerciseItemIdParams) ([]Exercise, error)
 	GetExercisesByWorkoutId(ctx context.Context, arg GetExercisesByWorkoutIdParams) ([]Exercise, error)
 	GetLastWeightRepsByExerciseTypeId(ctx context.Context, arg GetLastWeightRepsByExerciseTypeIdParams) (GetLastWeightRepsByExerciseTypeIdRow, error)
 	GetMaxWeightRepsByExerciseTypeId(ctx context.Context, arg GetMaxWeightRepsByExerciseTypeIdParams) (GetMaxWeightRepsByExerciseTypeIdRow, error)

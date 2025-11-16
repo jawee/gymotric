@@ -182,6 +182,7 @@ func TestCreateExerciseHandlerBadRequest(t *testing.T) {
 
 	reqBodyObj := createExerciseRequest{
 		ExerciseTypeID: exerciseTypeId,
+		// ExerciseItemID is intentionally missing to test validation
 	}
 
 	reqBody, err := json.Marshal(reqBodyObj)
@@ -202,11 +203,7 @@ func TestCreateExerciseHandlerBadRequest(t *testing.T) {
 	}
 
 	serviceMock := serviceMock{}
-	serviceMock.On("CreateAndReturnId", ctx, mock.MatchedBy(func(input createExerciseRequest) bool {
-		return input.ExerciseTypeID == exerciseTypeId
-	}), workoutId, userId).
-		Return("", fmt.Errorf("Some error occurred")).
-		Once()
+	// No expectations set since the request should be rejected before calling service
 
 	rr := httptest.NewRecorder()
 	s := handler{service: &serviceMock}
@@ -215,10 +212,10 @@ func TestCreateExerciseHandlerBadRequest(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	if status := rr.Code; status != http.StatusBadRequest {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
 	}
 
-	expected := "Failed to create exercise\n"
+	expected := "exercise_item_id is required\n"
 	if rr.Body.String() != expected {
 		t.Errorf("handler returned unexpected body: got '%v' want '%v'",
 			rr.Body.String(), expected)

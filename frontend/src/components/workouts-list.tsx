@@ -89,16 +89,23 @@ const WorkoutListItem = ({ workout }: WorkoutListItemProps) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchExercises = async () => {
-      const res = await ApiService.fetchExercises(workout.id);
+    const fetchExerciseItems = async () => {
+      const res = await ApiService.fetchExerciseItems(workout.id);
 
       if (res.status === 200) {
         const resObj = await res.json();
-        setExercises(resObj.data);
+        // Flatten exercises from all exercise items
+        const allExercises: Exercise[] = [];
+        resObj.data.forEach((item: any) => {
+          if (item.exercises && Array.isArray(item.exercises)) {
+            allExercises.push(...item.exercises);
+          }
+        });
+        setExercises(allExercises);
       }
     };
 
-    fetchExercises();
+    fetchExerciseItems();
   }, [workout.id]);
 
   return (
