@@ -24,7 +24,8 @@ type ExerciseProps = {
 
 type EditableExerciseProps = {
   exercise: Exercise,
-  deleteExerciseFunc: (exerciseId: string) => Promise<void>;
+  exerciseItemId: string,
+  deleteExerciseFunc: (exerciseItemId: string, exerciseId: string) => Promise<void>;
 };
 
 const fetchSets = async (wId: string, eId: string, setSets: Dispatch<React.SetStateAction<Set[]>>) => {
@@ -72,7 +73,7 @@ const ExerciseComponent = (props: ExerciseProps) => {
   );
 };
 
-const EditableExercise = ({ exercise, deleteExerciseFunc }: EditableExerciseProps) => {
+const EditableExercise = ({ exercise, exerciseItemId, deleteExerciseFunc }: EditableExerciseProps) => {
   const [sets, setSets] = useState<Set[]>([]);
   const [lastWeight, setLastWeight] = useState<number | null>(null);
   const [lastReps, setLastReps] = useState<number | null>(null);
@@ -160,7 +161,7 @@ const EditableExercise = ({ exercise, deleteExerciseFunc }: EditableExerciseProp
   };
 
   const deleteExercise = async () => {
-    await deleteExerciseFunc(exercise.id);
+    await deleteExerciseFunc(exerciseItemId, exercise.id);
   };
 
   return (
@@ -333,12 +334,12 @@ const WorkoutComponent = () => {
     navigate("/app/workouts/" + obj.id);
   };
 
-  const deleteExercise = async (exerciseId: string) => {
+  const deleteExercise = async (exerciseItemId: string, exerciseId: string) => {
     if (id === undefined) {
       return;
     }
 
-    const res = await ApiService.deleteExercise(id, exerciseId);
+    const res = await ApiService.deleteExercise(id, exerciseItemId, exerciseId);
     if (res.status !== 204) {
       console.log("Error");
       return;
@@ -521,7 +522,7 @@ const WorkoutComponent = () => {
         {exerciseItems.map(item => (
           <div key={item.id} className="mt-2">
             {item.exercises.map(e => (
-              <EditableExercise key={e.id} exercise={e} deleteExerciseFunc={deleteExercise} />
+              <EditableExercise key={e.id} exercise={e} exerciseItemId={item.id} deleteExerciseFunc={deleteExercise} />
             ))}
           </div>
         ))}
