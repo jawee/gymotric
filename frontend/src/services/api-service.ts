@@ -267,15 +267,28 @@ const fetchExercises = async (workoutId: string, isRetry: boolean = false) => {
   return res;
 };
 
-const createExerciseItem = async (workoutId: string, isRetry: boolean = false) => {
+const createExerciseItem = async (workoutId: string, type: string = "exercise", isRetry: boolean = false) => {
   const res = await fetch("/api/workouts/" + workoutId + "/exercise-items", {
     method: "POST",
     credentials: "include",
-    body: JSON.stringify({ type: "exercise" })
+    body: JSON.stringify({ type })
   });
   const shouldRetry = await checkIfUnauthorized(res, isRetry);
   if (shouldRetry && !isRetry) {
-    return await createExerciseItem(workoutId, true);
+    return await createExerciseItem(workoutId, type, true);
+  }
+  return res;
+};
+
+const updateExerciseItemType = async (exerciseItemId: string, type: string, isRetry: boolean = false) => {
+  const res = await fetch("/api/exercise-items/" + exerciseItemId, {
+    method: "PUT",
+    credentials: "include",
+    body: JSON.stringify({ type })
+  });
+  const shouldRetry = await checkIfUnauthorized(res, isRetry);
+  if (shouldRetry && !isRetry) {
+    return await updateExerciseItemType(exerciseItemId, type, true);
   }
   return res;
 };
@@ -301,6 +314,18 @@ const deleteExercise = async (workoutId: string, exerciseItemId: string, exercis
   const shouldRetry = await checkIfUnauthorized(res, isRetry);
   if (shouldRetry && !isRetry) {
     return await deleteExercise(workoutId, exerciseItemId, exerciseId, true);
+  }
+  return res;
+};
+
+const deleteExerciseItem = async (exerciseItemId: string, isRetry: boolean = false) => {
+  const res = await fetch("/api/exercise-items/" + exerciseItemId, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  const shouldRetry = await checkIfUnauthorized(res, isRetry);
+  if (shouldRetry && !isRetry) {
+    return await deleteExerciseItem(exerciseItemId, true);
   }
   return res;
 };
@@ -439,8 +464,10 @@ const ApiService = {
   fetchExerciseItems,
   fetchExercises,
   createExerciseItem,
+  updateExerciseItemType,
   createExercise,
   deleteExercise,
+  deleteExerciseItem,
   fetchMaxWeightAndReps,
   fetchLastWeightAndReps,
   fetchMe,

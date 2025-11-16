@@ -14,8 +14,10 @@ type WtDialogProps = {
   shouldUseDefaultSubmit?: boolean;
   topPercentage?: string;
   onOpenAutoFocus?: (e: Event) => void;
+  hideFooter?: boolean;
+  hideSubmitButton?: boolean;
 };
-const WtDialog = ({ openButtonTitle, openButtonClassName, form, title, description, onSubmitButtonTitle, onSubmitButtonClick, shouldUseDefaultSubmit = true, topPercentage = "20", onOpenAutoFocus, dialogProps }: WtDialogProps) => {
+const WtDialog = ({ openButtonTitle, openButtonClassName, form, title, description, onSubmitButtonTitle, onSubmitButtonClick, shouldUseDefaultSubmit = true, topPercentage = "20", onOpenAutoFocus, dialogProps, hideFooter = false, hideSubmitButton = false }: WtDialogProps) => {
   let topPosition = "max-md:top-[20%]";
   if (topPercentage == "25") {
     topPosition = "max-md:top-[25%]";
@@ -36,13 +38,16 @@ const WtDialog = ({ openButtonTitle, openButtonClassName, form, title, descripti
           </DialogDescription>
         </DialogHeader>
         {form}
-        <DialogFooter>
-          <DialogClose className={cn(buttonVariants({ variant: "default" }), "bg-red-500", "hover:bg-red-700")}>Cancel</DialogClose>
-          {shouldUseDefaultSubmit ?
-            <DialogClose asChild><Button onClick={() => onSubmitButtonClick()}>{onSubmitButtonTitle}</Button></DialogClose> :
-            <Button onClick={onSubmitButtonClick}>Submit</Button>
-          }
-        </DialogFooter>
+        {!hideFooter && (
+          <DialogFooter>
+            <DialogClose className={cn(buttonVariants({ variant: "default" }), "bg-red-500", "hover:bg-red-700")}>Cancel</DialogClose>
+            {!hideSubmitButton && (
+              shouldUseDefaultSubmit ?
+                <DialogClose asChild><Button onClick={() => onSubmitButtonClick()}>{onSubmitButtonTitle}</Button></DialogClose> :
+                <Button onClick={onSubmitButtonClick}>Submit</Button>
+            )}
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );
