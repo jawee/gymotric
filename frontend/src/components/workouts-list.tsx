@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 import { Workout } from "../models/workout";
 import ApiService from "../services/api-service";
 import WtDialog from "./wt-dialog";
-import { Exercise } from "../models/exercise";
+import { ExerciseItem } from "../models/exercise-item";
 import Loading from "./loading";
 import { Dumbbell } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "./ui/pagination";
@@ -85,7 +85,7 @@ type WorkoutListItemProps = {
 }
 
 const WorkoutListItem = ({ workout }: WorkoutListItemProps) => {
-  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [exerciseItems, setExerciseItems] = useState<ExerciseItem[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -94,14 +94,7 @@ const WorkoutListItem = ({ workout }: WorkoutListItemProps) => {
 
       if (res.status === 200) {
         const resObj = await res.json();
-        // Flatten exercises from all exercise items
-        const allExercises: Exercise[] = [];
-        resObj.data.forEach((item: any) => {
-          if (item.exercises && Array.isArray(item.exercises)) {
-            allExercises.push(...item.exercises);
-          }
-        });
-        setExercises(allExercises);
+        setExerciseItems(resObj.data);
       }
     };
 
@@ -118,11 +111,11 @@ const WorkoutListItem = ({ workout }: WorkoutListItemProps) => {
       <div className="flex-1 hidden md:block">
         <p className="font-medium">Exercises:</p>
         <ul>
-          {exercises.map(exercise => {
-            return (
+          {exerciseItems.map(item => (
+            item.exercises.map(exercise => (
               <li key={exercise.id}>{exercise.name}</li>
-            )
-          })}
+            ))
+          ))}
         </ul>
       </div>
     </div>

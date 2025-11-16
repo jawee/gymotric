@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Dispatch, useEffect, useState } from "react";
 import { Workout } from "../models/workout";
 import { Exercise } from "../models/exercise";
+import { ExerciseItem } from "../models/exercise-item";
 import { Set } from "../models/set";
 import { ExerciseType } from "../models/exercise-type";
 import { useLocation, useNavigate, useParams } from "react-router";
@@ -164,7 +165,7 @@ const EditableExercise = ({ exercise, deleteExerciseFunc }: EditableExerciseProp
 
   return (
     <div className="border-2 border-black p-2 mt-2 mb-2">
-      <li key={exercise.id}>
+      <div>
         <p className="text-xl">{exercise.name}
           <WtDialog openButtonTitle={<Trash2 />}
             openButtonClassName={cn(buttonVariants({ variant: "default" }),
@@ -219,7 +220,7 @@ const EditableExercise = ({ exercise, deleteExerciseFunc }: EditableExerciseProp
         </div>
         <p className="font-bold">Last set: {lastWeight}kg for {lastReps}reps</p>
         <p className="font-bold">Max set: {maxWeight}kg for {maxReps}reps</p>
-      </li>
+      </div>
     </div>
   );
 };
@@ -228,7 +229,7 @@ const WorkoutComponent = () => {
   const params = useParams();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [workout, setWorkout] = useState<Workout | null>(null);
-  const [exercises, setExercises] = useState<Exercise[]>([])
+  const [exerciseItems, setExerciseItems] = useState<ExerciseItem[]>([])
   const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([]);
 
   const [finishDialogOpen, setFinishDialogOpen] = useState<boolean>(false);
@@ -298,14 +299,7 @@ const WorkoutComponent = () => {
       const res = await ApiService.fetchExerciseItems(id);
       if (res.status === 200) {
         const resObj = await res.json();
-        // Flatten exercises from all exercise items
-        const allExercises: Exercise[] = [];
-        resObj.data.forEach((item: any) => {
-          if (item.exercises && Array.isArray(item.exercises)) {
-            allExercises.push(...item.exercises);
-          }
-        });
-        setExercises(allExercises);
+        setExerciseItems(resObj.data);
       }
     };
     fetchExerciseItems();
@@ -350,7 +344,11 @@ const WorkoutComponent = () => {
       return;
     }
 
-    setExercises(l => l.filter(item => item.id !== exerciseId));
+    // Remove the exercise from the exercise item that contains it
+    setExerciseItems(items => items.map(item => ({
+      ...item,
+      exercises: item.exercises.filter(e => e.id !== exerciseId)
+    })).filter(item => item.exercises.length > 0));
   };
 
   const [value, setValue] = useState("");
@@ -369,13 +367,15 @@ const WorkoutComponent = () => {
         <Button onClick={cloneWorkout}><Copy />Clone</Button>
         <Button onClick={reopen} className="ml-1"><Key />Reopen</Button>
         <h3 className="text-2xl mt-3">Exercises</h3>
-        <ul>
-          {exercises.map(e => {
-            return (
-              <ExerciseComponent key={e.id} exercise={e} />
-            );
-          })}
-        </ul>
+        <div>
+          {exerciseItems.map(item => (
+            <div key={item.id} className="mt-2">
+              {item.exercises.map(e => (
+                <ExerciseComponent key={e.id} exercise={e} />
+              ))}
+            </div>
+          ))}
+        </div>
         <div className="mt-2">
           <WtDialog openButtonTitle={<><Trash2 /> Delete workout</>}
             openButtonClassName={cn(buttonVariants({ variant: "default" }),
@@ -417,9 +417,19 @@ const WorkoutComponent = () => {
         }
 
         setValue("");
-        const obj = await res.json();
+        const exerciseObj = await res.json();
 
-        setExercises([...exercises, { id: obj.id, exercise_type_id: exerciseType.id, workout_id: workout.id, name: exerciseType.name }]);
+        // Add the new exercise to the exercise item and update state
+        const newExerciseItem: ExerciseItem = {
+          ...exerciseItemObj,
+          exercises: [{
+            id: exerciseObj.id,
+            exercise_type_id: exerciseType.id,
+            workout_id: workout.id,
+            name: exerciseType.name
+          }]
+        };
+        setExerciseItems([...exerciseItems, newExerciseItem]);
         return;
       }
 
@@ -434,8 +444,8 @@ const WorkoutComponent = () => {
         return;
       }
 
-      let obj = await exerciseTypeRes.json();
-      setExerciseTypes([...exerciseTypes, { id: obj.id, name: value }]);
+      let exerciseTypeObj = await exerciseTypeRes.json();
+      setExerciseTypes([...exerciseTypes, { id: exerciseTypeObj.id, name: value }]);
 
       // Create exercise_item first
       const exerciseItemRes = await ApiService.createExerciseItem(workout.id);
@@ -446,16 +456,26 @@ const WorkoutComponent = () => {
       const exerciseItemObj = await exerciseItemRes.json();
 
       // Then create exercise with the exercise_item_id
-      const res = await ApiService.createExercise(workout.id, obj.id, exerciseItemObj.id);
+      const res = await ApiService.createExercise(workout.id, exerciseTypeObj.id, exerciseItemObj.id);
 
       if (res.status !== 201) {
         console.log("Error");
         return
       }
 
-      obj = await res.json();
+      const exerciseObj = await res.json();
 
-      setExercises([...exercises, { id: obj.id, exercise_type_id: obj.id, workout_id: workout.id, name: value }]);
+      // Add the new exercise to the exercise item and update state
+      const newExerciseItem: ExerciseItem = {
+        ...exerciseItemObj,
+        exercises: [{
+          id: exerciseObj.id,
+          exercise_type_id: exerciseTypeObj.id,
+          workout_id: workout.id,
+          name: value
+        }]
+      };
+      setExerciseItems([...exerciseItems, newExerciseItem]);
 
       setValue("");
 
@@ -497,11 +517,15 @@ const WorkoutComponent = () => {
       <h2 className="text-l font-bold">{new Date(workout.created_on).toDateString()}</h2>
       <div className="mt-2"><Button onClick={() => setFinishDialogOpen(true)}><Check />Finish workout</Button></div>
       <h3 className="text-2xl mt-3">Exercises</h3>
-      <ul>
-        {exercises.map(e => {
-          return (<EditableExercise key={e.id} exercise={e} deleteExerciseFunc={deleteExercise} />);
-        })}
-      </ul>
+      <div>
+        {exerciseItems.map(item => (
+          <div key={item.id} className="mt-2">
+            {item.exercises.map(e => (
+              <EditableExercise key={e.id} exercise={e} deleteExerciseFunc={deleteExercise} />
+            ))}
+          </div>
+        ))}
+      </div>
       <WtDialog openButtonTitle={<><Plus /> Add Exercise</>} form={
         <>
           <Autocomplete value={value} setValue={setValue} suggestions={exerciseTypes.map(et => et.name)} />
