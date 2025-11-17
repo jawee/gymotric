@@ -27,7 +27,7 @@ type EditableExerciseProps = {
   exercise: Exercise,
   exerciseItemId: string,
   deleteExerciseFunc: (exerciseItemId: string, exerciseId: string) => Promise<void>;
-  onSetAdded?: () => void;
+  onSetAdded?: (exerciseId: string) => void;
   isTimerActive?: boolean;
   lastSetTime?: number | null;
   lastExerciseIdWithSet?: string | null;
@@ -165,9 +165,7 @@ const EditableExercise = ({ exercise, exerciseItemId, deleteExerciseFunc, onSetA
     setSets([...sets, { id: obj.id, weight: weight, repetitions: reps, exercise_id: exercise.id }]);
     
     // Reset timer when a new set is added
-    if (onSetAdded) {
-      onSetAdded(exercise.id);
-    }
+    onSetAdded?.(exercise.id);
   };
 
   const deleteExercise = async () => {
@@ -231,8 +229,8 @@ const EditableExercise = ({ exercise, exerciseItemId, deleteExerciseFunc, onSetA
         </div>
         <p className="font-bold">Last set: {lastWeight}kg for {lastReps}reps</p>
         <p className="font-bold">Max set: {maxWeight}kg for {maxReps}reps</p>
-        {isTimerActive && lastExerciseIdWithSet === exercise.id && (
-          <TimerDisplay isActive={isTimerActive} lastSetTime={lastSetTime} />
+        {isTimerActive && lastExerciseIdWithSet === exercise.id && lastSetTime !== undefined && (
+          <TimerDisplay isActive={isTimerActive} lastSetTime={lastSetTime ?? null} />
         )}
       </div>
     </div>
