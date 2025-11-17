@@ -17,6 +17,7 @@ import { Check, Copy, Key, Plus, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Loading from "../components/loading";
 import { Textarea } from "@/components/ui/textarea";
+import TimerDisplay from "../components/timer-display";
 
 type ExerciseProps = {
   exercise: Exercise,
@@ -26,6 +27,10 @@ type EditableExerciseProps = {
   exercise: Exercise,
   exerciseItemId: string,
   deleteExerciseFunc: (exerciseItemId: string, exerciseId: string) => Promise<void>;
+  onSetAdded?: () => void;
+  isTimerActive?: boolean;
+  lastSetTime?: number | null;
+  lastExerciseIdWithSet?: string | null;
 };
 
 const fetchSets = async (wId: string, eId: string, setSets: Dispatch<React.SetStateAction<Set[]>>) => {
@@ -73,7 +78,7 @@ const ExerciseComponent = (props: ExerciseProps) => {
   );
 };
 
-const EditableExercise = ({ exercise, exerciseItemId, deleteExerciseFunc }: EditableExerciseProps) => {
+const EditableExercise = ({ exercise, exerciseItemId, deleteExerciseFunc, onSetAdded, isTimerActive, lastSetTime, lastExerciseIdWithSet }: EditableExerciseProps) => {
   const [sets, setSets] = useState<Set[]>([]);
   const [lastWeight, setLastWeight] = useState<number | null>(null);
   const [lastReps, setLastReps] = useState<number | null>(null);
@@ -158,6 +163,11 @@ const EditableExercise = ({ exercise, exerciseItemId, deleteExerciseFunc }: Edit
 
     const obj = await res.json();
     setSets([...sets, { id: obj.id, weight: weight, repetitions: reps, exercise_id: exercise.id }]);
+    
+    // Reset timer when a new set is added
+    if (onSetAdded) {
+      onSetAdded(exercise.id);
+    }
   };
 
   const deleteExercise = async () => {
@@ -221,6 +231,9 @@ const EditableExercise = ({ exercise, exerciseItemId, deleteExerciseFunc }: Edit
         </div>
         <p className="font-bold">Last set: {lastWeight}kg for {lastReps}reps</p>
         <p className="font-bold">Max set: {maxWeight}kg for {maxReps}reps</p>
+        {isTimerActive && lastExerciseIdWithSet === exercise.id && (
+          <TimerDisplay isActive={isTimerActive} lastSetTime={lastSetTime} />
+        )}
       </div>
     </div>
   );
@@ -240,11 +253,69 @@ const WorkoutComponent = () => {
 
   const [note, setNote] = useState<string>("");
 
+  // Timer state
+  const [lastSetTime, setLastSetTime] = useState<number | null>(null);
+  const [isTimerActive, setIsTimerActive] = useState<boolean>(false);
+  const [lastExerciseIdWithSet, setLastExerciseIdWithSet] = useState<string | null>(null);
+
   const location = useLocation();
 
   const id = params.id;
 
   const navigate = useNavigate();
+
+  // Load timer state from localStorage on mount
+  useEffect(() => {
+    if (!id) return;
+    
+    const timerKey = `timer-state-${id}`;
+    const savedTimerState = localStorage.getItem(timerKey);
+    
+    if (savedTimerState) {
+      try {
+        const { lastSetTime: savedTime, exerciseId } = JSON.parse(savedTimerState);
+        // Only restore if the saved time is within the last 30 minutes
+        if (Date.now() - savedTime < 30 * 60 * 1000) {
+          setLastSetTime(savedTime);
+          setIsTimerActive(true);
+          setLastExerciseIdWithSet(exerciseId);
+        } else {
+          // Clear expired timer data
+          localStorage.removeItem(timerKey);
+        }
+      } catch (e) {
+        console.log("Error parsing timer state:", e);
+      }
+    }
+  }, [id]);
+
+  // Handler for when a set is added - resets the timer
+  const handleSetAdded = (exerciseId: string) => {
+    const now = Date.now();
+    setLastSetTime(now);
+    setIsTimerActive(true);
+    setLastExerciseIdWithSet(exerciseId);
+    
+    // Save to localStorage
+    if (id) {
+      const timerKey = `timer-state-${id}`;
+      localStorage.setItem(timerKey, JSON.stringify({
+        lastSetTime: now,
+        exerciseId: exerciseId
+      }));
+    }
+  };
+
+  // Handler for when an exercise is added - stops the timer
+  const handleExerciseAdded = () => {
+    setIsTimerActive(false);
+    
+    // Clear from localStorage
+    if (id) {
+      const timerKey = `timer-state-${id}`;
+      localStorage.removeItem(timerKey);
+    }
+  };
 
   useEffect(() => {
     const fetchExerciseTypes = async () => {
@@ -430,6 +501,9 @@ const WorkoutComponent = () => {
     const exerciseType = exerciseTypes.find(et => et.id === exerciseTypeId);
     if (!exerciseType) return;
 
+    // Stop the timer when adding a new exercise
+    handleExerciseAdded();
+
     let finalExerciseItemId = exerciseItemId;
 
     // If no exercise item provided, create one
@@ -562,6 +636,10 @@ const WorkoutComponent = () => {
         localStorage.removeItem(key);
       }
     }
+    
+    // Clear timer from localStorage
+    const timerKey = `timer-state-${workout.id}`;
+    localStorage.removeItem(timerKey);
 
     navigate("/app");
   };
@@ -598,13 +676,13 @@ const WorkoutComponent = () => {
                 </Button>
               </div>
               {item.exercises.map(e => (
-                <EditableExercise key={e.id} exercise={e} exerciseItemId={item.id} deleteExerciseFunc={deleteExercise} />
+                <EditableExercise key={e.id} exercise={e} exerciseItemId={item.id} deleteExerciseFunc={deleteExercise} onSetAdded={handleSetAdded} isTimerActive={isTimerActive} lastSetTime={lastSetTime} lastExerciseIdWithSet={lastExerciseIdWithSet} />
               ))}
             </div>
           ) : (
             <div key={item.id} className="mt-2">
               {item.exercises.map(e => (
-                <EditableExercise key={e.id} exercise={e} exerciseItemId={item.id} deleteExerciseFunc={deleteExercise} />
+                <EditableExercise key={e.id} exercise={e} exerciseItemId={item.id} deleteExerciseFunc={deleteExercise} onSetAdded={handleSetAdded} isTimerActive={isTimerActive} lastSetTime={lastSetTime} lastExerciseIdWithSet={lastExerciseIdWithSet} />
               ))}
             </div>
           )
