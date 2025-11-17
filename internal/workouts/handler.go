@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"weight-tracker/internal/database"
+	"weight-tracker/internal/exerciseitems"
 	"weight-tracker/internal/exercises"
 	"weight-tracker/internal/utils"
 )
@@ -19,7 +20,14 @@ type handler struct {
 
 func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper func(next http.Handler) http.Handler) {
 	handler := handler{
-		service: NewService(&workoutsRepository{s.GetRepository()}, exercises.NewExerciseRepository(s.GetRepository())),
+		service: NewService(
+			&workoutsRepository{s.GetRepository()},
+			exercises.NewExerciseRepository(s.GetRepository()),
+			exerciseitems.NewService(
+				exerciseitems.NewExerciseItemRepository(s.GetRepository()),
+				exercises.NewExerciseRepository(s.GetRepository()),
+			),
+		),
 	}
 
 	mux.Handle("GET /workouts", authenticationWrapper(http.HandlerFunc(handler.getAllWorkoutsHandler)))

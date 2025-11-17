@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"time"
+	"weight-tracker/internal/exerciseitems"
 	"weight-tracker/internal/exercises"
 	"weight-tracker/internal/repository"
 
@@ -24,8 +25,9 @@ type Service interface {
 }
 
 type workoutsService struct {
-	repo         WorkoutsRepository
-	exerciseRepo exercises.ExerciseRepository
+	repo            WorkoutsRepository
+	exerciseRepo    exercises.ExerciseRepository
+	exerciseItemSvc exerciseitems.Service
 }
 
 func (w *workoutsService) ReopenById(context context.Context, workoutId string, userId string) error {
@@ -81,26 +83,44 @@ func (w *workoutsService) CloneByIdAndReturnId(context context.Context, workoutI
 		return "", fmt.Errorf("failed to create cloned workout: %w", err)
 	}
 
-	exercises, err := w.exerciseRepo.GetByWorkoutId(context, repository.GetExercisesByWorkoutIdParams{UserID: userId, WorkoutID: workoutId})
+	// Get exercise items from the original workout (with their type and associated exercises)
+	exerciseItems, err := w.exerciseItemSvc.GetByWorkoutIdWithExercises(context, repository.GetExerciseItemsByWorkoutIdParams{
+		WorkoutID: workoutId,
+		UserID:    userId,
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to get exercise items: %w", err)
+	}
 
-	for _, exercise := range exercises {
-		uuid, err := uuid.NewV7()
+	// Clone each exercise item with its type and exercises
+	for _, item := range exerciseItems {
+		// Create the cloned exercise item with the same type
+		newItemId, err := w.exerciseItemSvc.CreateAndReturnId(context, item.Type, cloneId, userId)
 		if err != nil {
-			return "", fmt.Errorf("failed to generate UUID for exercise: %w", err)
+			return "", fmt.Errorf("failed to create cloned exercise item: %w", err)
 		}
 
-		_, err = w.exerciseRepo.CreateAndReturnId(context, repository.CreateExerciseAndReturnIdParams{
-			ID:             uuid.String(),
-			WorkoutID:      cloneId,
-			Name:           exercise.Name,
-			ExerciseTypeID: exercise.ExerciseTypeID,
-			CreatedOn:      time.Now().UTC().Format(time.RFC3339),
-			UserID:         userId,
-			UpdatedOn:      time.Now().UTC().Format(time.RFC3339),
-		})
+		// Clone all exercises in this item
+		for _, exercise := range item.Exercises {
+			exerciseUuid, err := uuid.NewV7()
+			if err != nil {
+				return "", fmt.Errorf("failed to generate UUID for exercise: %w", err)
+			}
 
-		if err != nil {
-			return "", fmt.Errorf("failed to create cloned exercise: %w", err)
+			_, err = w.exerciseRepo.CreateAndReturnId(context, repository.CreateExerciseAndReturnIdParams{
+				ID:             exerciseUuid.String(),
+				WorkoutID:      cloneId,
+				ExerciseItemID: newItemId,
+				Name:           exercise.Name,
+				ExerciseTypeID: exercise.ExerciseTypeID,
+				CreatedOn:      time.Now().UTC().Format(time.RFC3339),
+				UserID:         userId,
+				UpdatedOn:      time.Now().UTC().Format(time.RFC3339),
+			})
+
+			if err != nil {
+				return "", fmt.Errorf("failed to create cloned exercise: %w", err)
+			}
 		}
 	}
 
@@ -209,6 +229,6 @@ func (w *workoutsService) GetById(context context.Context, id string, userId str
 	return workout, err
 }
 
-func NewService(repo WorkoutsRepository, exerciseRepo exercises.ExerciseRepository) Service {
-	return &workoutsService{repo, exerciseRepo}
+func NewService(repo WorkoutsRepository, exerciseRepo exercises.ExerciseRepository, exerciseItemSvc exerciseitems.Service) Service {
+	return &workoutsService{repo, exerciseRepo, exerciseItemSvc}
 }
