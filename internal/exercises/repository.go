@@ -18,6 +18,7 @@ type Exercise struct {
 type ExerciseRepository interface {
 	GetAll(context context.Context, userId string) ([]Exercise, error)
 	GetByWorkoutId(context context.Context, arg repository.GetExercisesByWorkoutIdParams) ([]Exercise, error)
+	GetByExerciseItemId(context context.Context, exerciseItemId string, userId string) ([]Exercise, error)
 	DeleteById(context context.Context, arg repository.DeleteExerciseByIdParams) error
 	CreateAndReturnId(context context.Context, exercise repository.CreateExerciseAndReturnIdParams) (string, error)
 	GetExerciseTypeById(context context.Context, arg repository.GetExerciseTypeByIdParams) (*exercisetypes.ExerciseType, error)
@@ -105,5 +106,25 @@ func (e exerciseRepository) GetByWorkoutId(context context.Context, arg reposito
 	}
 
 	slog.Debug("GetByWorkoutId returns", "exercises", result)
+	return result, nil
+}
+
+func (e exerciseRepository) GetByExerciseItemId(context context.Context, exerciseItemId string, userId string) ([]Exercise, error) {
+	exercises, err := e.repo.GetExercisesByExerciseItemId(context, repository.GetExercisesByExerciseItemIdParams{
+		ExerciseItemID: exerciseItemId,
+		UserID:         userId,
+	})
+	slog.Debug("GetExercisesByExerciseItemId returns", "exercises", exercises)
+
+	if err != nil {
+		return []Exercise{}, fmt.Errorf("failed to get exercises by exercise item id: %w", err)
+	}
+
+	result := []Exercise{}
+	for _, v := range exercises {
+		result = append(result, newExercise(v))
+	}
+
+	slog.Debug("GetByExerciseItemId returns", "exercises", result)
 	return result, nil
 }

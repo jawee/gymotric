@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"weight-tracker/internal/exerciseitems"
 	"weight-tracker/internal/exercises"
 	"weight-tracker/internal/exercisetypes"
 	"weight-tracker/internal/ratelimiter"
@@ -33,6 +34,8 @@ func (s *Server) RegisterRoutes() http.Handler {
 	users.AddEndpoints(mux, s.db, s.AuthenticatedMiddleware, ratelimiter.RateLimitMiddleware, rateLimiter)
 
 	exercisetypes.AddEndpoints(mux, s.db, s.AuthenticatedMiddleware)
+
+	exerciseitems.AddEndpoints(mux, s.db, s.AuthenticatedMiddleware)
 
 	workouts.AddEndpoints(mux, s.db, s.AuthenticatedMiddleware)
 

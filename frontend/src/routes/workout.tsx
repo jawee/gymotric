@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Dispatch, useEffect, useState } from "react";
 import { Workout } from "../models/workout";
 import { Exercise } from "../models/exercise";
+import { ExerciseItem } from "../models/exercise-item";
 import { Set } from "../models/set";
 import { ExerciseType } from "../models/exercise-type";
 import { useLocation, useNavigate, useParams } from "react-router";
@@ -23,7 +24,8 @@ type ExerciseProps = {
 
 type EditableExerciseProps = {
   exercise: Exercise,
-  deleteExerciseFunc: (exerciseId: string) => Promise<void>;
+  exerciseItemId: string,
+  deleteExerciseFunc: (exerciseItemId: string, exerciseId: string) => Promise<void>;
 };
 
 const fetchSets = async (wId: string, eId: string, setSets: Dispatch<React.SetStateAction<Set[]>>) => {
@@ -71,7 +73,7 @@ const ExerciseComponent = (props: ExerciseProps) => {
   );
 };
 
-const EditableExercise = ({ exercise, deleteExerciseFunc }: EditableExerciseProps) => {
+const EditableExercise = ({ exercise, exerciseItemId, deleteExerciseFunc }: EditableExerciseProps) => {
   const [sets, setSets] = useState<Set[]>([]);
   const [lastWeight, setLastWeight] = useState<number | null>(null);
   const [lastReps, setLastReps] = useState<number | null>(null);
@@ -159,12 +161,12 @@ const EditableExercise = ({ exercise, deleteExerciseFunc }: EditableExerciseProp
   };
 
   const deleteExercise = async () => {
-    await deleteExerciseFunc(exercise.id);
+    await deleteExerciseFunc(exerciseItemId, exercise.id);
   };
 
   return (
     <div className="border-2 border-black p-2 mt-2 mb-2">
-      <li key={exercise.id}>
+      <div>
         <p className="text-xl">{exercise.name}
           <WtDialog openButtonTitle={<Trash2 />}
             openButtonClassName={cn(buttonVariants({ variant: "default" }),
@@ -219,7 +221,7 @@ const EditableExercise = ({ exercise, deleteExerciseFunc }: EditableExerciseProp
         </div>
         <p className="font-bold">Last set: {lastWeight}kg for {lastReps}reps</p>
         <p className="font-bold">Max set: {maxWeight}kg for {maxReps}reps</p>
-      </li>
+      </div>
     </div>
   );
 };
@@ -228,10 +230,13 @@ const WorkoutComponent = () => {
   const params = useParams();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [workout, setWorkout] = useState<Workout | null>(null);
-  const [exercises, setExercises] = useState<Exercise[]>([])
+  const [exerciseItems, setExerciseItems] = useState<ExerciseItem[]>([])
   const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([]);
 
   const [finishDialogOpen, setFinishDialogOpen] = useState<boolean>(false);
+  const [addExerciseDialogOpen, setAddExerciseDialogOpen] = useState<boolean>(false);
+  const [itemTypeDialogOpen, setItemTypeDialogOpen] = useState<boolean>(false);
+  const [selectedExerciseItemId, setSelectedExerciseItemId] = useState<string | null>(null);
 
   const [note, setNote] = useState<string>("");
 
@@ -290,18 +295,18 @@ const WorkoutComponent = () => {
 
 
   useEffect(() => {
-    const fetchExercises = async () => {
+    const fetchExerciseItems = async () => {
       if (id === undefined) {
         return;
       }
 
-      const res = await ApiService.fetchExercises(id);
+      const res = await ApiService.fetchExerciseItems(id);
       if (res.status === 200) {
         const resObj = await res.json();
-        setExercises(resObj.data);
+        setExerciseItems(resObj.data);
       }
     };
-    fetchExercises();
+    fetchExerciseItems();
   }, [workout, id]);
 
   const reopen = async () => {
@@ -332,21 +337,43 @@ const WorkoutComponent = () => {
     navigate("/app/workouts/" + obj.id);
   };
 
-  const deleteExercise = async (exerciseId: string) => {
+  const deleteExercise = async (exerciseItemId: string, exerciseId: string) => {
     if (id === undefined) {
       return;
     }
 
-    const res = await ApiService.deleteExercise(id, exerciseId);
+    const res = await ApiService.deleteExercise(id, exerciseItemId, exerciseId);
     if (res.status !== 204) {
       console.log("Error");
       return;
     }
 
-    setExercises(l => l.filter(item => item.id !== exerciseId));
+    // Remove the exercise from the exercise item that contains it
+    setExerciseItems(items => {
+      const updatedItems = items.map(item => ({
+        ...item,
+        exercises: item.exercises.filter(e => e.id !== exerciseId)
+      })).filter(item => item.exercises.length > 0);
+
+      // If the exercise item is now empty, delete it from the backend
+      const itemToDelete = items.find(item => 
+        item.id === exerciseItemId && 
+        item.exercises.length === 1 && 
+        item.exercises[0].id === exerciseId
+      );
+      
+      if (itemToDelete) {
+        ApiService.deleteExerciseItem(id, exerciseItemId).catch(err => {
+          console.log("Error deleting empty exercise item:", err);
+        });
+      }
+
+      return updatedItems;
+    });
   };
 
   const [value, setValue] = useState("");
+  const [selectedExerciseTypeId, setSelectedExerciseTypeId] = useState<string | null>(null);
 
   if (workout === null || isLoading) {
     return (
@@ -362,13 +389,24 @@ const WorkoutComponent = () => {
         <Button onClick={cloneWorkout}><Copy />Clone</Button>
         <Button onClick={reopen} className="ml-1"><Key />Reopen</Button>
         <h3 className="text-2xl mt-3">Exercises</h3>
-        <ul>
-          {exercises.map(e => {
-            return (
-              <ExerciseComponent key={e.id} exercise={e} />
-            );
-          })}
-        </ul>
+        <div>
+          {exerciseItems.map(item => (
+            item.type === 'superset' ? (
+              <div key={item.id} className="mt-4 p-3 border-2 border-yellow-500 bg-yellow-50 rounded">
+                <h4 className="font-bold text-lg">🔗 Superset</h4>
+                {item.exercises.map(e => (
+                  <ExerciseComponent key={e.id} exercise={e} />
+                ))}
+              </div>
+            ) : (
+              <div key={item.id} className="mt-2">
+                {item.exercises.map(e => (
+                  <ExerciseComponent key={e.id} exercise={e} />
+                ))}
+              </div>
+            )
+          ))}
+        </div>
         <div className="mt-2">
           <WtDialog openButtonTitle={<><Trash2 /> Delete workout</>}
             openButtonClassName={cn(buttonVariants({ variant: "default" }),
@@ -386,55 +424,126 @@ const WorkoutComponent = () => {
     );
   }
 
-  const addExercise = async () => {
-    if (value !== "" && value !== null) {
-      const exerciseTypeMatch = exerciseTypes.filter(et => et.name == value);
+  const addExerciseToItem = async (exerciseTypeId: string, exerciseItemId: string | null, itemType: string) => {
+    if (!workout) return;
+    
+    const exerciseType = exerciseTypes.find(et => et.id === exerciseTypeId);
+    if (!exerciseType) return;
 
-      if (exerciseTypeMatch.length === 1) {
-        const exerciseType = exerciseTypeMatch[0];
-        const res = await ApiService.createExercise(workout.id, exerciseType.id);
+    let finalExerciseItemId = exerciseItemId;
 
-        if (res.status !== 201) {
-          console.log("Error");
-          return
-        }
-
-        setValue("");
-        const obj = await res.json();
-
-        setExercises([...exercises, { id: obj.id, exercise_type_id: exerciseType.id, workout_id: workout.id, name: exerciseType.name }]);
+    // If no exercise item provided, create one
+    if (!finalExerciseItemId) {
+      const exerciseItemRes = await ApiService.createExerciseItem(workout.id, itemType);
+      if (exerciseItemRes.status !== 201) {
+        console.log("Error creating exercise item");
         return;
       }
+      const exerciseItemObj = await exerciseItemRes.json();
+      finalExerciseItemId = exerciseItemObj.id;
+    }
 
-      if (value === "") {
-        return;
-      }
-
-      const exerciseTypeRes = await ApiService.createExerciseType(value);
-
-      if (exerciseTypeRes.status !== 201) {
-        console.log("Error");
-        return;
-      }
-
-      let obj = await exerciseTypeRes.json();
-      setExerciseTypes([...exerciseTypes, { id: obj.id, name: value }]);
-
-      const res = await ApiService.createExercise(workout.id, obj.id);
-
-      if (res.status !== 201) {
-        console.log("Error");
-        return
-      }
-
-      obj = await res.json();
-
-      setExercises([...exercises, { id: obj.id, exercise_type_id: obj.id, workout_id: workout.id, name: value }]);
-
-      setValue("");
-
+    // Create exercise with the exercise_item_id (finalExerciseItemId is now guaranteed to be a string)
+    const res = await ApiService.createExercise(workout.id, exerciseTypeId, finalExerciseItemId as string);
+    if (res.status !== 201) {
+      console.log("Error creating exercise");
       return;
     }
+
+    const exerciseObj = await res.json();
+
+    // Update state
+    setExerciseItems(items => {
+      const existingItemIndex = items.findIndex(item => item.id === finalExerciseItemId);
+      
+      if (existingItemIndex >= 0) {
+        // Add to existing item
+        const updatedItems = [...items];
+        updatedItems[existingItemIndex] = {
+          ...updatedItems[existingItemIndex],
+          exercises: [...updatedItems[existingItemIndex].exercises, {
+            id: exerciseObj.id,
+            exercise_type_id: exerciseTypeId,
+            workout_id: workout.id,
+            name: exerciseType.name
+          }]
+        };
+        return updatedItems;
+      } else {
+        // Create new item
+        const newExerciseItem: ExerciseItem = {
+          id: finalExerciseItemId as string,
+          type: itemType,
+          user_id: "",
+          workout_id: workout.id,
+          created_on: new Date().toISOString(),
+          updated_on: new Date().toISOString(),
+          exercises: [{
+            id: exerciseObj.id,
+            exercise_type_id: exerciseTypeId,
+            workout_id: workout.id,
+            name: exerciseType.name
+          }]
+        };
+        return [...items, newExerciseItem];
+      }
+    });
+
+    setValue("");
+    setAddExerciseDialogOpen(false);
+    setItemTypeDialogOpen(false);
+    setSelectedExerciseTypeId(null);
+    setSelectedExerciseItemId(null);
+  };
+
+  const addExercise = async () => {
+    if (value === "" || value === null) {
+      return;
+    }
+
+    const exerciseTypeMatch = exerciseTypes.filter(et => et.name === value);
+
+    if (exerciseTypeMatch.length === 1) {
+      // Exercise type exists
+      const exerciseTypeId = exerciseTypeMatch[0].id;
+      
+      // If adding to existing superset, add directly without type dialog
+      if (selectedExerciseItemId) {
+        const existingItem = exerciseItems.find(item => item.id === selectedExerciseItemId);
+        if (existingItem) {
+          addExerciseToItem(exerciseTypeId, selectedExerciseItemId, existingItem.type);
+          return;
+        }
+      }
+      
+      // Otherwise show type selection dialog
+      setSelectedExerciseTypeId(exerciseTypeId);
+      setItemTypeDialogOpen(true);
+      return;
+    }
+
+    // Create new exercise type
+    const exerciseTypeRes = await ApiService.createExerciseType(value);
+    if (exerciseTypeRes.status !== 201) {
+      console.log("Error creating exercise type");
+      return;
+    }
+
+    const exerciseTypeObj = await exerciseTypeRes.json();
+    setExerciseTypes([...exerciseTypes, { id: exerciseTypeObj.id, name: value }]);
+    
+    // If adding to existing superset, add directly without type dialog
+    if (selectedExerciseItemId) {
+      const existingItem = exerciseItems.find(item => item.id === selectedExerciseItemId);
+      if (existingItem) {
+        addExerciseToItem(exerciseTypeObj.id, selectedExerciseItemId, existingItem.type);
+        return;
+      }
+    }
+    
+    // Otherwise show type selection dialog
+    setSelectedExerciseTypeId(exerciseTypeObj.id);
+    setItemTypeDialogOpen(true);
   }
 
   const finishWorkout = async () => {
@@ -471,22 +580,94 @@ const WorkoutComponent = () => {
       <h2 className="text-l font-bold">{new Date(workout.created_on).toDateString()}</h2>
       <div className="mt-2"><Button onClick={() => setFinishDialogOpen(true)}><Check />Finish workout</Button></div>
       <h3 className="text-2xl mt-3">Exercises</h3>
-      <ul>
-        {exercises.map(e => {
-          return (<EditableExercise key={e.id} exercise={e} deleteExerciseFunc={deleteExercise} />);
-        })}
-      </ul>
-      <WtDialog openButtonTitle={<><Plus /> Add Exercise</>} form={
-        <>
-          <Autocomplete value={value} setValue={setValue} suggestions={exerciseTypes.map(et => et.name)} />
-        </>
-      } onSubmitButtonClick={addExercise} onSubmitButtonTitle="Add exercise" title="Add Exercise" />
+      <div>
+        {exerciseItems.map(item => (
+          item.type === 'superset' ? (
+            <div key={item.id} className="mt-4 p-3 border-2 border-yellow-500 bg-yellow-50 rounded">
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="font-bold text-lg">🔗 Superset</h4>
+                <Button 
+                  size="sm"
+                  onClick={() => {
+                    setSelectedExerciseItemId(item.id);
+                    setItemTypeDialogOpen(false);
+                    setAddExerciseDialogOpen(true);
+                  }}
+                >
+                  <Plus /> Add to Superset
+                </Button>
+              </div>
+              {item.exercises.map(e => (
+                <EditableExercise key={e.id} exercise={e} exerciseItemId={item.id} deleteExerciseFunc={deleteExercise} />
+              ))}
+            </div>
+          ) : (
+            <div key={item.id} className="mt-2">
+              {item.exercises.map(e => (
+                <EditableExercise key={e.id} exercise={e} exerciseItemId={item.id} deleteExerciseFunc={deleteExercise} />
+              ))}
+            </div>
+          )
+        ))}
+      </div>
+      <div className="mt-4">
+        <WtDialog 
+          openButtonTitle={<><Plus /> Add Exercise</>} 
+          form={
+            <>
+              <Autocomplete value={value} setValue={setValue} suggestions={exerciseTypes.map(et => et.name)} />
+            </>
+          } 
+          onSubmitButtonClick={addExercise} 
+          onSubmitButtonTitle={selectedExerciseItemId ? "Add" : "Next"} 
+          title="Add Exercise"
+          dialogProps={{ open: addExerciseDialogOpen, onOpenChange: setAddExerciseDialogOpen }}
+        />
+      </div>
+      
+      {/* Type Selection Dialog for new exercise items - programmatically opened */}
+      {itemTypeDialogOpen && (
+        <WtDialog
+          openButtonTitle={null}
+          form={
+            <div className="space-y-4">
+              <p>What type of exercise item do you want to create?</p>
+              <div className="space-y-2">
+                <Button 
+                  onClick={() => {
+                    if (selectedExerciseTypeId) {
+                      addExerciseToItem(selectedExerciseTypeId, selectedExerciseItemId, 'exercise');
+                    }
+                  }}
+                  className="w-full"
+                >
+                  Single Exercise
+                </Button>
+                <Button 
+                  onClick={() => {
+                    if (selectedExerciseTypeId) {
+                      addExerciseToItem(selectedExerciseTypeId, selectedExerciseItemId, 'superset');
+                    }
+                  }}
+                  className="w-full bg-yellow-500 hover:bg-yellow-600"
+                >
+                  Superset
+                </Button>
+              </div>
+            </div>
+          }
+          onSubmitButtonTitle=""
+          onSubmitButtonClick={() => {}}
+          title="Exercise Item Type"
+          hideSubmitButton={true}
+          dialogProps={{ open: itemTypeDialogOpen, onOpenChange: setItemTypeDialogOpen }}
+        />
+      )}
       <div className="mt-2">
         <WtDialog openButtonTitle={<><Trash2 /> Delete workout</>}
           openButtonClassName={cn(buttonVariants({ variant: "default" }),
             "bg-red-500",
-            "hover:bg-red-700",
-            "ml-1",
+            "hover:bg-red-700"
           )
           } onSubmitButtonClick={() => deleteWorkout()} title="Delete Workout"
           form={<p>Are you sure you want to delete this Workout?</p>}

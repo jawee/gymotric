@@ -40,9 +40,11 @@ func (s *serviceMock) CreateAndReturnId(context context.Context, exercise create
 func TestGetExercisesByWorkoutIdHandlerSuccess(t *testing.T) {
 	userId := "userId"
 	workoutId := "workoutId"
+	exerciseItemId := "exerciseItemId"
 	exerciseTypeId := "exerciseTypeId"
-	req, err := http.NewRequest("GET", "/workouts/"+workoutId+"/exercises", nil)
-	req.SetPathValue("id", workoutId)
+	req, err := http.NewRequest("GET", "/workouts/"+workoutId+"/exercise-items/"+exerciseItemId+"/exercises", nil)
+	req.SetPathValue("workoutId", workoutId)
+	req.SetPathValue("exerciseItemId", exerciseItemId)
 
 	ctx := req.Context()
 	ctx = context.WithValue(ctx, "sub", userId)
@@ -86,9 +88,11 @@ func TestGetExercisesByWorkoutIdHandlerSuccess(t *testing.T) {
 func TestGetExercisesByWorkoutIdHandlerNotFound(t *testing.T) {
 	userId := "userId"
 	workoutId := "workoutId"
+	exerciseItemId := "exerciseItemId"
 
-	req, err := http.NewRequest("GET", "/workouts/"+workoutId+"/exercises", nil)
-	req.SetPathValue("id", workoutId)
+	req, err := http.NewRequest("GET", "/workouts/"+workoutId+"/exercise-items/"+exerciseItemId+"/exercises", nil)
+	req.SetPathValue("workoutId", workoutId)
+	req.SetPathValue("exerciseItemId", exerciseItemId)
 
 	ctx := req.Context()
 	ctx = context.WithValue(ctx, "sub", userId)
@@ -120,9 +124,11 @@ func TestCreateExerciseHandler(t *testing.T) {
 	userId := "userId"
 	workoutId := "workoutId"
 	exerciseTypeId := "exerciseTypeId"
+	exerciseItemId := "exerciseItemId"
 
 	reqBodyObj := createExerciseRequest{
 		ExerciseTypeID: exerciseTypeId,
+		ExerciseItemID: exerciseItemId,
 	}
 
 	reqBody, err := json.Marshal(reqBodyObj)
@@ -131,8 +137,9 @@ func TestCreateExerciseHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	req, err := http.NewRequest("POST", "/workouts/"+workoutId+"/exercises", bytes.NewBuffer(reqBody))
-	req.SetPathValue("id", workoutId)
+	req, err := http.NewRequest("POST", "/workouts/"+workoutId+"/exercise-items/"+exerciseItemId+"/exercises", bytes.NewBuffer(reqBody))
+	req.SetPathValue("workoutId", workoutId)
+	req.SetPathValue("exerciseItemId", exerciseItemId)
 
 	ctx := req.Context()
 	ctx = context.WithValue(ctx, "sub", userId)
@@ -144,7 +151,7 @@ func TestCreateExerciseHandler(t *testing.T) {
 
 	serviceMock := serviceMock{}
 	serviceMock.On("CreateAndReturnId", ctx, mock.MatchedBy(func(input createExerciseRequest) bool {
-		return input.ExerciseTypeID == exerciseTypeId
+		return input.ExerciseTypeID == exerciseTypeId && input.ExerciseItemID == exerciseItemId
 	}), workoutId, userId).
 		Return("abc", nil).
 		Once()
@@ -177,9 +184,11 @@ func TestCreateExerciseHandlerBadRequest(t *testing.T) {
 	userId := "userId"
 	workoutId := "workoutId"
 	exerciseTypeId := "exerciseTypeId"
+	exerciseItemId := "exerciseItemId"
 
 	reqBodyObj := createExerciseRequest{
 		ExerciseTypeID: exerciseTypeId,
+		// ExerciseItemID is intentionally missing to test validation
 	}
 
 	reqBody, err := json.Marshal(reqBodyObj)
@@ -188,8 +197,9 @@ func TestCreateExerciseHandlerBadRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	req, err := http.NewRequest("POST", "/workouts/"+workoutId+"/exercises", bytes.NewBuffer(reqBody))
-	req.SetPathValue("id", workoutId)
+	req, err := http.NewRequest("POST", "/workouts/"+workoutId+"/exercise-items/"+exerciseItemId+"/exercises", bytes.NewBuffer(reqBody))
+	req.SetPathValue("workoutId", workoutId)
+	req.SetPathValue("exerciseItemId", exerciseItemId)
 
 	ctx := req.Context()
 	ctx = context.WithValue(ctx, "sub", userId)
@@ -200,11 +210,7 @@ func TestCreateExerciseHandlerBadRequest(t *testing.T) {
 	}
 
 	serviceMock := serviceMock{}
-	serviceMock.On("CreateAndReturnId", ctx, mock.MatchedBy(func(input createExerciseRequest) bool {
-		return input.ExerciseTypeID == exerciseTypeId
-	}), workoutId, userId).
-		Return("", fmt.Errorf("Some error occurred")).
-		Once()
+	// No expectations set since the request should be rejected before calling service
 
 	rr := httptest.NewRecorder()
 	s := handler{service: &serviceMock}
@@ -213,10 +219,10 @@ func TestCreateExerciseHandlerBadRequest(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	if status := rr.Code; status != http.StatusBadRequest {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
 	}
 
-	expected := "Failed to create exercise\n"
+	expected := "exercise_item_id is required\n"
 	if rr.Body.String() != expected {
 		t.Errorf("handler returned unexpected body: got '%v' want '%v'",
 			rr.Body.String(), expected)
@@ -228,9 +234,11 @@ func TestCreateExerciseHandlerBadRequest(t *testing.T) {
 func TestCreateExerciseHandlerInvalidBodyBadRequest(t *testing.T) {
 	userId := "userId"
 	workoutId := "workoutId"
+	exerciseItemId := "exerciseItemId"
 
-	req, err := http.NewRequest("POST", "/workouts/"+workoutId+"/exercises", bytes.NewBuffer([]byte("")))
-	req.SetPathValue("id", workoutId)
+	req, err := http.NewRequest("POST", "/workouts/"+workoutId+"/exercise-items/"+exerciseItemId+"/exercises", bytes.NewBuffer([]byte("")))
+	req.SetPathValue("workoutId", workoutId)
+	req.SetPathValue("exerciseItemId", exerciseItemId)
 
 	ctx := req.Context()
 	ctx = context.WithValue(ctx, "sub", userId)
@@ -263,10 +271,12 @@ func TestCreateExerciseHandlerInvalidBodyBadRequest(t *testing.T) {
 func TestDeleteExerciseByIdHandler(t *testing.T) {
 	userId := "userId"
 	workoutId := "workoutId"
+	exerciseItemId := "exerciseItemId"
 	exerciseId := "exerciseId"
 
-	req, err := http.NewRequest("DELETE", "/workouts/"+workoutId+"/exercises"+exerciseId, nil)
-	req.SetPathValue("id", workoutId)
+	req, err := http.NewRequest("DELETE", "/workouts/"+workoutId+"/exercise-items/"+exerciseItemId+"/exercises/"+exerciseId, nil)
+	req.SetPathValue("workoutId", workoutId)
+	req.SetPathValue("exerciseItemId", exerciseItemId)
 	req.SetPathValue("exerciseId", exerciseId)
 
 	ctx := req.Context()
@@ -309,10 +319,12 @@ func TestDeleteExerciseByIdHandler(t *testing.T) {
 func TestDeleteExerciseByIdHandlerFailsBadRequest(t *testing.T) {
 	userId := "userId"
 	workoutId := "workoutId"
+	exerciseItemId := "exerciseItemId"
 	exerciseId := "exerciseId"
 
-	req, err := http.NewRequest("DELETE", "/workouts/"+workoutId+"/exercises"+exerciseId, nil)
-	req.SetPathValue("id", workoutId)
+	req, err := http.NewRequest("DELETE", "/workouts/"+workoutId+"/exercise-items/"+exerciseItemId+"/exercises/"+exerciseId, nil)
+	req.SetPathValue("workoutId", workoutId)
+	req.SetPathValue("exerciseItemId", exerciseItemId)
 	req.SetPathValue("exerciseId", exerciseId)
 
 	ctx := req.Context()

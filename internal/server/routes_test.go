@@ -207,7 +207,6 @@ type querierMock struct {
 	mock.Mock
 }
 
-
 func (m *querierMock) CheckIfTokenExists(ctx context.Context, arg repository.CheckIfTokenExistsParams) (int64, error) {
 	args := m.Called()
 	return args.Get(0).(int64), args.Error(1)
@@ -222,6 +221,9 @@ func (m *querierMock) CompleteWorkoutById(ctx context.Context, arg repository.Co
 }
 
 func (m *querierMock) CreateExerciseAndReturnId(ctx context.Context, arg repository.CreateExerciseAndReturnIdParams) (string, error) {
+	panic("not implemented")
+}
+func (m *querierMock) CreateExerciseItemAndReturnId(ctx context.Context, arg repository.CreateExerciseItemAndReturnIdParams) (string, error) {
 	panic("not implemented")
 }
 func (m *querierMock) CreateExerciseTypeAndReturnId(ctx context.Context, arg repository.CreateExerciseTypeAndReturnIdParams) (string, error) {
@@ -240,6 +242,9 @@ func (m *querierMock) CreateWorkoutAndReturnId(ctx context.Context, arg reposito
 	panic("not implemented")
 }
 func (m *querierMock) DeleteExerciseById(ctx context.Context, arg repository.DeleteExerciseByIdParams) (int64, error) {
+	panic("not implemented")
+}
+func (m *querierMock) DeleteExerciseItemById(ctx context.Context, arg repository.DeleteExerciseItemByIdParams) (int64, error) {
 	panic("not implemented")
 }
 func (m *querierMock) DeleteExerciseTypeById(ctx context.Context, arg repository.DeleteExerciseTypeByIdParams) (int64, error) {
@@ -287,10 +292,19 @@ func (m *querierMock) GetByUsername(ctx context.Context, username string) (repos
 func (m *querierMock) GetExerciseById(ctx context.Context, arg repository.GetExerciseByIdParams) (repository.Exercise, error) {
 	panic("not implemented")
 }
+func (m *querierMock) GetExerciseItemById(ctx context.Context, arg repository.GetExerciseItemByIdParams) (repository.ExerciseItem, error) {
+	panic("not implemented")
+}
+func (m *querierMock) GetExerciseItemsByWorkoutId(ctx context.Context, arg repository.GetExerciseItemsByWorkoutIdParams) ([]repository.ExerciseItem, error) {
+	panic("not implemented")
+}
 func (m *querierMock) GetExerciseTypeById(ctx context.Context, arg repository.GetExerciseTypeByIdParams) (repository.ExerciseType, error) {
 	panic("not implemented")
 }
 func (m *querierMock) GetExercisesByWorkoutId(ctx context.Context, arg repository.GetExercisesByWorkoutIdParams) ([]repository.Exercise, error) {
+	panic("not implemented")
+}
+func (m *querierMock) GetExercisesByExerciseItemId(ctx context.Context, arg repository.GetExercisesByExerciseItemIdParams) ([]repository.Exercise, error) {
 	panic("not implemented")
 }
 func (m *querierMock) GetLastWeightRepsByExerciseTypeId(ctx context.Context, arg repository.GetLastWeightRepsByExerciseTypeIdParams) (repository.GetLastWeightRepsByExerciseTypeIdRow, error) {
@@ -318,6 +332,9 @@ func (m *querierMock) GetWorkoutById(ctx context.Context, arg repository.GetWork
 	panic("not implemented")
 }
 func (m *querierMock) UpdateExerciseType(ctx context.Context, arg repository.UpdateExerciseTypeParams) (int64, error) {
+	panic("not implemented")
+}
+func (m *querierMock) UpdateExerciseItemType(ctx context.Context, arg repository.UpdateExerciseItemTypeParams) (int64, error) {
 	panic("not implemented")
 }
 func (m *querierMock) UpdateUser(ctx context.Context, arg repository.UpdateUserParams) (int64, error) {

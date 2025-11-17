@@ -7,9 +7,10 @@ import (
 	"weight-tracker/internal/database"
 	"weight-tracker/internal/repository"
 
+	"math/rand"
+
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
-	"math/rand"
 )
 
 func main() {
@@ -37,9 +38,9 @@ func main() {
 
 	// set user verified
 	updateUser := repository.UpdateUserParams{
-		ID:        userId,
-		Password:  user.Password,
-		UpdatedOn: user.UpdatedOn,
+		ID:         userId,
+		Password:   user.Password,
+		UpdatedOn:  user.UpdatedOn,
 		IsVerified: true,
 	}
 
@@ -151,13 +152,28 @@ func getRandomExerciseType(m map[string]string) string {
 }
 
 func createExerciseWithSets(workoutId string, exerciseTypeName string, exerciseTypeId string, repo repository.Querier, ctx context.Context, userId string) {
+	// Create exercise_item first
+	exerciseItemId := getUuidString()
+	now := time.Now().UTC().Format(time.RFC3339)
+	exerciseItem := repository.CreateExerciseItemAndReturnIdParams{
+		ID:        exerciseItemId,
+		Type:      "exercise",
+		UserID:    userId,
+		WorkoutID: workoutId,
+		CreatedOn: now,
+		UpdatedOn: now,
+	}
+	repo.CreateExerciseItemAndReturnId(ctx, exerciseItem)
+
+	// Create exercise with the exercise_item_id
 	exercise := repository.CreateExerciseAndReturnIdParams{
 		ID:             getUuidString(),
 		Name:           exerciseTypeName,
 		WorkoutID:      workoutId,
 		ExerciseTypeID: exerciseTypeId,
-		CreatedOn:      time.Now().UTC().Format(time.RFC3339),
-		UpdatedOn:      time.Now().UTC().Format(time.RFC3339),
+		ExerciseItemID: exerciseItemId,
+		CreatedOn:      now,
+		UpdatedOn:      now,
 		UserID:         userId,
 	}
 

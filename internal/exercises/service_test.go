@@ -34,6 +34,11 @@ func (r *repoMock) GetByWorkoutId(context context.Context, arg repository.GetExe
 	return args.Get(0).([]Exercise), args.Error(1)
 }
 
+func (r *repoMock) GetByExerciseItemId(context context.Context, exerciseItemId string, userId string) ([]Exercise, error) {
+	args := r.Called(context, exerciseItemId, userId)
+	return args.Get(0).([]Exercise), args.Error(1)
+}
+
 func (r *repoMock) GetExerciseTypeById(context context.Context, arg repository.GetExerciseTypeByIdParams) (*exercisetypes.ExerciseType, error) {
 	args := r.Called(context, arg)
 	return args.Get(0).(*exercisetypes.ExerciseType), args.Error(1)

@@ -15,13 +15,14 @@ type Service interface {
 	DeleteById(context context.Context, id string, userId string) error
 	CreateAndReturnId(context context.Context, exercise createExerciseRequest, workoutId string, userId string) (string, error)
 }
+
 type exerciseService struct {
 	repo ExerciseRepository
 }
 
 func (e *exerciseService) CreateAndReturnId(context context.Context, exercise createExerciseRequest, workoutId string, userId string) (string, error) {
 	arg := repository.GetExerciseTypeByIdParams{
-		ID: exercise.ExerciseTypeID,
+		ID:     exercise.ExerciseTypeID,
 		UserID: userId,
 	}
 	exerciseType, err := e.repo.GetExerciseTypeById(context, arg)
@@ -30,19 +31,22 @@ func (e *exerciseService) CreateAndReturnId(context context.Context, exercise cr
 		return "", fmt.Errorf("failed to get exercise type by id: %w", err)
 	}
 
-	uuid, err := uuid.NewV7()
+	// Create exercise
+	exerciseUUID, err := uuid.NewV7()
 	if err != nil {
-		return "", fmt.Errorf("failed to generate UUID: %w", err)
+		return "", fmt.Errorf("failed to generate UUID for exercise: %w", err)
 	}
 
+	now := time.Now().UTC().Format(time.RFC3339)
 	toCreate := repository.CreateExerciseAndReturnIdParams{
-		ID:             uuid.String(),
+		ID:             exerciseUUID.String(),
 		Name:           exerciseType.Name,
 		WorkoutID:      workoutId,
 		ExerciseTypeID: exerciseType.ID,
-		CreatedOn: time.Now().UTC().Format(time.RFC3339),
-		UpdatedOn: time.Now().UTC().Format(time.RFC3339),
-		UserID: userId,
+		ExerciseItemID: exercise.ExerciseItemID,
+		CreatedOn:      now,
+		UpdatedOn:      now,
+		UserID:         userId,
 	}
 
 	id, err := e.repo.CreateAndReturnId(context, toCreate)

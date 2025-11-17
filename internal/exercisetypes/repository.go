@@ -2,6 +2,7 @@ package exercisetypes
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -46,18 +47,24 @@ func (e exerciseTypeRepository) GetLastWeightRepsByExerciseTypeId(ctx context.Co
 		return MaxLastWeightReps{}, fmt.Errorf("failed to get last weight reps by exercise type id: %w", err)
 	}
 
-	return MaxLastWeightReps{ a.Weight, int(a.Repetitions) }, nil
+	return MaxLastWeightReps{a.Weight, int(a.Repetitions)}, nil
 }
 
 func (e exerciseTypeRepository) GetMaxWeightRepsByExerciseTypeId(ctx context.Context, arg repository.GetMaxWeightRepsByExerciseTypeIdParams) (MaxLastWeightReps, error) {
 	a, err := e.repo.GetMaxWeightRepsByExerciseTypeId(ctx, arg)
 	if err != nil {
+		// Return 0/0 if no rows found
+		if errors.Is(err, sql.ErrNoRows) {
+			return MaxLastWeightReps{0, 0}, nil
+		}
 		return MaxLastWeightReps{}, fmt.Errorf("failed to get max weight reps by exercise type id: %w", err)
 	}
 
-	weight := a.Weight
-	repetitions := a.Repetitions.(int64)
-	return MaxLastWeightReps{ weight, int(repetitions) }, nil
+	reps := 0
+	if r, ok := a.Repetitions.(int64); ok {
+		reps = int(r)
+	}
+	return MaxLastWeightReps{a.Weight, reps}, nil
 }
 
 func (e exerciseTypeRepository) GetAll(context context.Context, userId string) ([]ExerciseType, error) {

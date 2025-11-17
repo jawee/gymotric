@@ -17,17 +17,17 @@ func AddEndpoints(mux *http.ServeMux, s database.Service, authenticationWrapper 
 		service: NewService(NewExerciseRepository(s.GetRepository())),
 	}
 
-	mux.Handle("GET /workouts/{id}/exercises", authenticationWrapper(http.HandlerFunc(handler.getExercisesByWorkoutIdHandler)))
-	mux.Handle("POST /workouts/{id}/exercises", authenticationWrapper(http.HandlerFunc(handler.createExerciseHandler)))
-	mux.Handle("DELETE /workouts/{id}/exercises/{exerciseId}", authenticationWrapper(http.HandlerFunc(handler.deleteExerciseByIdHandler)))
+	mux.Handle("GET /workouts/{workoutId}/exercise-items/{exerciseItemId}/exercises", authenticationWrapper(http.HandlerFunc(handler.getExercisesByWorkoutIdHandler)))
+	mux.Handle("POST /workouts/{workoutId}/exercise-items/{exerciseItemId}/exercises", authenticationWrapper(http.HandlerFunc(handler.createExerciseHandler)))
+	mux.Handle("DELETE /workouts/{workoutId}/exercise-items/{exerciseItemId}/exercises/{exerciseId}", authenticationWrapper(http.HandlerFunc(handler.deleteExerciseByIdHandler)))
 }
 
 func (s *handler) getExercisesByWorkoutIdHandler(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	workoutId := r.PathValue("workoutId")
 
 	userId := r.Context().Value("sub").(string)
 
-	exercises, err := s.service.GetByWorkoutId(r.Context(), id, userId)
+	exercises, err := s.service.GetByWorkoutId(r.Context(), workoutId, userId)
 
 	if err != nil {
 		slog.Error("Failed to get exercises", "error", err)
@@ -57,7 +57,13 @@ func (s *handler) createExerciseHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	workoutId := r.PathValue("id")
+	if t.ExerciseItemID == "" {
+		slog.Error("Missing required field", "field", "exercise_item_id")
+		http.Error(w, "exercise_item_id is required", http.StatusBadRequest)
+		return
+	}
+
+	workoutId := r.PathValue("workoutId")
 
 	id, err := s.service.CreateAndReturnId(r.Context(), t, workoutId, userId)
 
@@ -96,4 +102,5 @@ func (s *handler) deleteExerciseByIdHandler(w http.ResponseWriter, r *http.Reque
 
 type createExerciseRequest struct {
 	ExerciseTypeID string `json:"exercise_type_id"`
+	ExerciseItemID string `json:"exercise_item_id"`
 }

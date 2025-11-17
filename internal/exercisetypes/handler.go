@@ -3,6 +3,7 @@ package exercisetypes
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -64,8 +65,15 @@ func (s *handler) getLastSet(w http.ResponseWriter, r *http.Request) {
 
 	lastSet, err := s.service.GetLastWeightRepsByExerciseTypeId(r.Context(), exerciseTypeId, userId)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			http.Error(w, "", http.StatusNotFound)
+		if errors.Is(err, sql.ErrNoRows) {
+			// No historical data found, return 0 weight and 0 reps
+			jsonResp, err := utils.CreateResponse(getLastMaxSetResponse{Weight: 0, Reps: 0})
+			if err != nil {
+				slog.Warn("Failed to marshal response", "error", err)
+				http.Error(w, "", http.StatusBadRequest)
+				return
+			}
+			utils.ReturnJson(w, jsonResp)
 			return
 		}
 
@@ -90,8 +98,15 @@ func (s *handler) getMaxSet(w http.ResponseWriter, r *http.Request) {
 
 	maxSet, err := s.service.GetMaxWeightRepsByExerciseTypeId(r.Context(), exerciseTypeId, userId)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			http.Error(w, "", http.StatusNotFound)
+		if errors.Is(err, sql.ErrNoRows) {
+			// No historical data found, return 0 weight and 0 reps
+			jsonResp, err := utils.CreateResponse(getLastMaxSetResponse{Weight: 0, Reps: 0})
+			if err != nil {
+				slog.Warn("Failed to marshal response", "error", err)
+				http.Error(w, "", http.StatusBadRequest)
+				return
+			}
+			utils.ReturnJson(w, jsonResp)
 			return
 		}
 
