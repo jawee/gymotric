@@ -25,7 +25,6 @@ COPY --from=build /app/main /app/main
 EXPOSE ${PORT}
 CMD ["./main"]
 
-
 FROM node:23 AS frontend_builder
 WORKDIR /frontend
 
