@@ -28,6 +28,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	rateLimiter := ratelimiter.NewRateLimiter(1*time.Minute, 500)
 	mux := http.NewServeMux()
 
+	mux.Handle("GET /live", http.HandlerFunc(s.liveHandler))
 	mux.Handle("GET /health", http.HandlerFunc(s.healthHandler))
 	mux.Handle("GET /ip", http.HandlerFunc(s.ipHandler))
 
@@ -46,6 +47,13 @@ func (s *Server) RegisterRoutes() http.Handler {
 	statistics.AddEndpoints(mux, s.db, s.AuthenticatedMiddleware)
 
 	return s.corsMiddleware(s.loggingMiddleware(mux))
+}
+
+func (s *Server) liveHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	if _, err := w.Write([]byte("OK")); err != nil {
+		slog.Warn("Failed to write liveness response", "error", err)
+	}
 }
 
 func (s *Server) AuthenticatedMiddleware(next http.Handler) http.Handler {

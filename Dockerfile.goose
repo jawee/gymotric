@@ -10,7 +10,10 @@ COPY . .
 
 RUN CGO_ENABLED=1 GOOS=linux go build -o main cmd/goose/main.go
 
-FROM alpine:latest AS migrations
+FROM alpine:3.22 AS migrations
 WORKDIR /app
-COPY --from=build /app/main /app/main
+RUN addgroup -S app && adduser -S -G app app
+COPY --from=build --chown=app:app /app/main /app/main
+USER app
+HEALTHCHECK NONE
 CMD ["./main"]

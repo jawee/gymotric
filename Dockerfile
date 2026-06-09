@@ -19,10 +19,14 @@ COPY --from=mjml_builder /app/. .
 
 RUN CGO_ENABLED=1 GOOS=linux go build -o main cmd/api/main.go
 
-FROM alpine:latest AS backend
+FROM alpine:3.22 AS backend
 WORKDIR /app
-COPY --from=build /app/main /app/main
+RUN addgroup -S app && adduser -S -G app app
+COPY --from=build --chown=app:app /app/main /app/main
+USER app
 EXPOSE ${PORT}
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget --quiet --tries=1 --spider "http://127.0.0.1:${PORT}/live" || exit 1
 CMD ["./main"]
 
 FROM node:23 AS frontend_builder
@@ -36,4 +40,8 @@ RUN npm run build
 FROM nginx:alpine AS frontend
 COPY --from=frontend_builder /frontend/dist /usr/share/nginx/html
 COPY nginx-frontend.conf /etc/nginx/conf.d/default.conf
+RUN chown -R nginx:nginx /run /var/cache/nginx /usr/share/nginx/html
+USER nginx
 EXPOSE 80
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://127.0.0.1/ || exit 1

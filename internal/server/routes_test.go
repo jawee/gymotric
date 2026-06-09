@@ -15,6 +15,28 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+func TestLiveHandlerReturnsOKWithoutAuthenticationOrDependencies(t *testing.T) {
+	server := Server{
+		db: liveDbStub{
+			repo: &querierMock{},
+		},
+	}
+
+	handlerToTest := server.RegisterRoutes()
+	req := httptest.NewRequest("GET", "/live", nil)
+	rr := httptest.NewRecorder()
+
+	handlerToTest.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	if body := rr.Body.String(); body != "OK" {
+		t.Errorf("handler returned wrong body: got %q want %q", body, "OK")
+	}
+}
+
 func createToken(t *testing.T, userId string, expiration int) string {
 	signingKey := "sekrit"
 
@@ -200,6 +222,22 @@ func (m *dbStub) Close() error {
 }
 
 func (m *dbStub) GetRepository() repository.Querier {
+	return m.repo
+}
+
+type liveDbStub struct {
+	repo repository.Querier
+}
+
+func (m liveDbStub) Health() map[string]string {
+	panic("live endpoint must not call database health")
+}
+
+func (m liveDbStub) Close() error {
+	return nil
+}
+
+func (m liveDbStub) GetRepository() repository.Querier {
 	return m.repo
 }
 
